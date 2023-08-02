@@ -1,5 +1,5 @@
 [project]
-name = "Opti_HPLC_handler"
+name = "Opti_HPLC_Handler"
 version = "0.0.0"
 description = "Simplified proxy API for interacting with the Waters Empower Web API."
 readme = "README.md"
@@ -47,7 +47,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["*"]
 
 [tool.coverage.run]
 branch = true
