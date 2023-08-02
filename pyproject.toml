@@ -1,0 +1,77 @@
+[project]
+name = "Opti_HPLC_handler"
+version = "0.0.0"
+description = "Simplified proxy API for interacting with the Waters Empower Web API."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "BSD-3-Clause"
+authors = [
+  { name="Søren Furbo", email="srfu@novonordisk.com" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Topic :: Scientific/Engineering :: Chemistry",
+  "Topic :: Software Development :: Libraries :: Python Modules"
+]
+dependencies = [
+  "keyring==24.0.0",
+  "requests==2.30.0",
+]
+# dynamic = ["version"] To be implemented in the future
+
+[project.optional-dependencies]
+dev = [
+  "black==23.3.0",
+  "isort==5.12.0"
+]
+pipeline =[
+  "black==23.3.0",
+  "isort==5.12.0",
+  "pytest==7.3.1",
+  "pytest-cov==4-1-0"
+]
+
+[project.urls]
+Repository = "https://github.com/novonordisk-research/OptiHPLCHandler.git"
+
+[build-system]
+requires = ["setuptools>=0.61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["*"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "@abstractmethod",
+    "@abc.abstractmethod",
+    "def __repr__(self):",
+    # re-enable the standard pragma
+    "pragma: no cover",
+    "if TYPE_CHECKING",
+]
+precision = 2
+omit = [
+    "tests/*"
+]
+
+
+[tool.isort]
+profile = "black"
+skip = [".gitignore",".git","*/generated",".env","venv","env","ENV","env.bak","venv.bak"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
