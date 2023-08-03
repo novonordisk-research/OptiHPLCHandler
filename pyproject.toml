@@ -1,6 +1,6 @@
 [project]
 name = "Opti_HPLC_Handler"
-version = "0.0.0"
+version = "0.2.4"
 description = "Simplified proxy API for interacting with the Waters Empower Web API."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -21,15 +21,17 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 dependencies = [
-  "keyring==24.0.0",
-  "requests==2.30.0",
+  "keyring>=24.0.0",
+  "requests>=2.28.1",
 ]
-# dynamic = ["version"] To be implemented in the future
+# dynamic = ["version"] Possibly to be implemented in the future
 
 [project.optional-dependencies]
 dev = [
   "black==23.3.0",
-  "isort==5.12.0"
+  "isort==5.12.0",
+  "twine==4.0.2",
+  "build==0.10.0",
 ]
 pipeline =[
   "black==23.3.0",
@@ -42,7 +44,7 @@ pipeline =[
 Repository = "https://github.com/novonordisk-research/OptiHPLCHandler.git"
 
 [build-system]
-requires = ["setuptools>=0.64.0"]
+requires = ["setuptools>=0.64.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
