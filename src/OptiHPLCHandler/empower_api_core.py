@@ -91,7 +91,7 @@ class EmpowerConnection:
     @property
     def password(self):
         try:
-            password = keyring.get_password("empower", self.username)
+            password = keyring.get_password("Empower", self.username)
         except (
             NoKeyringError
         ):  # If no keyring is available, ask for password. This is the case in Datalab.
@@ -99,5 +99,7 @@ class EmpowerConnection:
         if not password:
             if not self.address.startswith("https"):
                 warnings.warn("The password will be sent in plain text.")
-            password = getpass.getpass("Please enter your password: ")
+            password = getpass.getpass(
+                f"Please enter the password for user {self.username}: "
+            )
         return password

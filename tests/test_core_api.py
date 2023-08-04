@@ -174,3 +174,19 @@ class TestEmpowerConnection(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             connection.login()
+
+    @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_info_in_login_message(self, mock_request, mock_getpass):
+        # Verify that the handler prints the correct info in the login message.
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.post.return_value = mock_response
+        mock_request.get.return_value = mock_response
+        mock_getpass.return_value = self.mock_password
+        connection = EmpowerConnection(
+            address="https://test_address/",
+            username="test_username",
+            project="test_project",
+        )
+        assert "test_username" in mock_getpass.call_args[0][0]
