@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
+import warnings
 
 from OptiHPLCHandler import EmpowerConnection
 
@@ -143,3 +144,33 @@ class TestEmpowerConnection(unittest.TestCase):
 
         with self.assertRaises(IOError):
             self.connection.login()
+
+    @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_http_warning(self, mock_requests, mock_getpass):
+        # Verify that the handler warns if the connection is not https.
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        mock_requests.get.return_value = mock_response
+        mock_getpass.return_value = self.mock_password
+        with self.assertWarns(Warning):
+            self.connection.login()
+
+    @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_no_warning_https(self, mock_request, mock_getpass):
+        # Verify that the handler does not warn if the connection is https.
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.post.return_value = mock_response
+        mock_request.get.return_value = mock_response
+        mock_getpass.return_value = self.mock_password
+        connection = EmpowerConnection(
+            address="https://test_address/",
+            username="test_username",
+            project="test_project",
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            connection.login()

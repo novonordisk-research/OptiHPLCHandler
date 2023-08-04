@@ -1,4 +1,5 @@
 import getpass
+import warnings
 from typing import Optional
 
 import keyring
@@ -96,5 +97,7 @@ class EmpowerConnection:
         ):  # If no keyring is available, ask for password. This is the case in Datalab.
             password = None
         if not password:
+            if not self.address.startswith("https"):
+                warnings.warn("The password will be sent in plain text.")
             password = getpass.getpass("Please enter your password: ")
         return password
