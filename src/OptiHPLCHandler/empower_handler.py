@@ -145,11 +145,30 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def RunExperiment(
         self,
         sample_set_method: str,
+        node: str,
         hplc: str = None,
         sample_set_name: Optional[str] = None,
     ) -> HplcResult:
-        """Run the experiment on the instrument."""
-        raise NotImplementedError
+        """Run the experiment on an instrument."""
+        parameters = {
+            "sampleSetMethodName": sample_set_method,
+            "sampleSetName": sample_set_name,
+            "shutDownMethodName": "",
+            "processingPrinter": "",
+            "runMode": "RunOnly",
+            "suitabilityMode": "ContinueOnFault",
+            "waitForUser": False,
+            "reRun": False,
+            "sampleSetId": 0,
+            "fromLine": 0,
+            "nodeName": node,
+            "systemName": hplc,
+        }
+        reply = self.connection.post(
+            endpoint="acquisition/run-sample-set", body=parameters
+        )
+        if reply.status_code != 200:
+            raise ValueError(f"Could not run experiment. Response: {reply.text}")
 
     def AddMethod(
         self,

@@ -221,8 +221,29 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.handler.GetSetup()
 
-    def test_empower_run_experiment(self):
-        with self.assertRaises(NotImplementedError):
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_run_experiment_fails(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_requests.post.return_value = mock_response
+        with self.assertRaises(ValueError):
             self.handler.RunExperiment(
-                sample_set_method="test_sample_set_method", hplc="test_hplc"
+                sample_set_method="test_sample_set_method",
+                node="test_node",
+                hplc="test_hplc",
             )
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_run_experiment(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        self.handler.RunExperiment(
+            sample_set_method="test_sample_set_method",
+            node="test_node",
+            hplc="test_hplc",
+        )
+        assert (
+            mock_requests.post.call_args[0][0]
+            == "http://test_address/acquisition/run-sample-set"
+        )  # Check that the correct URl is used.
