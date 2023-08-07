@@ -24,20 +24,19 @@ class TestEmpowerHandler(unittest.TestCase):
         mock_password.return_value = "test_password"
         self.mock_password = mock_password
         mock_getpass.return_value = mock_password
-        # getpass is used to get the password, so we need to mock that response since interactivity is not possible
+        # getpass is used to get the password, so we need to mock that response since
+        # interactivity is not possible for automated testing.
 
         self.handler = EmpowerHandler(
             project="test_project",
             address="http://test_address/",
             username="test_username",
-            run_automatically=True,
         )
 
     def test_empower_handler_initialisation(self):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
         assert self.handler.address == "http://test_address/"
-        assert self.handler.run_automatically is True
         assert self.handler.connection.address == "http://test_address/"
         assert self.handler.connection.username == "test_username"
         assert self.handler.connection.project == "test_project"
@@ -51,9 +50,9 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_post_sample_list(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {"results": "mock_results"}
+        mock_response.status_code = 201
         mock_requests.post.return_value = mock_response
 
-        self.handler.run_automatically = False
         sample_list = [
             {
                 "Method": "test_method_1",
@@ -72,13 +71,12 @@ class TestEmpowerHandler(unittest.TestCase):
                 ],
             },
         ]
-        response = self.handler.Post(
-            sample_set_name="test_sampleset_name",
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
             sample_list=sample_list,
             plate_list=[],
             audit_trail_message="test_audit_trail_message",
         )
-        assert response == "mock_results"
         assert "name=test_sampleset_name" in mock_requests.method_calls[0][1][0]
         # Testing that the name is correct in the request
         assert (
@@ -89,7 +87,8 @@ class TestEmpowerHandler(unittest.TestCase):
         first_line_fields = {
             field["name"]: field["value"] for field in sample_set_lines[0]["fields"]
         }
-        # Converting the fields in the first sample set line to a dictionary for easier testing
+        # Converting the fields in the first sample set line to a dictionary for easier
+        # testing
         assert first_line_fields["MethodSetOrReportMethod"] == "test_method_1"
         assert first_line_fields["Vial"] == "test_sample_pos_1"
         assert first_line_fields["SampleName"] == "test_sample_name_1"
@@ -97,7 +96,8 @@ class TestEmpowerHandler(unittest.TestCase):
         second_line_fields = {
             field["name"]: field["value"] for field in sample_set_lines[1]["fields"]
         }
-        # Converting the fields in the second sample set line  to a dictionary for easier testing
+        # Converting the fields in the second sample set line to a dictionary for easier
+        # testing
         assert second_line_fields["MethodSetOrReportMethod"] == "test_method_2"
         assert second_line_fields["Vial"] == "test_sample_pos_2"
         assert second_line_fields["SampleName"] == "test_sample_name_2"
@@ -133,35 +133,6 @@ class TestEmpowerHandler(unittest.TestCase):
         ]
         assert all([dict_type == "Enumerator" for dict_type in dict_type_list])
         # Testing that all dictionary values are strings
-
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_run_automatically(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": "mock_results"}
-        mock_requests.post.return_value = mock_response
-        sample_list = [
-            {
-                "Method": "test_method_1",
-                "SamplePos": "test_sample_pos_1",
-                "SampleName": "test_sample_name_1",
-                "InjectionVolume": 1,
-            }
-        ]
-        with self.assertRaises(ValueError):
-            self.handler.Post(
-                sample_set_name="test_sampleset_name",
-                sample_list=sample_list,
-                plate_list=[],
-                audit_trail_message="test_audit_trail_message",
-            )
-        with self.assertRaises(NotImplementedError):
-            self.handler.Post(
-                hplc="test_instrument",
-                sample_set_name="test_sampleset_name",
-                sample_list=sample_list,
-                plate_list=[],
-                audit_trail_message="test_audit_trail_message",
-            )
 
     def test_empower_handler_add_method(self):
         with self.assertRaises(NotImplementedError):
@@ -249,3 +220,30 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_get_setup(self):
         with self.assertRaises(NotImplementedError):
             self.handler.GetSetup()
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_run_experiment_fails(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_requests.post.return_value = mock_response
+        with self.assertRaises(ValueError):
+            self.handler.RunExperiment(
+                sample_set_method="test_sample_set_method",
+                node="test_node",
+                hplc="test_hplc",
+            )
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_run_experiment(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        self.handler.RunExperiment(
+            sample_set_method="test_sample_set_method",
+            node="test_node",
+            hplc="test_hplc",
+        )
+        assert (
+            mock_requests.post.call_args[0][0]
+            == "http://test_address/acquisition/run-sample-set"
+        )  # Check that the correct URl is used.
