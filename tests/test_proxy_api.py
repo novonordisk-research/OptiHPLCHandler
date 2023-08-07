@@ -24,7 +24,8 @@ class TestEmpowerHandler(unittest.TestCase):
         mock_password.return_value = "test_password"
         self.mock_password = mock_password
         mock_getpass.return_value = mock_password
-        # getpass is used to get the password, so we need to mock that response since interactivity is not possible
+        # getpass is used to get the password, so we need to mock that response since
+        # interactivity is not possible for automated testing.
 
         self.handler = EmpowerHandler(
             project="test_project",
@@ -71,7 +72,7 @@ class TestEmpowerHandler(unittest.TestCase):
             },
         ]
         self.handler.PostExperiment(
-            sample_set_name="test_sampleset_name",
+            sample_set_method_name="test_sampleset_name",
             sample_list=sample_list,
             plate_list=[],
             audit_trail_message="test_audit_trail_message",
@@ -86,7 +87,8 @@ class TestEmpowerHandler(unittest.TestCase):
         first_line_fields = {
             field["name"]: field["value"] for field in sample_set_lines[0]["fields"]
         }
-        # Converting the fields in the first sample set line to a dictionary for easier testing
+        # Converting the fields in the first sample set line to a dictionary for easier
+        # testing
         assert first_line_fields["MethodSetOrReportMethod"] == "test_method_1"
         assert first_line_fields["Vial"] == "test_sample_pos_1"
         assert first_line_fields["SampleName"] == "test_sample_name_1"
@@ -94,7 +96,8 @@ class TestEmpowerHandler(unittest.TestCase):
         second_line_fields = {
             field["name"]: field["value"] for field in sample_set_lines[1]["fields"]
         }
-        # Converting the fields in the second sample set line  to a dictionary for easier testing
+        # Converting the fields in the second sample set line to a dictionary for easier
+        # testing
         assert second_line_fields["MethodSetOrReportMethod"] == "test_method_2"
         assert second_line_fields["Vial"] == "test_sample_pos_2"
         assert second_line_fields["SampleName"] == "test_sample_name_2"
@@ -217,3 +220,9 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_get_setup(self):
         with self.assertRaises(NotImplementedError):
             self.handler.GetSetup()
+
+    def test_empower_run_experiment(self):
+        with self.assertRaises(NotImplementedError):
+            self.handler.RunExperiment(
+                sample_set_method="test_sample_set_method", hplc="test_hplc"
+            )

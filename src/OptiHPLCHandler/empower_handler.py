@@ -71,7 +71,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
     def PostExperiment(
         self,
-        sample_set_name: str,
+        sample_set_method_name: str,
         sample_list: List[Sample],
         plate_list: List[Any],
         audit_trail_message: str,
@@ -80,29 +80,36 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         Post the experiment to the HPLC.
 
 
-        :param sample_set_name: Name of the sample set method. This will be the name of the sample set in Empower.
+        :param sample_set_method_name: Name of the sample set method. This will be the
+            name of the sample set in Empower.
 
-        :param sample_list: List of samples to run. Each sample is a dictionary with the following keys:
+        :param sample_list: List of samples to run. Each sample is a dictionary with
+            the following keys:
             - Method: Name of the method to use for the sample
-            - SamplePos: Position of the sample in the autosampler, including plate and position on the plate
+            - SamplePos: Position of the sample in the autosampler, including plate and
+                position on the plate
             - SampleName: Name of the sample
             - InjectionVolume: Volume of the sample to inject in micro liters
-            - OtherFields: List of other fields to add to the sample. Each field is a dictionary with the
-                following keys:
+            - OtherFields: List of other fields to add to the sample. Each field is a
+                dictionary with the following keys:
                 - name: Name of the field
-                - value: Value of the field. Can be a string, number, or dictionary with the following keys:
+                - value: Value of the field. Can be a string, number, or dictionary
+                    with the following keys:
                     - member: Name of the member to use for the field
                     - value: Value of the member
-            For all fields, the datatype will be autodetermined according the the type of the value. For Boolean
-            values, this will errouneously be set to string. Instead, use `"value": {"member": “No”}` or
-            `"value": {"member": “Yes”}`
+            For all fields, the datatype will be autodetermined according the the type
+                of the value. For Boolean
+            values, this will errouneously be set to string. Instead, use
+                `"value": {"member": “No”}` or `"value": {"member": “Yes”}`
 
-        :param plate_list: List of plates to use. Each plate is a dictionary with the following keys:
+        :param plate_list: List of plates to use. Each plate is a dictionary with the
+            following keys:
             - plateTypeName: Name of the plate type
-            - position: Position of the plate in the autosampler. This is what you reference in
-                the sample value "SamplePos"
+            - position: Position of the plate in the autosampler. This is what you
+                reference in the sample value "SamplePos"
 
-        :param audit_trail_message: Message to add to the audit trail of the sample set method
+        :param audit_trail_message: Message to add to the audit trail of the sample set
+            method
         """
         sampleset_object = {"plates": plate_list}
         empower_sample_list = []
@@ -116,16 +123,17 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 {"name": "InjVol", "value": sample["InjectionVolume"]},
             ]
             other_fields = sample.get("OtherFields", [])
-            # Getting the other fields to add, or an empty list if no other fields are given.
+            # Getting the other fields to add, or an empty list if no other fields are
+            # given.
             for field in other_fields:
                 field_list.append(field)
             for field in field_list:
-                self.set_data_type(field)
+                self._set_data_type(field)
             empower_sample_list.append(
                 {"components": [], "id": num, "fields": field_list}
             )
         sampleset_object["sampleSetLines"] = empower_sample_list
-        endpoint = f"project/methods/sample-set-method?name={sample_set_name}"
+        endpoint = f"project/methods/sample-set-method?name={sample_set_method_name}"
         if audit_trail_message:
             endpoint += f"&AtComment={audit_trail_message}"
         response = self.connection.post(endpoint=endpoint, body=sampleset_object)
@@ -134,7 +142,12 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 f"Could not post sample set method. Response: {response.text}"
             )
 
-    def RunExperiment(self, experiment: Any, hplc: Optional[str] = None) -> HplcResult:
+    def RunExperiment(
+        self,
+        sample_set_method: str,
+        hplc: str = None,
+        sample_set_name: Optional[str] = None,
+    ) -> HplcResult:
         """Run the experiment on the instrument."""
         raise NotImplementedError
 
@@ -168,10 +181,10 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
     def GetSetup(self) -> List[HPLCSetup]:
         """Get the list of HPLC setups"""
-        # This is almost certainly an incredibly naive use of the API. Fill out with correct details when available.
         raise NotImplementedError
 
-    def set_data_type(self, field: Dict[str, Any]) -> Dict[str, Any]:
+    def _set_data_type(self, field: Dict[str, Any]):
+        """Find and set the data type of the field, based on the type of `value"""
         data_type_dict = {
             str: "String",
             int: "Double",
