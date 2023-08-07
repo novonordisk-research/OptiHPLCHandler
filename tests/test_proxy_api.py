@@ -30,14 +30,12 @@ class TestEmpowerHandler(unittest.TestCase):
             project="test_project",
             address="http://test_address/",
             username="test_username",
-            run_automatically=True,
         )
 
     def test_empower_handler_initialisation(self):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
         assert self.handler.address == "http://test_address/"
-        assert self.handler.run_automatically is True
         assert self.handler.connection.address == "http://test_address/"
         assert self.handler.connection.username == "test_username"
         assert self.handler.connection.project == "test_project"
@@ -51,9 +49,9 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_post_sample_list(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {"results": "mock_results"}
+        mock_response.status_code = 201
         mock_requests.post.return_value = mock_response
 
-        self.handler.run_automatically = False
         sample_list = [
             {
                 "Method": "test_method_1",
@@ -72,13 +70,12 @@ class TestEmpowerHandler(unittest.TestCase):
                 ],
             },
         ]
-        response = self.handler.Post(
+        self.handler.PostExperiment(
             sample_set_name="test_sampleset_name",
             sample_list=sample_list,
             plate_list=[],
             audit_trail_message="test_audit_trail_message",
         )
-        assert response == "mock_results"
         assert "name=test_sampleset_name" in mock_requests.method_calls[0][1][0]
         # Testing that the name is correct in the request
         assert (
@@ -133,35 +130,6 @@ class TestEmpowerHandler(unittest.TestCase):
         ]
         assert all([dict_type == "Enumerator" for dict_type in dict_type_list])
         # Testing that all dictionary values are strings
-
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_run_automatically(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": "mock_results"}
-        mock_requests.post.return_value = mock_response
-        sample_list = [
-            {
-                "Method": "test_method_1",
-                "SamplePos": "test_sample_pos_1",
-                "SampleName": "test_sample_name_1",
-                "InjectionVolume": 1,
-            }
-        ]
-        with self.assertRaises(ValueError):
-            self.handler.Post(
-                sample_set_name="test_sampleset_name",
-                sample_list=sample_list,
-                plate_list=[],
-                audit_trail_message="test_audit_trail_message",
-            )
-        with self.assertRaises(NotImplementedError):
-            self.handler.Post(
-                hplc="test_instrument",
-                sample_set_name="test_sampleset_name",
-                sample_list=sample_list,
-                plate_list=[],
-                audit_trail_message="test_audit_trail_message",
-            )
 
     def test_empower_handler_add_method(self):
         with self.assertRaises(NotImplementedError):
