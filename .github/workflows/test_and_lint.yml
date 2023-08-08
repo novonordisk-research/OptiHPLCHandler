@@ -14,4 +14,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[pipepline]
       - name: Run tests
-        run: pytest
+        run: python -m pytest
