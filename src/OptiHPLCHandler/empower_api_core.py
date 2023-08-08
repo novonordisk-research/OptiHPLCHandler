@@ -9,6 +9,7 @@ from keyring.errors import NoKeyringError
 
 logger = logging.getLogger(__name__)
 
+
 class EmpowerConnection:
     def __init__(
         self,
