@@ -107,7 +107,7 @@ class TestEmpowerHandler(unittest.TestCase):
         int_type_list = [
             field["dataType"]
             for field in sample_set_lines[0]["fields"]
-            if type(field["value"]) == int
+            if isinstance(field["value"], int)
         ]
         assert all(
             [int_type == "Double" for int_type in int_type_list]
@@ -115,21 +115,21 @@ class TestEmpowerHandler(unittest.TestCase):
         float_type_list = [
             field["dataType"]
             for field in sample_set_lines[0]["fields"]
-            if type(field["value"]) == float
+            if isinstance(field["value"], float)
         ]
         assert all([float_type == "Double" for float_type in float_type_list])
         # Testing that all float values are doubles
         string_type_list = [
             field["dataType"]
             for field in sample_set_lines[0]["fields"]
-            if type(field["value"]) == str
+            if isinstance(field["value"], str)
         ]
         assert all([string_type == "String" for string_type in string_type_list])
         # Testing that all string values are strings
         dict_type_list = [
             field["dataType"]
             for field in sample_set_lines[0]["fields"]
-            if type(field["value"]) == dict
+            if isinstance(field["value"], dict)
         ]
         assert all([dict_type == "Enumerator" for dict_type in dict_type_list])
         # Testing that all dictionary values are strings
