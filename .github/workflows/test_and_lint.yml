@@ -2,7 +2,7 @@ name: testing-and-linting
 run-name: Testing and liniting
 on:
   - push
-  - workflow_call:
+  - workflow_call
 jobs:
   test:
     runs-on: ubuntu-latest
