@@ -11,6 +11,7 @@ Setup = TypeVar("Setup")
 
 logger = logging.getLogger(__name__)
 
+
 class StatefulInstrumentHandler(ABC, Generic[Result, Setup]):
     def __init__(self):
         pass
