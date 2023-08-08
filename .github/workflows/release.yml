@@ -6,7 +6,7 @@ on:
       - main
 jobs:
   lint-and-test:
-    uses: ./.github/workflows/test-and-lint.yml
+    uses: ./.github/workflows/test_and_lint.yml
   release:
     name: Release
     runs-on: ubuntu-latest
