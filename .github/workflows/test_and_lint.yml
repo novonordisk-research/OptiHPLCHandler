@@ -12,6 +12,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .[pipepline]
+          pip install .[pipeline]
       - name: Run tests
         run: python -m pytest
