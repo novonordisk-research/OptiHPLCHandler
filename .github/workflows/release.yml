@@ -1,15 +1,22 @@
 name: Release
 run-name: Release workflow
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "The type of release to perform"
+        required: true
+        default: "--patch"
 jobs:
-  lint-and-test:
-    uses: ./.github/workflows/test_and_lint.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
+  test:
+    uses: ./.github/workflows/test.yml
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: lint-and-test
+    needs: [lint, test]
     steps:
-      - run: echo "Release"
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - run: python -m bumpver ${{ inputs.release_type }}
