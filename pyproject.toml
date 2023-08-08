@@ -36,6 +36,7 @@ dev = [
 ]
 pipeline =[
   "black==23.3.0",
+  "bumpver==2023.1125",
   "flake8==6.1.0",
   "isort==5.12.0",
   "pytest==7.3.1",
@@ -78,3 +79,20 @@ skip = [".gitignore",".git","*/generated",".env","venv","env","ENV","env.bak","v
 pythonpath = [
   "src"
 ]
+
+[tool.bumpver]
+current_version = "0.2.5"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version {old_version} -> {new_version}"
+tag_message = "{new_version}"
+tag_scope = "default"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+    'version = "{version}"',
+]
+"src\OptiHPLCHandler\__init__.py*" = ['__version__ = "{version}"']
