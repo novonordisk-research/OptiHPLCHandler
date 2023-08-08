@@ -73,7 +73,7 @@ omit = [
 
 [tool.isort]
 profile = "black"
-skip = [".gitignore",".git","*/generated",".env","venv","env","ENV","env.bak","venv.bak"]
+skip = [".gitignore",".git",".env","venv","env","ENV","env.bak","venv.bak"]
 
 [tool.pytest.ini_options]
 pythonpath = [
@@ -95,4 +95,4 @@ push = true
     'current_version = "{version}"',
     'version = "{version}"',
 ]
-"src\OptiHPLCHandler\__init__.py*" = ['__version__ = "{version}"']
+"src/OptiHPLCHandler/__init__.py*" = ['__version__ = "{version}"']
