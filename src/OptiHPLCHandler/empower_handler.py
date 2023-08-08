@@ -131,7 +131,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             # Getting the other fields to add, or an empty list if no other fields are
             # given.
             for field in other_fields:
-                logger.debug("adding field %s to sample %s", field["name"], sample["SampleName"])
+                logger.debug(
+                    "adding field %s to sample %s", field["name"], sample["SampleName"]
+                )
                 field_list.append(field)
             for field in field_list:
                 self._set_data_type(field)
