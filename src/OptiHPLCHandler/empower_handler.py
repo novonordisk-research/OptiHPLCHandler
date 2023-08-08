@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
@@ -8,6 +9,7 @@ Result = TypeVar("Result")
 
 Setup = TypeVar("Setup")
 
+logger = logging.getLogger(__name__)
 
 class StatefulInstrumentHandler(ABC, Generic[Result, Setup]):
     def __init__(self):
@@ -111,9 +113,11 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         :param audit_trail_message: Message to add to the audit trail of the sample set
             method
         """
+        logger.debug("Posting experiment to Empower")
         sampleset_object = {"plates": plate_list}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
+            logger.debug("Adding sample %s to sample list", sample["SampleName"])
             field_list = [
                 {"name": "Function", "value": {"member": "Inject Samples"}},
                 {"name": "Processing", "value": {"member": "Normal"}},
@@ -126,6 +130,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             # Getting the other fields to add, or an empty list if no other fields are
             # given.
             for field in other_fields:
+                logger.debug("adding field %s to sample %s", field["name"], sample["SampleName"])
                 field_list.append(field)
             for field in field_list:
                 self._set_data_type(field)
@@ -135,6 +140,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sampleset_object["sampleSetLines"] = empower_sample_list
         endpoint = f"project/methods/sample-set-method?name={sample_set_method_name}"
         if audit_trail_message:
+            logger.debug("Adding audit trail message to endpoint")
             endpoint += f"&AtComment={audit_trail_message}"
         response = self.connection.post(endpoint=endpoint, body=sampleset_object)
         if response.status_code != 201:
@@ -164,10 +170,12 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             "nodeName": node,
             "systemName": hplc,
         }
+        logger.debug("Running experiment with parameters %s", parameters)
         reply = self.connection.post(
             endpoint="acquisition/run-sample-set", body=parameters
         )
         if reply.status_code != 200:
+            logger.error("Could not run experiment. Response: %s", reply.text)
             raise ValueError(f"Could not run experiment. Response: {reply.text}")
 
     def AddMethod(
@@ -190,12 +198,15 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             for method in response.json()["results"]
         ]
         if any([len(name_dict) > 1 for name_dict in method_name_dict_list]):
+            logger.error("Multiple names found for a method.")
             raise ValueError("Multiple names found for a method.")
         if any([len(name_dict) == 0 for name_dict in method_name_dict_list]):
+            logger.error("No name found for a method.")
             raise ValueError("No name found for a method.")
         method_name_list = [
             name_dict[0]["value"] for name_dict in method_name_dict_list
         ]
+        logger.debug("Found methods %s", method_name_list)
         return method_name_list
 
     def GetSetup(self) -> List[HPLCSetup]:
@@ -211,4 +222,5 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             dict: "Enumerator",
         }
         data_type = type(field["value"])
+        logger.debug("Setting data type of field %s to %s", field["name"], data_type)
         field["dataType"] = data_type_dict[data_type]
