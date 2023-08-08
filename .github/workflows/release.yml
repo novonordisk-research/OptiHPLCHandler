@@ -22,4 +22,4 @@ jobs:
         with:
           python-version: 3.9
       - run: pip install .[release]
-      - run: python -m bumpver ${{ inputs.release_type }}
+      - run: python -m bumpver update ${{ inputs.release_type }}
