@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .[pipepline]
+          pip install .[pipeline]
       - name: Linting with flakes8
         run: python -m flake8 --max-complexity=10
       - name: Linting with black
