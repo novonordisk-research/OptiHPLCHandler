@@ -1,6 +1,6 @@
 import unittest
-from unittest.mock import MagicMock, patch
 import warnings
+from unittest.mock import MagicMock, patch
 
 from OptiHPLCHandler import EmpowerConnection
 
@@ -184,7 +184,7 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_request.post.return_value = mock_response
         mock_request.get.return_value = mock_response
         mock_getpass.return_value = self.mock_password
-        connection = EmpowerConnection(
+        EmpowerConnection(
             address="https://test_address/",
             username="test_username",
             project="test_project",
