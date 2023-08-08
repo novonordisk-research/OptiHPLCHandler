@@ -1,0 +1,9 @@
+name: Pull Request
+run-name: Pull reqeust workflow
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  lint-and-test:
+    uses: ./.github/workflows/test_and_lint.yml
