@@ -97,7 +97,7 @@ commands
 
 ```
 pip install venv
-python -v venv .env
+python -m venv .env
 .\.env\Scripts\activate
 ```
 
@@ -118,3 +118,17 @@ If this doesn't work, you might need to upgrade pip and/or setuptools:
 ```
 
 You should then be able to install the package locally as an editable installation.
+
+## Releasing
+
+To release a new version, update the version number in `pyproject.toml` and
+`src\OptiHPLCHandler\__init__.py`. Make a new branch and commit the changes.
+
+Then run the commands
+
+```
+python -m build
+py -m twine upload dist/*
+```
+
+you will be prompted for your pipy.org username and password.
