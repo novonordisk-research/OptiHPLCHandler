@@ -1,7 +1,7 @@
 name: Release
 run-name: Release workflow
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering of workflow.
     inputs:
       release_type:
         description: "The type of release to perform"
@@ -13,10 +13,18 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
   release:
-    name: Release
+    name: Release # This is not a separate wokflow because it should only run after linting and testing.
     runs-on: ubuntu-latest
     needs: [lint, test]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
-      - run: python -m bumpver ${{ inputs.release_type }}
+        with:
+          python-version: 3.9
+      - run: pip install .[release]
+      - run: git config --global user.name "GitHub Action"
+      - run: git config --global user.email "build_pipeline@novonordisk.com"
+      - run: git branch -c release
+      - run: git checkout release
+      - run: git push --set-upstream origin release
+      - run: python -m bumpver update ${{ inputs.release_type }}
