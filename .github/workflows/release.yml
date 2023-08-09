@@ -25,5 +25,6 @@ jobs:
       - run: git config --global user.name "GitHub Action"
       - run: git config --global user.email "build_pipeline@novonordisk.com"
       - run: git branch -c release
+      - run: git checkout release
       - run: git push --set-upstream origin release
       - run: python -m bumpver update ${{ inputs.release_type }}
