@@ -122,7 +122,9 @@ You should then be able to install the package locally as an editable installati
 ## Releasing
 
 To release a new version, get all of the changes you want into the branch `main`.
-Then manually run the [release GitHub action](https://github.com/novonordisk-research/OptiHPLCHandler/actions/workflows/release.yml).
+Then manually run the
+[release GitHub action](https://github.com/novonordisk-research/OptiHPLCHandler/actions/workflows/release.yml)
+. Select what type of release it is by typing in `--patch`, `--minor`, or `--major`.
 
 Fetch the new branch `release`, and run the commands
 
