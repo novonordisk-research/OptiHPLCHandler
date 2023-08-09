@@ -42,8 +42,6 @@ pipeline =[
   "pytest-cov==4.1.0"
 ]
 release = [
-  "twine==4.0.2",
-  "build==0.10.0",
   "bumpver==2023.1125",
 ]
 
