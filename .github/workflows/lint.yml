@@ -1,7 +1,8 @@
 name: Lint
 run-name: Lint
 on:
-  - workflow_call
+  - workflow_call # Allowing for calling from other workflows
+  - workflow_dispatch # Allowing for manual triggering
 jobs:
   lint:
     runs-on: ubuntu-latest
