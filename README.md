@@ -121,14 +121,21 @@ You should then be able to install the package locally as an editable installati
 
 ## Releasing
 
-To release a new version, update the version number in `pyproject.toml` and
-`src\OptiHPLCHandler\__init__.py`. Make a new branch and commit the changes.
+To release a new version, get all of the changes you want into the branch `main`.
+Then manually run the
+[release GitHub action](https://github.com/novonordisk-research/OptiHPLCHandler/actions/workflows/release.yml)
+by clicking `Run workflow`. Select what type of release it is by typing in `--patch`, `--minor`, or `--major` in `The type of release to perform`, and then click `Run workflow`.
 
-Then run the commands
+Fetch the new branch `release`. Make sure there isn't a `dist` folder in
+your project folder (or delete it), and run the commands
 
 ```
-python -m build
+py -m build
 py -m twine upload dist/*
 ```
 
 you will be prompted for your pipy.org username and password.
+
+In GitHub, merge the `release` branch into the `main` branch by
+[creating a pull request](https://github.com/novonordisk-research/OptiHPLCHandler/compare/main...release)
+and merging it.
