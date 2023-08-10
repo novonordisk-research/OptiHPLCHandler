@@ -126,10 +126,10 @@ Then manually run the
 [release GitHub action](https://github.com/novonordisk-research/OptiHPLCHandler/actions/workflows/release.yml)
 by clicking `Run workflow`. Select what type of release it is by typing in `--patch`, `--minor`, or `--major` in `The type of release to perform`, and then click `Run workflow`.
 
-Fetch the new branch `release`. Make sure there isn't a `dist` folder in
-your project folder (or delete it), and run the commands
+Fetch the new branch `release`. Run the commands
 
 ```
+rm -r -fo dist
 py -m build
 py -m twine upload dist/*
 ```
