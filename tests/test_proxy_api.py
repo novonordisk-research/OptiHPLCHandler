@@ -77,10 +77,10 @@ class TestEmpowerHandler(unittest.TestCase):
             plate_list=[],
             audit_trail_message="test_audit_trail_message",
         )
-        assert "name=test_sampleset_name" in mock_requests.method_calls[0][1][0]
+        assert "test_sampleset_name" == mock_requests.method_calls[0][2]["json"]["name"]
         # Testing that the name is correct in the request
         assert (
-            "AtComment=test_audit_trail_message" in mock_requests.method_calls[0][1][0]
+            "auditTrailComment=test_audit_trail_message" in mock_requests.method_calls[0][1][0]
         )
         # Testing that the audit trail message is correct
         sample_set_lines = mock_requests.method_calls[0][2]["json"]["sampleSetLines"]
