@@ -80,7 +80,7 @@ class TestEmpowerHandler(unittest.TestCase):
         assert "test_sampleset_name" == mock_requests.method_calls[0][2]["json"]["name"]
         # Testing that the name is correct in the request
         assert (
-            "auditTrailComment=test_audit_trail_message"
+            "?auditTrailComment=test_audit_trail_message"
             in mock_requests.method_calls[0][1][0]
         )
         # Testing that the audit trail message is correct
@@ -134,6 +134,31 @@ class TestEmpowerHandler(unittest.TestCase):
         ]
         assert all([dict_type == "Enumerator" for dict_type in dict_type_list])
         # Testing that all dictionary values are strings
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_handler_post_sample_list_error(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": "mock_results"}
+        mock_response.status_code = 404
+        mock_requests.post.return_value = mock_response
+        with self.assertRaises(ValueError) as context:
+            self.handler.PostExperiment(
+                sample_set_method_name="test_sampleset_name",
+                sample_list=[],
+                plate_list=[],
+                audit_trail_message="test_audit_trail_message",
+            )
+        assert "Resource not found" in context.exception.args[0]
+        mock_response.status_code = 400
+        mock_response.text = "mock_error_message"
+        with self.assertRaises(ValueError) as context:
+            self.handler.PostExperiment(
+                sample_set_method_name="test_sampleset_name",
+                sample_list=[],
+                plate_list=[],
+                audit_trail_message="test_audit_trail_message",
+            )
+        assert  "Response: mock_error_message" in context.exception.args[0]
 
     def test_empower_handler_add_method(self):
         with self.assertRaises(NotImplementedError):
