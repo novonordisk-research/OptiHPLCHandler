@@ -144,9 +144,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         endpoint = "project/methods/sample-set-method"
         if audit_trail_message:
             logger.debug("Adding audit trail message to endpoint")
-            endpoint += f"&auditTrailComment={audit_trail_message}"
+            endpoint += f"?auditTrailComment={audit_trail_message}"
         response = self.connection.post(endpoint=endpoint, body=sampleset_object)
         if response.status_code != 201:
+            if response.status_code == 404:
+                raise ValueError(
+                    "Could not post sample set method. Resource not found."
+                )
             raise ValueError(
                 f"Could not post sample set method. Response: {response.text}"
             )
