@@ -141,7 +141,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 {"components": [], "id": num, "fields": field_list}
             )
         sampleset_object["sampleSetLines"] = empower_sample_list
-        endpoint = f"project/methods/sample-set-method"
+        endpoint = "project/methods/sample-set-method"
         if audit_trail_message:
             logger.debug("Adding audit trail message to endpoint")
             endpoint += f"&auditTrailComment={audit_trail_message}"
