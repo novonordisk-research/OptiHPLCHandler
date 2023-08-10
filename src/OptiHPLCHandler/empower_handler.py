@@ -149,7 +149,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         if response.status_code != 201:
             if response.status_code == 404:
                 raise ValueError(
-                    f"Could not post sample set method. Resource not found."
+                    "Could not post sample set method. Resource not found."
                 )
             raise ValueError(
                 f"Could not post sample set method. Response: {response.text}"
