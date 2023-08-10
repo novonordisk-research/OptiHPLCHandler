@@ -158,7 +158,7 @@ class TestEmpowerHandler(unittest.TestCase):
                 plate_list=[],
                 audit_trail_message="test_audit_trail_message",
             )
-        assert  "Response: mock_error_message" in context.exception.args[0]
+        assert "Response: mock_error_message" in context.exception.args[0]
 
     def test_empower_handler_add_method(self):
         with self.assertRaises(NotImplementedError):
