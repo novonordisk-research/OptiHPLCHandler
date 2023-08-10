@@ -115,7 +115,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             method
         """
         logger.debug("Posting experiment to Empower")
-        sampleset_object = {"plates": plate_list}
+        sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
             logger.debug("Adding sample %s to sample list", sample["SampleName"])
@@ -141,10 +141,10 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 {"components": [], "id": num, "fields": field_list}
             )
         sampleset_object["sampleSetLines"] = empower_sample_list
-        endpoint = f"project/methods/sample-set-method?name={sample_set_method_name}"
+        endpoint = f"project/methods/sample-set-method"
         if audit_trail_message:
             logger.debug("Adding audit trail message to endpoint")
-            endpoint += f"&AtComment={audit_trail_message}"
+            endpoint += f"&AauditTrailComment={audit_trail_message}"
         response = self.connection.post(endpoint=endpoint, body=sampleset_object)
         if response.status_code != 201:
             raise ValueError(
