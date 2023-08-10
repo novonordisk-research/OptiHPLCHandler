@@ -144,7 +144,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         endpoint = f"project/methods/sample-set-method"
         if audit_trail_message:
             logger.debug("Adding audit trail message to endpoint")
-            endpoint += f"&AauditTrailComment={audit_trail_message}"
+            endpoint += f"&auditTrailComment={audit_trail_message}"
         response = self.connection.post(endpoint=endpoint, body=sampleset_object)
         if response.status_code != 201:
             raise ValueError(
