@@ -148,11 +148,10 @@ class TestEmpowerHandler(unittest.TestCase):
             plates=plates,
             audit_trail_message="test_audit_trail_message",
         )
-        plate_definition_list = [{
-                "plateTypeName": plate_name,
-                "plateLayoutPosition": plate_pos}
-                for (plate_pos, plate_name) in plates.items()
-        ]  
+        plate_definition_list = [
+            {"plateTypeName": plate_name, "plateLayoutPosition": plate_pos}
+            for (plate_pos, plate_name) in plates.items()
+        ]
         for plate_definiton in plate_definition_list:
             assert plate_definiton in mock_requests.post.call_args[1]["json"]["plates"]
 
