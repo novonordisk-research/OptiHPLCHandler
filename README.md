@@ -58,14 +58,21 @@ sample_list = [
 ]
 ```
 
+At the moment, only Injection Sampleset lines are supported, but the injection volume
+can be set to 0.
+
 You also need to set the list of plates used in the sampleset:
 
 ```
 plates = {"1": "plate_1_type_name", "2": "plate_2_type_name"}
 ```
 
-At the moment, only Injection Sampleset lines are supported, but the injection volume
-can be set to 0.
+You can also have the plate liste be empty, but you will then have to fill it out in
+Empower before you can run the SampleSetMethod:
+
+```
+plates = {}
+```
 
 You can then use the handler to create the sampleset:
 
