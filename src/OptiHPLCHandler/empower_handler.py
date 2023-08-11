@@ -76,7 +76,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         sample_set_method_name: str,
         sample_list: List[Sample],
-        plates: Dict[str,str],
+        plates: Dict[str, str],
         audit_trail_message: str,
     ):
         """
@@ -113,11 +113,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """
         logger.debug("Posting experiment to Empower")
         plate_list = []
-        for (plate_pos, plate_name) in plates.items():
-            plate_list.append({
-                "plateTypeName": plate_name,
-                "plateLayoutPosition": plate_pos,
-            })        
+        for plate_pos, plate_name in plates.items():
+            plate_list.append(
+                {
+                    "plateTypeName": plate_name,
+                    "plateLayoutPosition": plate_pos,
+                }
+            )
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
