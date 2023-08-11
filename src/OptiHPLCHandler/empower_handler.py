@@ -76,7 +76,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         sample_set_method_name: str,
         sample_list: List[Sample],
-        plate_list: List[Any],
+        plates: Dict[str, str],
         audit_trail_message: str,
     ):
         """
@@ -105,16 +105,21 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             values, this will errouneously be set to string. Instead, use
                 `"value": {"member": “No”}` or `"value": {"member": “Yes”}`
 
-        :param plate_list: List of plates to use. Each plate is a dictionary with the
-            following keys:
-            - plateTypeName: Name of the plate type
-            - position: Position of the plate in the autosampler. This is what you
-                reference in the sample value "SamplePos"
+        :param plate_list: Dict of plates to use. The keys should be the position of the
+            plate, the value should be the plate type.
 
         :param audit_trail_message: Message to add to the audit trail of the sample set
             method
         """
         logger.debug("Posting experiment to Empower")
+        plate_list = []
+        for plate_pos, plate_name in plates.items():
+            plate_list.append(
+                {
+                    "plateTypeName": plate_name,
+                    "plateLayoutPosition": plate_pos,
+                }
+            )
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
