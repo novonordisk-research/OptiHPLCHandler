@@ -58,7 +58,7 @@ sample_list = [
 ]
 ```
 
-You also need to set the list of plates used in the sampleset
+You also need to set the list of plates used in the sampleset:
 
 ```
 plates = {"1": "plate_1_type_name", "2": "plate_2_type_name"}
