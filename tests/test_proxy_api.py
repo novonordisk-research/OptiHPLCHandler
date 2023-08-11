@@ -74,7 +74,7 @@ class TestEmpowerHandler(unittest.TestCase):
         self.handler.PostExperiment(
             sample_set_method_name="test_sampleset_name",
             sample_list=sample_list,
-            plate_list=[],
+            plates={},
             audit_trail_message="test_audit_trail_message",
         )
         assert "test_sampleset_name" == mock_requests.method_calls[0][2]["json"]["name"]
@@ -136,6 +136,27 @@ class TestEmpowerHandler(unittest.TestCase):
         # Testing that all dictionary values are strings
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_handler_post_sample_list_plates(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": "mock_results"}
+        mock_response.status_code = 201
+        mock_requests.post.return_value = mock_response
+        plates = {"1": "test_plate_name_1", "2": "test_plate_name_2"}
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=[],
+            plates=plates,
+            audit_trail_message="test_audit_trail_message",
+        )
+        plate_definition_list = [{
+                "plateTypeName": plate_name,
+                "plateLayoutPosition": plate_pos}
+                for (plate_pos, plate_name) in plates.items()
+        ]  
+        for plate_definiton in plate_definition_list:
+            assert plate_definiton in mock_requests.post.call_args[1]["json"]["plates"]
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_empower_handler_post_sample_list_error(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {"results": "mock_results"}
@@ -145,7 +166,7 @@ class TestEmpowerHandler(unittest.TestCase):
             self.handler.PostExperiment(
                 sample_set_method_name="test_sampleset_name",
                 sample_list=[],
-                plate_list=[],
+                plates={},
                 audit_trail_message="test_audit_trail_message",
             )
         assert "Resource not found" in context.exception.args[0]
@@ -155,7 +176,7 @@ class TestEmpowerHandler(unittest.TestCase):
             self.handler.PostExperiment(
                 sample_set_method_name="test_sampleset_name",
                 sample_list=[],
-                plate_list=[],
+                plates={},
                 audit_trail_message="test_audit_trail_message",
             )
         assert "Response: mock_error_message" in context.exception.args[0]

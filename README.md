@@ -58,6 +58,12 @@ sample_list = [
 ]
 ```
 
+You also need to set the list of plates used in the sampleset
+
+```
+plates = {"1": "plate_1_type_name", "2": "plate_2_type_name"}
+```
+
 At the moment, only Injection Sampleset lines are supported, but the injection volume
 can be set to 0.
 
@@ -67,12 +73,10 @@ You can then use the handler to create the sampleset:
 handler.PostExperiment(
     sample_set_method_name="test_sampleset_method_name",
     sample_list=sample_list,
-    plate_list=[],
+    plates=plates,
     audit_trail_message="test_audit_trail_message",
 )
 ```
-
-Note that `plate_list` should be filled out in order to run the sampleset.
 
 You can run a sampleset method to create a sampleset:
 
