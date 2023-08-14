@@ -2,7 +2,7 @@
 
 Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
 putting data into and getting data out of Empower easy. It will not feature changing
-data already in Empower.
+data already in Empower, with the aim of automating running samples.
 
 ## Using the package
 
@@ -52,10 +52,11 @@ plates = {}
 ```
 
 To create a new sampleset method, first create its sample list as a list of
-dictionaries. Each dictionary must have the keys `Method`, `SamplePos`, `SampleName`,
-and `InjectionVolume`. If you want to populate ohter fields, also add a key called
-`OtherFields`, with a value that is a list of dicts, each dict having the keys `name`
-and `value`:
+dictionaries. Each dictionary must have the keys `SampleName`. The key `Method` is
+intepreted as the Empower field `MethodSetOrReportMethod`, the key `SamplePos` as the
+Empower field `Vial`, and the key `Injectionvolume` as the Empower field
+`InjectionVolume`. Additional keys are interpreted as Empower fields with the key value
+as its name.
 
 ```
 sample_list = [
@@ -70,16 +71,16 @@ sample_list = [
         "SamplePos": "2:A,1",
         "SampleName": "test_sample_name_2",
         "InjectionVolume": 2,
-        "OtherFields": [
-            {"name": "test_field_1", "value": "test_value"},
-            {"name": "test_field_2", "value": 2.3},
-        ],
+        "test_field_1": "test_value",
+        "test_field_2" 2.3,
     },
 ]
 ```
 
 At the moment, only Injection Sampleset lines are supported, but the injection volume
 can be set to 0.
+
+At the moment, `components` can only be an empty list.
 
 You can then use the handler to create the sampleset:
 

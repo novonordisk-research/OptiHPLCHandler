@@ -65,10 +65,8 @@ class TestEmpowerHandler(unittest.TestCase):
                 "SamplePos": "test_sample_pos_2",
                 "SampleName": "test_sample_name_2",
                 "InjectionVolume": 2,
-                "OtherFields": [
-                    {"name": "test_field_1", "value": "test_value"},
-                    {"name": "test_field_2", "value": 2.3},
-                ],
+                "test_field_1": "test_value",
+                "test_field_2": 2.3,
             },
         ]
         self.handler.PostExperiment(
@@ -134,6 +132,33 @@ class TestEmpowerHandler(unittest.TestCase):
         ]
         assert all([dict_type == "Enumerator" for dict_type in dict_type_list])
         # Testing that all dictionary values are strings
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_handler_post_sample_list_with_empower_names(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 201
+        mock_requests.post.return_value = mock_response
+        sample_list = [
+            {
+                "MethodSetOrReportMethod": "test_method_1",
+                "Vial": "test_sample_pos_1",
+                "InjVol": 1,
+                "SampleName": "test_sample_name_1",
+            },
+        ]
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=sample_list,
+            plates={},
+            audit_trail_message="test_audit_trail_message",
+        )
+        sample_set_lines = mock_requests.method_calls[0][2]["json"]["sampleSetLines"]
+        sample_fields = {
+            field["name"]: field["value"] for field in sample_set_lines[0]["fields"]
+        }
+        assert sample_fields["MethodSetOrReportMethod"] == "test_method_1"
+        assert sample_fields["Vial"] == "test_sample_pos_1"
+        assert sample_fields["InjVol"] == 1
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_empower_handler_post_sample_list_plates(self, mock_requests):
