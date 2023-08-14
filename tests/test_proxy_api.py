@@ -293,17 +293,28 @@ class TestEmpowerHandler(unittest.TestCase):
             mock_requests.post.call_args[0][0]
             == "http://test_address/acquisition/run-sample-set-method"
         )  # Check that the correct URl is used.
-        assert (mock_requests.post.call_args[1]["json"]["sampleSetMethodName"]) == "test_sample_set_method"  # Check that the correct sample set method is used.
-        assert (mock_requests.post.call_args[1]["json"]["nodeName"]) == "test_node"  # Check that the correct node is used.
-        assert (mock_requests.post.call_args[1]["json"]["systemName"]) == "test_hplc"  # Check that the correct HPLC is used.
-        assert (mock_requests.post.call_args[1]["json"]["sampleSetName"]) is None  # Check that no sample set name is given
+        assert (
+            mock_requests.post.call_args[1]["json"]["sampleSetMethodName"]
+        ) == "test_sample_set_method"
+        # Check that the correct sample set method is used.
+        assert (
+            mock_requests.post.call_args[1]["json"]["nodeName"]
+        ) == "test_node"  # Check that the correct node is used.
+        assert (
+            mock_requests.post.call_args[1]["json"]["systemName"]
+        ) == "test_hplc"  # Check that the correct HPLC is used.
+        assert (
+            mock_requests.post.call_args[1]["json"]["sampleSetName"]
+        ) is None  # Check that no sample set name is given
         self.handler.RunExperiment(
             sample_set_method="test_sample_set_method",
             node="test_node",
             hplc="test_hplc",
             sample_set_name="test_sample_set_name",
         )
-        assert (mock_requests.post.call_args[1]["json"]["sampleSetName"]) == "test_sample_set_name"  # Check that the correct sample set name is given
+        assert (
+            mock_requests.post.call_args[1]["json"]["sampleSetName"]
+        ) == "test_sample_set_name"  # Check that the correct sample set name is given
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get_plate_type_names(self, mock_requests):

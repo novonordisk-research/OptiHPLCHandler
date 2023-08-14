@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from .data_types import HplcResult, HPLCSetup, Sample
+from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
 
 Result = TypeVar("Result")
@@ -161,7 +161,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 raise ValueError(
                     "Could not post sample set method. Resource not found."
                 )
-            logger.error("Could not post sample set method. Response: %s", response.text)
+            logger.error(
+                "Could not post sample set method. Response: %s", response.text
+            )
             raise ValueError(
                 f"Could not post sample set method. Response: {response.text}"
             )
@@ -198,7 +200,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 raise ValueError(
                     "Could not post sample set method. Resource not found."
                 )
-            logger.error("Could not post sample set method. Response: %s", response.text)
+            logger.error(
+                "Could not post sample set method. Response: %s", response.text
+            )
             raise ValueError(
                 f"Could not post sample set method. Response: {response.text}"
             )
