@@ -21,7 +21,7 @@ from OptiHPLCHandler import EmpowerHandler
 handler=EmpowerHandler(project="project", address="https://API_url.com:3076")
 ```
 
-your username will be auto-detected. Add the input `username` to use another account.
+your username will be auto-detected. Add the argument `username` to use another account.
 
 You will be prompted you for your password. The password will only be used to get a
 token from the Empower Web API. When the token runs out, you will have to input your
@@ -30,26 +30,44 @@ passwrod again.
 You can now get a list of the methodset methods in the project:
 
 ```
-handler.GetMethodList()
+method_list = handler.GetMethodList()
 ```
 
-To create a new sampleset method, first create it as a list of dicitonaries. Each
-dictionary must have the keys `Method`, `SamplePos`, `SampleName`, and
-`Injectionvolume`. If you want to populate oher fields, also add a key called
+You can also get the plate types that can be used in the project, the method
+`handler.GetPlateTypeNames` is used. If you run it without arguments, it returns all
+possible plate type names. You can also give it a `filter_string`. In that case, only
+the plate types with names that contain the filter string are returned. You can then
+define the plate setup of your HPLC:
+
+```
+plate_type_name_list = handler.GetPlateTypeNames(filter_string="48")
+plates = {"1": plate_type_name_list[0], "2": plate_type_name_list[1]}
+```
+
+You can also have the plate list be empty, but you will then have to fill it out in
+Empower before you can run the SampleSetMethod:
+
+```
+plates = {}
+```
+
+To create a new sampleset method, first create its sample list as a list of
+dictionaries. Each dictionary must have the keys `Method`, `SamplePos`, `SampleName`,
+and `InjectionVolume`. If you want to populate ohter fields, also add a key called
 `OtherFields`, with a value that is a list of dicts, each dict having the keys `name`
 and `value`:
 
 ```
 sample_list = [
     {
-        "Method": "test_method_1",
-        "SamplePos": "test_sample_pos_1",
+        "Method": method_list[0],
+        "SamplePos": "1:A,1",
         "SampleName": "test_sample_name_1",
         "InjectionVolume": 1,
     },
     {
-        "Method": "test_method_2",
-        "SamplePos": "test_sample_pos_2",
+        "Method": method_list[1],
+        "SamplePos": "2:A,1",
         "SampleName": "test_sample_name_2",
         "InjectionVolume": 2,
         "OtherFields": [
@@ -62,25 +80,6 @@ sample_list = [
 
 At the moment, only Injection Sampleset lines are supported, but the injection volume
 can be set to 0.
-
-To find the plate types that can be used in the project, the method
-`handler.GetPlateTypeNames` is used. If you run it without arguments, it returns all
-possible plate type names. You can also give it a `filter_string`. In that case, only
-the plate types with names tht contain the filter string are returned.
-
-You can now set the plate type for the SampleSet:
-
-```
-plate_type_names = handler.GetPlateTypeNames(filter_string="48")
-plates = {"1": plate_type_names[0], "2": plate_type_names[1]}
-```
-
-You can also have the plate list be empty, but you will then have to fill it out in
-Empower before you can run the SampleSetMethod:
-
-```
-plates = {}
-```
 
 You can then use the handler to create the sampleset:
 
@@ -120,10 +119,10 @@ python -m venv .env
 .\.env\Scripts\activate
 ```
 
-You need to run the last command every time you restart the computer
+You need to run the last command every time you restart the computer.
 
 When the virtual environment is activated, install the package locally as an editable
-installation
+installation:
 
 ```
 pip install -e .[dev]
