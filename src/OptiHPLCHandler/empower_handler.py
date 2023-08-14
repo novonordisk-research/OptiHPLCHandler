@@ -225,6 +225,14 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """Get the list of HPLC setups"""
         raise NotImplementedError
 
+    def GetPlateTypeNames(self, filter_string: Optional[None] = None) -> List[str]:
+        """Get the list of names of available plate types"""
+        endpoint = "configuration/plate-types-list"
+        if filter_string:
+            endpoint += f"?stringFilter={filter_string}"
+        reply = self.connection.get(endpoint=endpoint)
+        return reply.json()["results"]
+
     def _set_data_type(self, field: Dict[str, Any]):
         """Find and set the data type of the field, based on the type of `value"""
         data_type_dict = {
