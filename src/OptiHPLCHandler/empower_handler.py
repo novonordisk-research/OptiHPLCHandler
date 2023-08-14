@@ -93,7 +93,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 position on the plate
             - SampleName: Name of the sample
             - InjectionVolume: Volume of the sample to inject in micro liters
-            Any other keys will be added as fields to the sample, inlcuding custom
+            Any other keys will be added as fields to the sample, including custom
                 fields.
             For all fields, the datatype will be autodetermined according the the type
                 of the value.
@@ -133,7 +133,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             for key, value in sample.items():
                 if key in alias_dict:
                     key = alias_dict[key]
-                logger.debug("Adding field %s with value %s", key, value)
+                logger.debug("Adding field %s with value %s to sample.", key, value)
                 field_list.append({"name": key, "value": value})
             for field in field_list:
                 self._set_data_type(field)
