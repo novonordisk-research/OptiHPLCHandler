@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from .data_types import HplcResult, HPLCSetup, Sample
+from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
 
 Result = TypeVar("Result")
@@ -75,7 +75,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def PostExperiment(
         self,
         sample_set_method_name: str,
-        sample_list: List[Sample],
+        sample_list: List[Dict[str, Any]],
         plates: Dict[str, str],
         audit_trail_message: str,
     ):
@@ -123,7 +123,11 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
-            logger.debug("Adding sample %s to sample list", sample["SampleName"])
+            logger.debug(
+                "Adding sample number %s with name %s to sample list",
+                num,
+                sample["SampleName"],
+            )
             field_list = [
                 {"name": "Function", "value": {"member": "Inject Samples"}},
                 {"name": "Processing", "value": {"member": "Normal"}},
@@ -153,9 +157,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         response = self.connection.post(endpoint=endpoint, body=sampleset_object)
         if response.status_code != 201:
             if response.status_code == 404:
+                logger.error("Could not post sample set method. Resource not found.")
                 raise ValueError(
                     "Could not post sample set method. Resource not found."
                 )
+            logger.error(
+                "Could not post sample set method. Response: %s", response.text
+            )
             raise ValueError(
                 f"Could not post sample set method. Response: {response.text}"
             )
@@ -183,12 +191,21 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             "systemName": hplc,
         }
         logger.debug("Running experiment with parameters %s", parameters)
-        reply = self.connection.post(
-            endpoint="acquisition/run-sample-set", body=parameters
+        response = self.connection.post(
+            endpoint="acquisition/run-sample-set-method", body=parameters
         )
-        if reply.status_code != 200:
-            logger.error("Could not run experiment. Response: %s", reply.text)
-            raise ValueError(f"Could not run experiment. Response: {reply.text}")
+        if response.status_code != 200:
+            if response.status_code == 404:
+                logger.error("Could not post sample set method. Resource not found.")
+                raise ValueError(
+                    "Could not post sample set method. Resource not found."
+                )
+            logger.error(
+                "Could not post sample set method. Response: %s", response.text
+            )
+            raise ValueError(
+                f"Could not post sample set method. Response: {response.text}"
+            )
 
     def AddMethod(
         self,
@@ -230,8 +247,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         endpoint = "configuration/plate-types-list"
         if filter_string:
             endpoint += f"?stringFilter={filter_string}"
-        reply = self.connection.get(endpoint=endpoint)
-        return reply.json()["results"]
+        response = self.connection.get(endpoint=endpoint)
+        return response.json()["results"]
 
     def _set_data_type(self, field: Dict[str, Any]):
         """Find and set the data type of the field, based on the type of `value"""
