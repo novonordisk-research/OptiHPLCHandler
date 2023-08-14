@@ -93,17 +93,10 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 position on the plate
             - SampleName: Name of the sample
             - InjectionVolume: Volume of the sample to inject in micro liters
-            - OtherFields: List of other fields to add to the sample. Each field is a
-                dictionary with the following keys:
-                - name: Name of the field
-                - value: Value of the field. Can be a string, number, or dictionary
-                    with the following keys:
-                    - member: Name of the member to use for the field
-                    - value: Value of the member
+            Any other keys will be added as fields to the sample, including custom
+                fields.
             For all fields, the datatype will be autodetermined according the the type
-                of the value. For Boolean
-            values, this will errouneously be set to string. Instead, use
-                `"value": {"member": “No”}` or `"value": {"member": “Yes”}`
+                of the value.
 
         :param plate_list: Dict of plates to use. The keys should be the position of the
             plate, the value should be the plate type.
@@ -128,22 +121,20 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 num,
                 sample["SampleName"],
             )
+            alias_dict = {
+                "Method": "MethodSetOrReportMethod",
+                "SamplePos": "Vial",
+                "InjectionVolume": "InjVol",
+            }  # Key are "human readable" names, values are the names used in Empower.
             field_list = [
                 {"name": "Function", "value": {"member": "Inject Samples"}},
                 {"name": "Processing", "value": {"member": "Normal"}},
-                {"name": "MethodSetOrReportMethod", "value": sample["Method"]},
-                {"name": "Vial", "value": sample["SamplePos"]},
-                {"name": "SampleName", "value": sample["SampleName"]},
-                {"name": "InjVol", "value": sample["InjectionVolume"]},
             ]
-            other_fields = sample.get("OtherFields", [])
-            # Getting the other fields to add, or an empty list if no other fields are
-            # given.
-            for field in other_fields:
-                logger.debug(
-                    "adding field %s to sample %s", field["name"], sample["SampleName"]
-                )
-                field_list.append(field)
+            for key, value in sample.items():
+                if key in alias_dict:
+                    key = alias_dict[key]
+                logger.debug("Adding field %s with value %s to sample.", key, value)
+                field_list.append({"name": key, "value": value})
             for field in field_list:
                 self._set_data_type(field)
             empower_sample_list.append(
