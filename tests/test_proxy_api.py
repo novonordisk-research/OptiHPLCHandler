@@ -293,3 +293,26 @@ class TestEmpowerHandler(unittest.TestCase):
             mock_requests.post.call_args[0][0]
             == "http://test_address/acquisition/run-sample-set"
         )  # Check that the correct URl is used.
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_plate_type_names(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "results": [
+                "test_plate_type_name_1",
+                "test_plate_type_name_2",
+            ]
+        }
+        mock_requests.get.return_value = mock_response
+        plate_type_names = self.handler.GetPlateTypeNames()
+        assert plate_type_names == [
+            "test_plate_type_name_1",
+            "test_plate_type_name_2",
+        ]
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_plate_type_names_filter(self, mock_requests):
+        mock_response = MagicMock()
+        mock_requests.get.return_value = mock_response
+        self.handler.GetPlateTypeNames(filter_string="test_filter_text")
+        assert "?stringFilter=test_filter_text" in mock_requests.get.call_args[0][0]
