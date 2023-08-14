@@ -1,6 +1,8 @@
 # OptiHPLCHandler
 
-Simplified proxy API for interacting with the Waters Empower Web API.
+Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
+putting data into and getting data out of Empower easy. It will not feature changing
+data already in Empower.
 
 ## Using the package
 
@@ -61,13 +63,19 @@ sample_list = [
 At the moment, only Injection Sampleset lines are supported, but the injection volume
 can be set to 0.
 
-You also need to set the list of plates used in the sampleset:
+To find the plate types that can be used in the project, the method
+`handler.GetPlateTypeNames` is used. If you run it without arguments, it returns all
+possible plate type names. You can also give it a `filter_string`. In that case, only
+the plate types with names tht contain the filter string are returned.
+
+You can now set the plate type for the SampleSet:
 
 ```
-plates = {"1": "plate_1_type_name", "2": "plate_2_type_name"}
+plate_type_names = handler.GetPlateTypeNames(filter_string="48")
+plates = {"1": plate_type_names[0], "2": plate_type_names[1]}
 ```
 
-You can also have the plate liste be empty, but you will then have to fill it out in
+You can also have the plate list be empty, but you will then have to fill it out in
 Empower before you can run the SampleSetMethod:
 
 ```
