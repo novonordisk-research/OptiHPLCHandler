@@ -124,8 +124,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             alias_dict = {
                 "Method": "MethodSetOrReportMethod",
                 "SamplePos": "Vial",
-                "InjectionVolume": "InjVol"
-            } # Keay are "human readable" names, values are the names used in Empower.
+                "InjectionVolume": "InjVol",
+            }  # Key are "human readable" names, values are the names used in Empower.
             field_list = [
                 {"name": "Function", "value": {"member": "Inject Samples"}},
                 {"name": "Processing", "value": {"member": "Normal"}},
