@@ -34,9 +34,4 @@ jobs:
       - run: git checkout release
       - run: git push --set-upstream origin release
       - run: python -m bumpver update --${{ inputs.release_type }}
-      - name: Creating pull request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          branch: release
-          base: $${{ github.ref }}
-          delete-branch: true
+      - run: gh pr create --title "Release" --body "Release" --base main --head release --repo ${{ github.repository }}
