@@ -363,3 +363,24 @@ class TestEmpowerHandler(unittest.TestCase):
         mock_requests.get.return_value = mock_response
         self.handler.GetPlateTypeNames(filter_string="test_filter_text")
         assert "?stringFilter=test_filter_text" in mock_requests.get.call_args[0][0]
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_node_name_list(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": ["test_node_name_1"]}
+        mock_requests.get.return_value = mock_response
+        node_name_list = self.handler.GetNodeNames()
+        assert node_name_list == ["test_node_name_1"]
+        assert "acquisition/nodes" in mock_requests.get.call_args[0][0]
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_system_name_list(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": ["test_system_name_1"]}
+        mock_requests.get.return_value = mock_response
+        system_name_list = self.handler.GetSystemNames("test_node_name")
+        assert system_name_list == ["test_system_name_1"]
+        assert (
+            "acquisition/chromatographic-systems?nodeName=test_node_name"
+            in mock_requests.get.call_args[0][0]
+        )
