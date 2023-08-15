@@ -54,8 +54,9 @@ plates = {}
 To create a new sampleset method, first create its sample list as a list of
 dictionaries. Each dictionary must have the keys `SampleName`. The key `Method` is
 intepreted as the Empower field `MethodSetOrReportMethod`, the key `SamplePos` as the
-Empower field `Vial`, and the key `Injectionvolume` as the Empower field
-`InjectionVolume`. Additional keys are interpreted as Empower fields with the key value
+Empower field `Vial`, and the key `Injectionvolume` as the Empower field `InjVol`. Note
+that if the dictionary contains both of one of these pairs, it is not predictable which
+will be used. Additional keys are interpreted as Empower fields with the key value
 as its name.
 
 ```
