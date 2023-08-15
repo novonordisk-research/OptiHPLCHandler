@@ -93,12 +93,18 @@ handler.PostExperiment(
 )
 ```
 
-You can run a sampleset method to create a sampleset:
+To run the a SampleSetmethod, you need to provide a node name and a chromatograpic
+system name. If you don't know them, you can find them with `handler.GetNodeName()` and
+`handler.GetSystemName(node = "node_name")`.
+
+You can now run a sampleset method to create a sampleset:
 
 ```
 handler.RunExperiment(
     sample_set_method="test_sampleset_method_name",
-    hplc = "test_hplc",
+    sample_set_name="test_sample_set",
+    node="node_name",
+    hplc="test_hplc",
 )
 ```
 
