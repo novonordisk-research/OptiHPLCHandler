@@ -5,8 +5,13 @@ on:
     inputs:
       release_type:
         description: "The type of release to perform"
+        type: choice
         required: true
-        default: "--patch"
+        options:
+          - "major"
+          - "minor"
+          - "patch"
+        default: "patch"
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
@@ -28,7 +33,7 @@ jobs:
       - run: git branch -c release
       - run: git checkout release
       - run: git push --set-upstream origin release
-      - run: python -m bumpver update ${{ inputs.release_type }}
+      - run: python -m bumpver update --${{ inputs.release_type }}
       - name: Creating pull request
         uses: peter-evans/create-pull-request@v5
         with:
