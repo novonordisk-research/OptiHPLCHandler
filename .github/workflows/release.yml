@@ -16,7 +16,7 @@ jobs:
     name: Release # This is not a separate wokflow because it should only run after linting and testing.
     runs-on: ubuntu-latest
     needs: [lint, test]
-    if: github.ref == 'refs/heads/main' # Only run on main branch.
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -25,4 +25,12 @@ jobs:
       - run: pip install .[release]
       - run: git config --global user.name "GitHub Action"
       - run: git config --global user.email "build_pipeline@novonordisk.com"
+      - run: git branch -c release
+      - run: git checkout release
+      - run: git push --set-upstream origin release
       - run: python -m bumpver update ${{ inputs.release_type }}
+      - name: Creating pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: release
+          delete-branch: true
