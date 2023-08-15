@@ -16,6 +16,7 @@ jobs:
     name: Release # This is not a separate wokflow because it should only run after linting and testing.
     runs-on: ubuntu-latest
     needs: [lint, test]
+    if: github.ref == 'refs/heads/main' # Only run on main branch.
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
