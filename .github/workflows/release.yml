@@ -38,5 +38,5 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           branch: release
-          base: $${{ github.ref_name }}
+          base: $${{ github.ref }}
           delete-branch: true
