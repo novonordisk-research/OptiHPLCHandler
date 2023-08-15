@@ -23,9 +23,11 @@ handler=EmpowerHandler(project="project", address="https://API_url.com:3076")
 
 your username will be auto-detected. Add the argument `username` to use another account.
 
-You will be prompted you for your password. The password will only be used to get a
-token from the Empower Web API. When the token runs out, you will have to input your
-passwrod again.
+EmpowerHandler will first try to find a password for Empower for the `username` in the
+OS's system keyring, e.g. Windows Credential Locker. If it can't access a system
+keyring, or the keyring does not contain the relevant key, you will be prompted you for
+the password. The password will only be used to get a token from the Empower Web API.
+When the token runs out, you will have to input your password again.
 
 You can now get a list of the methodset methods in the project:
 
