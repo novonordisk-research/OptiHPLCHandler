@@ -161,6 +161,4 @@ py -m twine upload dist/*
 
 you will be prompted for your pipy.org username and password.
 
-In GitHub, merge the `release` branch into the `main` branch by
-[creating a pull request](https://github.com/novonordisk-research/OptiHPLCHandler/compare/main...release)
-and merging it.
+In GitHub, a pull request will have been made. Merge the pull request.
