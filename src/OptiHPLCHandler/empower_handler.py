@@ -233,9 +233,15 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """Get the list of HPLC setups"""
         raise NotImplementedError
     
-    def GetNodeNameList(self) -> List[str]:
+    def GetNodeNames(self) -> List[str]:
         """Get the list of node names"""
         response = self.connection.get(endpoint="acquisition/nodes")
+        return response.json()["results"]
+    
+    def GetSystemNames(self, node: str) -> List[str]:
+        """Get the list of names of chromatographic systems on a node"""
+        endpoint = f"acquisition/chromatographic-systems?nodeName={node}"
+        response = self.connection.get(endpoint=endpoint)
         return response.json()["results"]
 
     def GetPlateTypeNames(self, filter_string: Optional[None] = None) -> List[str]:
