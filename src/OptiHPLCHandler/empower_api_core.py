@@ -67,6 +67,7 @@ class EmpowerConnection:
                 headers={"Authorization": "Bearer " + self.token},
             )
         logger.debug("Got response %s from %s", response.text, endpoint)
+        response.raise_for_status()
         return response
 
     def put(self, endpoint: str, body: dict) -> requests.Response:
@@ -85,6 +86,7 @@ class EmpowerConnection:
                 headers={"Authorization": "Bearer " + self.token},
             )
         logger.debug("Got respones %s from %s", response.text, endpoint)
+        response.raise_for_status()
         return response
 
     def post(self, endpoint: str, body: dict) -> requests.Response:
@@ -103,6 +105,7 @@ class EmpowerConnection:
                 headers={"Authorization": "Bearer " + self.token},
             )
         logger.debug("Got respones %s from %s", response.text, endpoint)
+        response.raise_for_status()
         return response
 
     @property
