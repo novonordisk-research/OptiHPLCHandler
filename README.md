@@ -2,7 +2,7 @@
 
 Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
 putting data into and getting data out of Empower easy. It will not feature changing
-data already in Empower, with the aim of automating running samples.
+data already in Empower, with the aim of automating running samples. 
 
 ## Using the package
 
