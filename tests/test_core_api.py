@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from OptiHPLCHandler import EmpowerConnection
 
+
 class TestEmpowerConnection(unittest.TestCase):
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")

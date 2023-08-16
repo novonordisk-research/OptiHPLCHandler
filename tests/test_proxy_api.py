@@ -266,7 +266,6 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_get_setup(self):
         with self.assertRaises(NotImplementedError):
             self.handler.GetSetup()
-     
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_empower_run_experiment(self, mock_requests):
