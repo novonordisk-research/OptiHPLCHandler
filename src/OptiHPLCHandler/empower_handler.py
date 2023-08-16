@@ -145,7 +145,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         if audit_trail_message:
             logger.debug("Adding audit trail message to endpoint")
             endpoint += f"?auditTrailComment={audit_trail_message}"
-            
+
         self.connection.post(endpoint=endpoint, body=sampleset_object)
 
     def RunExperiment(
