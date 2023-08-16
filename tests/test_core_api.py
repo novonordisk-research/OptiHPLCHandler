@@ -3,7 +3,6 @@ import warnings
 from unittest.mock import MagicMock, patch
 
 from OptiHPLCHandler import EmpowerConnection
-from requests.exceptions import HTTPError
 
 class TestEmpowerConnection(unittest.TestCase):
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
