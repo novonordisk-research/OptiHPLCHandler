@@ -1,6 +1,6 @@
 # Examples
 
-Outlined here are some example .ipynb files from use of OptiHPLCHandler
+Outlined here are some example .ipynb files from use of OptiHPLCHandler.
 
 ## Example: Basic usage - example_basicusage.ipynb
 Here outlines a basic usage example of OptiHPLCHandler's EmpowerHandler.
