@@ -190,3 +190,13 @@ class TestEmpowerConnection(unittest.TestCase):
             project="test_project",
         )
         assert "test_username" in mock_getpass.call_args[0][0]
+        
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_set_password(self,mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        self.connection.login(password = "test_password")
+        assert (
+            mock_requests.post.call_args[1]["json"]["password"]=="test_password"
+        )
