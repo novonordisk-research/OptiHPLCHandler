@@ -17,6 +17,7 @@ class EmpowerConnection:
         username: Optional[str] = None,
         project: Optional[str] = None,
         service: Optional[str] = None,
+        password: Optional[str] = None,
     ) -> None:
         self.address = address
         if username is None:
@@ -32,13 +33,19 @@ class EmpowerConnection:
         else:
             self.service = service
         self.project = project
-        self.login()
+        self.login(password)
 
-    def login(self) -> None:
+    def login(self, password: Optional[str] = None) -> None:
+        
+        if not password:
+            
+            password = self.password
+            
+        
         body = {
             "service": self.service,
             "userName": self.username,
-            "password": self.password,
+            "password": password,
         }
         if self.project is not None:
             # If no project is given, log into the default project, e.g. "Mobile"
