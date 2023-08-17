@@ -396,4 +396,3 @@ class TestEmpowerHandler(unittest.TestCase):
             "project/methods/sample-set-method-list"
             in mock_requests.get.call_args[0][0]
         )
-
