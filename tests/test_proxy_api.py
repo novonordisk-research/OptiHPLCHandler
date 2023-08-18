@@ -384,7 +384,7 @@ class TestEmpowerHandler(unittest.TestCase):
             "acquisition/chromatographic-systems?nodeName=test_node_name"
             in mock_requests.get.call_args[0][0]
         )
-    
+
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get_sample_set_method_list(self, mock_requests):
         mock_response = MagicMock()
