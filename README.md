@@ -164,9 +164,10 @@ You should then be able to install the package locally as an editable installati
 To release a new version, get all of the changes you want into the branch `main`.
 Then manually run the
 [release GitHub action](https://github.com/novonordisk-research/OptiHPLCHandler/actions/workflows/release.yml)
-by clicking `Run workflow`. Select what type of release it is by typing in `--patch`, `--minor`, or `--major` in `The type of release to perform`, and then click `Run workflow`.
+by clicking `Run workflow`. Select what type of release it is (`patch`, `minor`, or
+`major`) in `The type of release to perform`, and then click `Run workflow`.
 
-Fetch the new branch `release`. Run the commands
+Fetch the new tag. Run the commands
 
 ```
 rm -r -fo dist
@@ -175,5 +176,3 @@ py -m twine upload dist/*
 ```
 
 you will be prompted for your pipy.org username and password.
-
-In GitHub, a pull request will have been made. Merge the pull request.
