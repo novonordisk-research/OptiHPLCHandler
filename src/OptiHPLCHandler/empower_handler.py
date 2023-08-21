@@ -150,19 +150,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         if audit_trail_message:
             logger.debug("Adding audit trail message to endpoint")
             endpoint += f"?auditTrailComment={audit_trail_message}"
-        response = self.connection.post(endpoint=endpoint, body=sampleset_object)
-        if response.status_code != 201:
-            if response.status_code == 404:
-                logger.error("Could not post sample set method. Resource not found.")
-                raise ValueError(
-                    "Could not post sample set method. Resource not found."
-                )
-            logger.error(
-                "Could not post sample set method. Response: %s", response.text
-            )
-            raise ValueError(
-                f"Could not post sample set method. Response: {response.text}"
-            )
+
+        self.connection.post(endpoint=endpoint, body=sampleset_object)
 
     def RunExperiment(
         self,
@@ -187,21 +176,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             "systemName": hplc,
         }
         logger.debug("Running experiment with parameters %s", parameters)
-        response = self.connection.post(
+        self.connection.post(
             endpoint="acquisition/run-sample-set-method", body=parameters
         )
-        if response.status_code != 200:
-            if response.status_code == 404:
-                logger.error("Could not post sample set method. Resource not found.")
-                raise ValueError(
-                    "Could not post sample set method. Resource not found."
-                )
-            logger.error(
-                "Could not post sample set method. Response: %s", response.text
-            )
-            raise ValueError(
-                f"Could not post sample set method. Response: {response.text}"
-            )
 
     def AddMethod(
         self,
@@ -247,6 +224,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """Get the list of names of chromatographic systems on a node"""
         endpoint = f"acquisition/chromatographic-systems?nodeName={node}"
         response = self.connection.get(endpoint=endpoint)
+        return response.json()["results"]
+
+    def GetSampleSetMethods(self) -> List[str]:
+        """Get the list of sample set methods in project"""
+        response = self.connection.get(
+            endpoint="project/methods/sample-set-method-list"
+        )
         return response.json()["results"]
 
     def GetPlateTypeNames(self, filter_string: Optional[None] = None) -> List[str]:
