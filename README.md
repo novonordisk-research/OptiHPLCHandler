@@ -1,8 +1,8 @@
 # OptiHPLCHandler
 
 Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
-putting data into and getting data out of Empower easy. It will not feature changing
-data already in Empower, with the aim of automating running samples.
+putting data into and getting data out of Empower easy, with the aim of automating
+running samples. It will not feature changing data already in Empower.
 
 ## Using the package
 
@@ -21,7 +21,8 @@ from OptiHPLCHandler import EmpowerHandler
 handler=EmpowerHandler(project="project", address="https://API_url.com:3076")
 ```
 
-your username will be auto-detected. Add the argument `username` to use another account.
+your username will be auto-detected. Add the argument `username` to circumvent this
+auto-detection.
 
 EmpowerHandler will first try to find a password for Empower for the `username` in the
 OS's system keyring, e.g. Windows Credential Locker. If it can't access a system
