@@ -347,3 +347,15 @@ class TestEmpowerHandler(unittest.TestCase):
             "acquisition/chromatographic-systems?nodeName=test_node_name"
             in mock_requests.get.call_args[0][0]
         )
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_sample_set_method_list(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": ["test_samplesetmethod_1"]}
+        mock_requests.get.return_value = mock_response
+        samplesetmethod_list = self.handler.GetSampleSetMethods()
+        assert samplesetmethod_list == ["test_samplesetmethod_1"]
+        assert (
+            "project/methods/sample-set-method-list"
+            in mock_requests.get.call_args[0][0]
+        )
