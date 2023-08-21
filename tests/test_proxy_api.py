@@ -360,7 +360,7 @@ class TestEmpowerHandler(unittest.TestCase):
             password="test_password",
         )
         assert mock_requests.post.call_args[1]["json"]["password"] == "test_password"
-        
+
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get_sample_set_method_list(self, mock_requests):
         mock_response = MagicMock()
