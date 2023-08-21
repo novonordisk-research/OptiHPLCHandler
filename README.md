@@ -1,8 +1,8 @@
 # OptiHPLCHandler
 
 Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
-putting data into and getting data out of Empower easy. It will not feature changing
-data already in Empower, with the aim of automating running samples. 
+putting data into and getting data out of Empower easy, with the aim of automating
+running samples. It will not feature changing data already in Empower.
 
 ## Using the package
 
@@ -12,7 +12,7 @@ The package can be installed into a Python environment with the command
 pip install Opti-HPLC-Handler
 ```
 
-You can then import packge and start an `EmpowerHandler`. You need to select the Empower
+You can then import package and start an `EmpowerHandler`. You need to select the Empower
 project to log in to. Note that the user logging in needs to have access to both that
 project, and the project `Mobile`.
 
@@ -21,13 +21,25 @@ from OptiHPLCHandler import EmpowerHandler
 handler=EmpowerHandler(project="project", address="https://API_url.com:3076")
 ```
 
-your username will be auto-detected. Add the argument `username` to use another account.
+Your username will be auto-detected. Add the argument `username` to circumvent this
+auto-detection.
 
 EmpowerHandler will first try to find a password for Empower for the `username` in the
 OS's system keyring, e.g. Windows Credential Locker. If it can't access a system
 keyring, or the keyring does not contain the relevant key, you will be prompted you for
 the password. The password will only be used to get a token from the Empower Web API.
 When the token runs out, you will have to input your password again.
+
+If you get the password from another source, e.g. a UI element, you can also provide it
+directly when initialising the handler:
+
+```
+handler=EmpowerHandler(
+   project="project",
+   address="https://API_url.com:3076",
+   password="password",
+)
+```
 
 You can now get a list of the methodset methods in the project:
 
@@ -152,9 +164,10 @@ You should then be able to install the package locally as an editable installati
 To release a new version, get all of the changes you want into the branch `main`.
 Then manually run the
 [release GitHub action](https://github.com/novonordisk-research/OptiHPLCHandler/actions/workflows/release.yml)
-by clicking `Run workflow`. Select what type of release it is by typing in `--patch`, `--minor`, or `--major` in `The type of release to perform`, and then click `Run workflow`.
+by clicking `Run workflow`. Select what type of release it is (`patch`, `minor`, or
+`major`) in `The type of release to perform`, and then click `Run workflow`.
 
-Fetch the new branch `release`. Run the commands
+Fetch the new tag. Run the commands
 
 ```
 rm -r -fo dist
@@ -163,5 +176,3 @@ py -m twine upload dist/*
 ```
 
 you will be prompted for your pipy.org username and password.
-
-In GitHub, a pull request will have been made. Merge the pull request.
