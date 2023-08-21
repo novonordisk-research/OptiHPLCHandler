@@ -37,5 +37,4 @@ jobs:
       - run: git push --set-upstream origin release
       - run: python -m bumpver update --${{ inputs.release_type }}
       - run: gh pr create --title "Release" --body "Release" --base main --head release --repo ${{ github.repository }}
-      - run: gh pr review --approve
-      - run: gh pr merge --auto --rebase --delete-branch
+      - run: gh pr merge --auto --rebase --delete-branch --admin
