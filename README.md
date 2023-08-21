@@ -2,7 +2,7 @@
 
 Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
 putting data into and getting data out of Empower easy. It will not feature changing
-data already in Empower, with the aim of automating running samples.
+data already in Empower, with the aim of automating running samples. 
 
 ## Using the package
 
@@ -23,9 +23,11 @@ handler=EmpowerHandler(project="project", address="https://API_url.com:3076")
 
 your username will be auto-detected. Add the argument `username` to use another account.
 
-You will be prompted you for your password. The password will only be used to get a
-token from the Empower Web API. When the token runs out, you will have to input your
-passwrod again.
+EmpowerHandler will first try to find a password for Empower for the `username` in the
+OS's system keyring, e.g. Windows Credential Locker. If it can't access a system
+keyring, or the keyring does not contain the relevant key, you will be prompted you for
+the password. The password will only be used to get a token from the Empower Web API.
+When the token runs out, you will have to input your password again.
 
 You can now get a list of the methodset methods in the project:
 
@@ -54,8 +56,9 @@ plates = {}
 To create a new sampleset method, first create its sample list as a list of
 dictionaries. Each dictionary must have the keys `SampleName`. The key `Method` is
 intepreted as the Empower field `MethodSetOrReportMethod`, the key `SamplePos` as the
-Empower field `Vial`, and the key `Injectionvolume` as the Empower field
-`InjectionVolume`. Additional keys are interpreted as Empower fields with the key value
+Empower field `Vial`, and the key `Injectionvolume` as the Empower field `InjVol`. Note
+that if the dictionary contains both of one of these pairs, it is not predictable which
+will be used. Additional keys are interpreted as Empower fields with the key value
 as its name.
 
 ```

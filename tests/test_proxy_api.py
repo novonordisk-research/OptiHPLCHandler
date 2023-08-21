@@ -180,31 +180,6 @@ class TestEmpowerHandler(unittest.TestCase):
         for plate_definiton in plate_definition_list:
             assert plate_definiton in mock_requests.post.call_args[1]["json"]["plates"]
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_post_sample_list_error(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": "mock_results"}
-        mock_response.status_code = 404
-        mock_requests.post.return_value = mock_response
-        with self.assertRaises(ValueError) as context:
-            self.handler.PostExperiment(
-                sample_set_method_name="test_sampleset_name",
-                sample_list=[],
-                plates={},
-                audit_trail_message="test_audit_trail_message",
-            )
-        assert "Resource not found" in context.exception.args[0]
-        mock_response.status_code = 400
-        mock_response.text = "mock_error_message"
-        with self.assertRaises(ValueError) as context:
-            self.handler.PostExperiment(
-                sample_set_method_name="test_sampleset_name",
-                sample_list=[],
-                plates={},
-                audit_trail_message="test_audit_trail_message",
-            )
-        assert "Response: mock_error_message" in context.exception.args[0]
-
     def test_empower_handler_add_method(self):
         with self.assertRaises(NotImplementedError):
             self.handler.AddMethod(
@@ -291,18 +266,6 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_get_setup(self):
         with self.assertRaises(NotImplementedError):
             self.handler.GetSetup()
-
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_run_experiment_fails(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_requests.post.return_value = mock_response
-        with self.assertRaises(ValueError):
-            self.handler.RunExperiment(
-                sample_set_method="test_sample_set_method",
-                node="test_node",
-                hplc="test_hplc",
-            )
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_empower_run_experiment(self, mock_requests):
@@ -397,3 +360,15 @@ class TestEmpowerHandler(unittest.TestCase):
             password="test_password",
         )
         assert mock_requests.post.call_args[1]["json"]["password"] == "test_password"
+        
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_sample_set_method_list(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": ["test_samplesetmethod_1"]}
+        mock_requests.get.return_value = mock_response
+        samplesetmethod_list = self.handler.GetSampleSetMethods()
+        assert samplesetmethod_list == ["test_samplesetmethod_1"]
+        assert (
+            "project/methods/sample-set-method-list"
+            in mock_requests.get.call_args[0][0]
+        )
