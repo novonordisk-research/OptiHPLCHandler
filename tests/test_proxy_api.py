@@ -349,6 +349,19 @@ class TestEmpowerHandler(unittest.TestCase):
         )
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_login_pwd(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="http://test_address/",
+            username="test_username",
+            password="test_password",
+        )
+        assert mock_requests.post.call_args[1]["json"]["password"] == "test_password"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get_sample_set_method_list(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {"results": ["test_samplesetmethod_1"]}

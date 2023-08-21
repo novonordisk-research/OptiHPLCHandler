@@ -49,11 +49,16 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         address: str,
         username: Optional[str] = None,
         service: str = None,
+        password: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
-            project=project, address=address, username=username, service=service
+            project=project,
+            address=address,
+            username=username,
+            service=service,
+            password=password,
         )
 
     @property
