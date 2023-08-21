@@ -244,7 +244,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         response = self.connection.get(endpoint=endpoint)
         return response.json()["results"]
 
-    # ***REMOVED***
     def GetSampleSetMethods(self) -> List[str]:
         """Get the list of sample set methods in project"""
         response = self.connection.get(
