@@ -396,6 +396,4 @@ class TestEmpowerHandler(unittest.TestCase):
             username="test_username",
             password="test_password",
         )
-        assert (
-            mock_requests.post.call_args[1]["json"]["password"]=="test_password"
-        )
+        assert mock_requests.post.call_args[1]["json"]["password"] == "test_password"
