@@ -12,7 +12,7 @@ The package can be installed into a Python environment with the command
 pip install Opti-HPLC-Handler
 ```
 
-You can then import packge and start an `EmpowerHandler`. You need to select the Empower
+You can then import package and start an `EmpowerHandler`. You need to select the Empower
 project to log in to. Note that the user logging in needs to have access to both that
 project, and the project `Mobile`.
 
@@ -21,7 +21,7 @@ from OptiHPLCHandler import EmpowerHandler
 handler=EmpowerHandler(project="project", address="https://API_url.com:3076")
 ```
 
-your username will be auto-detected. Add the argument `username` to circumvent this
+Your username will be auto-detected. Add the argument `username` to circumvent this
 auto-detection.
 
 EmpowerHandler will first try to find a password for Empower for the `username` in the
@@ -37,7 +37,7 @@ directly when initialising the handler:
 handler=EmpowerHandler(
    project="project",
    address="https://API_url.com:3076",
-   password = "password",
+   password="password",
 )
 ```
 
