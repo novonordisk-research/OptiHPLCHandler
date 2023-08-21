@@ -2,7 +2,7 @@
 
 Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
 putting data into and getting data out of Empower easy. It will not feature changing
-data already in Empower, with the aim of automating running samples. 
+data already in Empower, with the aim of automating running samples.
 
 ## Using the package
 
@@ -28,6 +28,17 @@ OS's system keyring, e.g. Windows Credential Locker. If it can't access a system
 keyring, or the keyring does not contain the relevant key, you will be prompted you for
 the password. The password will only be used to get a token from the Empower Web API.
 When the token runs out, you will have to input your password again.
+
+If you get the passwrod from aother source, e.g. a UI element, you can also provide it
+directly when initialising the handler:
+
+```
+handler=EmpowerHandler(
+   project="project",
+   address="https://API_url.com:3076",
+   password = "password",
+)
+```
 
 You can now get a list of the methodset methods in the project:
 
