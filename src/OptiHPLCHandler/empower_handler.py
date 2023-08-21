@@ -221,6 +221,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         response = self.connection.get(endpoint=endpoint)
         return response.json()["results"]
 
+    def GetSampleSetMethods(self) -> List[str]:
+        """Get the list of sample set methods in project"""
+        response = self.connection.get(
+            endpoint="project/methods/sample-set-method-list"
+        )
+        return response.json()["results"]
+
     def GetPlateTypeNames(self, filter_string: Optional[None] = None) -> List[str]:
         """Get the list of names of available plate types"""
         endpoint = "configuration/plate-types-list"
