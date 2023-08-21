@@ -73,6 +73,14 @@ class TestEmpowerConnection(unittest.TestCase):
         )
         assert connection.service == "automatic_test_service"
 
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_http_error(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_requests.get.return_value = mock_response
+        self.connection.get("test_url")
+        assert mock_requests.get.return_value.raise_for_status.called
+
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_relogin_get(self, mock_requests, mock_getpass):
@@ -93,6 +101,14 @@ class TestEmpowerConnection(unittest.TestCase):
         )
         # The last call should be to log in, since this should casue an exception.
 
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_put_http_error(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_requests.put.return_value = mock_response
+        self.connection.put("test_url", body="test_body")
+        assert mock_requests.put.return_value.raise_for_status.called
+
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_relogin_put(self, mock_requests, mock_getpass):
@@ -112,6 +128,14 @@ class TestEmpowerConnection(unittest.TestCase):
             "http://test_address/authentication/login",
         )
         # The last call should be to log in, since this should casue an exception.
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_post_http_error(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_requests.post.return_value = mock_response
+        self.connection.post("test_url", body="test_body")
+        assert mock_requests.post.return_value.raise_for_status.called
 
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
