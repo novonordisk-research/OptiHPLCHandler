@@ -36,12 +36,9 @@ class EmpowerConnection:
         self.login(password)
 
     def login(self, password: Optional[str] = None) -> None:
-        
         if not password:
-            
             password = self.password
-            
-        
+
         body = {
             "service": self.service,
             "userName": self.username,
