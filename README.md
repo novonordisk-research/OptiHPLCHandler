@@ -29,7 +29,7 @@ keyring, or the keyring does not contain the relevant key, you will be prompted 
 the password. The password will only be used to get a token from the Empower Web API.
 When the token runs out, you will have to input your password again.
 
-If you get the passwrod from aother source, e.g. a UI element, you can also provide it
+If you get the password from another source, e.g. a UI element, you can also provide it
 directly when initialising the handler:
 
 ```
