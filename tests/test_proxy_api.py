@@ -36,8 +36,12 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_initialisation(self):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
-        assert self.handler.address == "http://test_address/"
-        assert self.handler.connection.address == "http://test_address/"
+        assert (
+            self.handler.address == "http://test_address"
+        )  # Check that the trailing slash is removed
+        assert (
+            self.handler.connection.address == "http://test_address"
+        )  # Check that the trailing slash is removed
         assert self.handler.connection.username == "test_username"
         assert self.handler.connection.project == "test_project"
         assert self.handler.connection.service == "test_service"
