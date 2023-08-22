@@ -45,7 +45,8 @@ class EmpowerConnection:
             "userName": self.username,
             "password": password,
         }
-        if self.project is not None:  # If no project is given, log into the default project, e.g. "Mobile"
+        if (self.project is not None):
+            # If no project is given, log into the default project, e.g. "Mobile"
             body["project"] = self.project
         logger.debug("Logging into Empower")
         reply = requests.post(
@@ -60,7 +61,8 @@ class EmpowerConnection:
 
     def get(self, endpoint: str) -> requests.Response:
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
-        address = (self.address + "/" + endpoint)  # Add slash between address and endpoint
+        address = (self.address + "/" + endpoint)
+        # Add slash between address and endpoint
         logger.debug(f"Getting {address}")
         response = requests.get(
             address, headers={"Authorization": "Bearer " + self.token}
@@ -78,7 +80,8 @@ class EmpowerConnection:
 
     def post(self, endpoint: str, body: dict) -> requests.Response:
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
-        address = (self.address + "/" + endpoint)  # Add slash between address and endpoint
+        address = (self.address + "/" + endpoint)
+        # Add slash between address and endpoint
         logger.debug("Posting %s to %s", body, address)
         response = requests.post(
             address,
@@ -102,7 +105,8 @@ class EmpowerConnection:
         try:
             password = keyring.get_password("Empower", self.username)
             logger.debug("Password found in keyring")
-        except (NoKeyringError):  # If no keyring is available, ask for password. This is the case in Datalab.
+        except (NoKeyringError):
+            # If no keyring is available, ask for password. This is the case in Datalab.
             password = None
             logger.debug("No keyring found")
         if not password:
