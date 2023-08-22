@@ -74,25 +74,6 @@ class EmpowerConnection:
         response.raise_for_status()
         return response
 
-    def put(self, endpoint: str, body: dict) -> requests.Response:
-        logger.debug("Putting %s to %s", body, endpoint)
-        response = requests.put(
-            self.address + endpoint,
-            json=body,
-            headers={"Authorization": "Bearer " + self.token},
-        )
-        if response.status_code == 401:
-            logger.debug("Token expired, logging in again")
-            self.login()
-            response = requests.put(
-                self.address + endpoint,
-                json=body,
-                headers={"Authorization": "Bearer " + self.token},
-            )
-        logger.debug("Got respones %s from %s", response.text, endpoint)
-        response.raise_for_status()
-        return response
-
     def post(self, endpoint: str, body: dict) -> requests.Response:
         logger.debug("Posting %s to %s", body, endpoint)
         response = requests.post(

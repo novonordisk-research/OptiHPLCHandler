@@ -101,13 +101,6 @@ class TestEmpowerConnection(unittest.TestCase):
         )
         # The last call should be to log in, since this should casue an exception.
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_put_http_error(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_requests.put.return_value = mock_response
-        self.connection.put("test_url", body="test_body")
-        assert mock_requests.put.return_value.raise_for_status.called
 
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
@@ -117,11 +110,10 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.json.return_value = {"results": [{"token": "test_token"}]}
         mock_response.status_code = 401
         mock_requests.post.return_value = mock_response
-        mock_requests.put.return_value = mock_response
         mock_getpass.return_value = self.mock_password
         try:  # When put fails, the connection will try and log in, which should also give an error.
             # We do not care about that error, we want to verify that it tries to log in again.
-            self.connection.put("test_url", body="test_body")
+            self.connection.post("test_url", body="test_body")
         except IOError:
             pass
         assert mock_requests.method_calls[-1].args == (
