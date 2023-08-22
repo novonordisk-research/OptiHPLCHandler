@@ -36,12 +36,10 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_initialisation(self):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
-        assert (
-            self.handler.address == "http://test_address"
-        )  # Check that the trailing slash is removed
-        assert (
-            self.handler.connection.address == "http://test_address"
-        )  # Check that the trailing slash is removed
+        assert self.handler.address == "http://test_address"
+        # Check that the trailing slash is removed
+        assert self.handler.connection.address == "http://test_address"
+        # Check that the trailing slash is removed
         assert self.handler.connection.username == "test_username"
         assert self.handler.connection.project == "test_project"
         assert self.handler.connection.service == "test_service"
@@ -216,9 +214,8 @@ class TestEmpowerHandler(unittest.TestCase):
 
         method_list = self.handler.GetMethodList()
         assert method_list == ["test_method_name_1", "test_method_name_2"]
-        assert (
-            "methodTypes=MethodSetMethod" in mock_requests.get.call_args[0][0]
-        )  # Check that the correct parameters are passed to the request
+        assert "methodTypes=MethodSetMethod" in mock_requests.get.call_args[0][0]
+        # Check that the correct parameters are passed to the request
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_empower_handler_method_with_no_name(self, mock_requests):
@@ -289,15 +286,12 @@ class TestEmpowerHandler(unittest.TestCase):
             mock_requests.post.call_args[1]["json"]["sampleSetMethodName"]
         ) == "test_sample_set_method"
         # Check that the correct sample set method is used.
-        assert (
-            mock_requests.post.call_args[1]["json"]["nodeName"]
-        ) == "test_node"  # Check that the correct node is used.
-        assert (
-            mock_requests.post.call_args[1]["json"]["systemName"]
-        ) == "test_hplc"  # Check that the correct HPLC is used.
-        assert (
-            mock_requests.post.call_args[1]["json"]["sampleSetName"]
-        ) is None  # Check that no sample set name is given
+        assert (mock_requests.post.call_args[1]["json"]["nodeName"]) == "test_node"
+        # Check that the correct node is used.
+        assert (mock_requests.post.call_args[1]["json"]["systemName"]) == "test_hplc"
+        # Check that the correct HPLC is used.
+        assert (mock_requests.post.call_args[1]["json"]["sampleSetName"]) is None
+        # Check that no sample set name is given
         self.handler.RunExperiment(
             sample_set_method="test_sample_set_method",
             node="test_node",
