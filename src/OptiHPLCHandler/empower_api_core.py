@@ -19,6 +19,7 @@ class EmpowerConnection:
         service: Optional[str] = None,
         password: Optional[str] = None,
     ) -> None:
+        address = address.rstrip("/")  # Remove trailing slash
         self.address = address
         if username is None:
             logger.debug("No username specified, getting username from system")
@@ -27,7 +28,7 @@ class EmpowerConnection:
             self.username = username
         if service is None:
             logger.debug("No service specified, getting service from Empower")
-            response = requests.get(self.address + "authentication/db-service-list")
+            response = requests.get(self.address + "/authentication/db-service-list")
             self.service = response.json()["results"][0]["netServiceName"]
             # If no service is specified, use the first one in the list
         else:
@@ -49,7 +50,7 @@ class EmpowerConnection:
             body["project"] = self.project
         logger.debug("Logging into Empower")
         reply = requests.post(
-            self.address + "authentication/login",
+            self.address + "/authentication/login",
             json=body,
         )
         if reply.status_code != 200:
@@ -59,25 +60,33 @@ class EmpowerConnection:
         logger.debug("Login successful, keeping token")
 
     def get(self, endpoint: str) -> requests.Response:
-        logger.debug(f"Getting {endpoint}")
+        endpoint = endpoint.lstrip("/")  # Remove leading slash
+        address = (
+            self.address + "/" + endpoint
+        )  # Add slash between address and endpoint
+        logger.debug(f"Getting {address}")
         response = requests.get(
-            self.address + endpoint, headers={"Authorization": "Bearer " + self.token}
+            address, headers={"Authorization": "Bearer " + self.token}
         )
         if response.status_code == 401:
             logger.debug("Token expired, logging in again")
             self.login()
             response = requests.get(
-                self.address + endpoint,
+                address,
                 headers={"Authorization": "Bearer " + self.token},
             )
-        logger.debug("Got response %s from %s", response.text, endpoint)
+        logger.debug("Got response %s from %s", response.text, address)
         response.raise_for_status()
         return response
 
     def post(self, endpoint: str, body: dict) -> requests.Response:
-        logger.debug("Posting %s to %s", body, endpoint)
+        endpoint = endpoint.lstrip("/")  # Remove leading slash
+        address = (
+            self.address + "/" + endpoint
+        )  # Add slash between address and endpoint
+        logger.debug("Posting %s to %s", body, address)
         response = requests.post(
-            self.address + endpoint,
+            address,
             json=body,
             headers={"Authorization": "Bearer " + self.token},
         )
@@ -85,11 +94,11 @@ class EmpowerConnection:
             logger.debug("Token expired, logging in again")
             self.login()
             response = requests.post(
-                self.address + endpoint,
+                address,
                 json=body,
                 headers={"Authorization": "Bearer " + self.token},
             )
-        logger.debug("Got respones %s from %s", response.text, endpoint)
+        logger.debug("Got respones %s from %s", response.text, address)
         response.raise_for_status()
         return response
 
