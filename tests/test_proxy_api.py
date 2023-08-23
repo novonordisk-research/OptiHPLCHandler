@@ -5,27 +5,13 @@ from OptiHPLCHandler import EmpowerHandler
 
 
 class TestEmpowerHandler(unittest.TestCase):
-    @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def setUp(self, mock_requests, mock_getpass) -> None:
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, mock_connection) -> None:
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "results": [{"netServiceName": "test_service"}]
-        }
-        # Service name is automatically requested, so we need to mock that response
-        mock_requests.get.return_value = mock_response
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": [{"token": "test_token"}]}
-        mock_response.status_code = 200
-        mock_requests.post.return_value = mock_response
-        # The connection logs in automatically, so we need to mock that response
-
-        mock_password = MagicMock()
-        mock_password.return_value = "test_password"
-        self.mock_password = mock_password
-        mock_getpass.return_value = mock_password
-        # getpass is used to get the password, so we need to mock that response since
-        # interactivity is not possible for automated testing.
+        mock_response.address = "http://test_address/"
+        mock_response.username = "test_username"
+        mock_response.project = "test_project"
+        mock_connection.return_value = mock_response
 
         self.handler = EmpowerHandler(
             project="test_project",
@@ -37,21 +23,12 @@ class TestEmpowerHandler(unittest.TestCase):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
         assert self.handler.address == "http://test_address/"
-        assert self.handler.connection.address == "http://test_address/"
-        assert self.handler.connection.username == "test_username"
-        assert self.handler.connection.project == "test_project"
-        assert self.handler.connection.service == "test_service"
 
     def test_empower_handler_status(self):
         with self.assertRaises(NotImplementedError):
             self.handler.Status()
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_post_sample_list(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": "mock_results"}
-        mock_response.status_code = 201
-        mock_requests.post.return_value = mock_response
+    def test_empower_handler_post_sample_list(self):
 
         sample_list = [
             {
@@ -75,14 +52,14 @@ class TestEmpowerHandler(unittest.TestCase):
             plates={},
             audit_trail_message="test_audit_trail_message",
         )
-        assert "test_sampleset_name" == mock_requests.method_calls[0][2]["json"]["name"]
+        assert "test_sampleset_name" == self.handler.connection.post.call_args[1]["body"]["name"]
         # Testing that the name is correct in the request
         assert (
             "?auditTrailComment=test_audit_trail_message"
-            in mock_requests.method_calls[0][1][0]
+            in self.handler.connection.post.call_args[1]["endpoint"]
         )
         # Testing that the audit trail message is correct
-        sample_set_lines = mock_requests.method_calls[0][2]["json"]["sampleSetLines"]
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"]["sampleSetLines"]
         first_line_fields = {
             field["name"]: field["value"] for field in sample_set_lines[0]["fields"]
         }
@@ -133,11 +110,7 @@ class TestEmpowerHandler(unittest.TestCase):
         assert all([dict_type == "Enumerator" for dict_type in dict_type_list])
         # Testing that all dictionary values are strings
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_post_sample_list_with_empower_names(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.status_code = 201
-        mock_requests.post.return_value = mock_response
+    def test_empower_handler_post_sample_list_with_empower_names(self):
         sample_list = [
             {
                 "MethodSetOrReportMethod": "test_method_1",
@@ -152,7 +125,7 @@ class TestEmpowerHandler(unittest.TestCase):
             plates={},
             audit_trail_message="test_audit_trail_message",
         )
-        sample_set_lines = mock_requests.method_calls[0][2]["json"]["sampleSetLines"]
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"]["sampleSetLines"]
         sample_fields = {
             field["name"]: field["value"] for field in sample_set_lines[0]["fields"]
         }
@@ -160,12 +133,7 @@ class TestEmpowerHandler(unittest.TestCase):
         assert sample_fields["Vial"] == "test_sample_pos_1"
         assert sample_fields["InjVol"] == 1
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_post_sample_list_plates(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": "mock_results"}
-        mock_response.status_code = 201
-        mock_requests.post.return_value = mock_response
+    def test_empower_handler_post_sample_list_plates(self):
         plates = {"1": "test_plate_name_1", "2": "test_plate_name_2"}
         self.handler.PostExperiment(
             sample_set_method_name="test_sampleset_name",
@@ -178,7 +146,7 @@ class TestEmpowerHandler(unittest.TestCase):
             for (plate_pos, plate_name) in plates.items()
         ]
         for plate_definiton in plate_definition_list:
-            assert plate_definiton in mock_requests.post.call_args[1]["json"]["plates"]
+            assert plate_definiton in self.handler.connection.post.call_args[1]["body"]["plates"]
 
     def test_empower_handler_add_method(self):
         with self.assertRaises(NotImplementedError):
@@ -189,8 +157,7 @@ class TestEmpowerHandler(unittest.TestCase):
                 audit_trail_message="test_audit_trail_message",
             )
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_get_method_list(self, mock_requests):
+    def test_empower_handler_get_method_list(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "results": [
@@ -208,16 +175,15 @@ class TestEmpowerHandler(unittest.TestCase):
                 },
             ]
         }
-        mock_requests.get.return_value = mock_response
+        self.handler.connection.get.return_value = mock_response
 
         method_list = self.handler.GetMethodList()
         assert method_list == ["test_method_name_1", "test_method_name_2"]
         assert (
-            "methodTypes=MethodSetMethod" in mock_requests.get.call_args[0][0]
+            "methodTypes=MethodSetMethod" in self.handler.connection.get.call_args[1]["endpoint"]
         )  # Check that the correct parameters are passed to the request
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_method_with_no_name(self, mock_requests):
+    def test_empower_handler_method_with_no_name(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "results": [
@@ -236,12 +202,11 @@ class TestEmpowerHandler(unittest.TestCase):
             ]
         }
 
-        mock_requests.get.return_value = mock_response
+        self.handler.connection.get.return_value = mock_response
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_handler_method_with_two_names(self, mock_requests):
+    def test_empower_handler_method_with_two_names(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "results": [
@@ -259,7 +224,7 @@ class TestEmpowerHandler(unittest.TestCase):
                 },
             ]
         }
-        mock_requests.get.return_value = mock_response
+        self.handler.connection.get.return_value = mock_response
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
@@ -267,32 +232,31 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.handler.GetSetup()
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_empower_run_experiment(self, mock_requests):
+    def test_empower_run_experiment(self):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_requests.post.return_value = mock_response
+        self.handler.connection.post.return_value = mock_response
         self.handler.RunExperiment(
             sample_set_method="test_sample_set_method",
             node="test_node",
             hplc="test_hplc",
         )
         assert (
-            mock_requests.post.call_args[0][0]
-            == "http://test_address/acquisition/run-sample-set-method"
+            self.handler.connection.post.call_args[1]["endpoint"]
+            == "acquisition/run-sample-set-method"
         )  # Check that the correct URl is used.
         assert (
-            mock_requests.post.call_args[1]["json"]["sampleSetMethodName"]
+            self.handler.connection.post.call_args[1]["body"]["sampleSetMethodName"]
         ) == "test_sample_set_method"
         # Check that the correct sample set method is used.
         assert (
-            mock_requests.post.call_args[1]["json"]["nodeName"]
+            self.handler.connection.post.call_args[1]["body"]["nodeName"]
         ) == "test_node"  # Check that the correct node is used.
         assert (
-            mock_requests.post.call_args[1]["json"]["systemName"]
+            self.handler.connection.post.call_args[1]["body"]["systemName"]
         ) == "test_hplc"  # Check that the correct HPLC is used.
         assert (
-            mock_requests.post.call_args[1]["json"]["sampleSetName"]
+            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
         ) is None  # Check that no sample set name is given
         self.handler.RunExperiment(
             sample_set_method="test_sample_set_method",
@@ -301,11 +265,10 @@ class TestEmpowerHandler(unittest.TestCase):
             sample_set_name="test_sample_set_name",
         )
         assert (
-            mock_requests.post.call_args[1]["json"]["sampleSetName"]
+            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
         ) == "test_sample_set_name"  # Check that the correct sample set name is given
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_get_plate_type_names(self, mock_requests):
+    def test_get_plate_type_names(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "results": [
@@ -313,62 +276,43 @@ class TestEmpowerHandler(unittest.TestCase):
                 "test_plate_type_name_2",
             ]
         }
-        mock_requests.get.return_value = mock_response
+        self.handler.connection.get.return_value = mock_response
         plate_type_names = self.handler.GetPlateTypeNames()
         assert plate_type_names == [
             "test_plate_type_name_1",
             "test_plate_type_name_2",
         ]
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_get_plate_type_names_filter(self, mock_requests):
-        mock_response = MagicMock()
-        mock_requests.get.return_value = mock_response
+    def test_get_plate_type_names_filter(self):
         self.handler.GetPlateTypeNames(filter_string="test_filter_text")
-        assert "?stringFilter=test_filter_text" in mock_requests.get.call_args[0][0]
+        assert "?stringFilter=test_filter_text" in self.handler.connection.get.call_args[1]["endpoint"]
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_get_node_name_list(self, mock_requests):
+    def test_get_node_name_list(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {"results": ["test_node_name_1"]}
-        mock_requests.get.return_value = mock_response
+        self.handler.connection.get.return_value = mock_response
         node_name_list = self.handler.GetNodeNames()
         assert node_name_list == ["test_node_name_1"]
-        assert "acquisition/nodes" in mock_requests.get.call_args[0][0]
+        assert "acquisition/nodes" in self.handler.connection.get.call_args[1]["endpoint"]
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_get_system_name_list(self, mock_requests):
+    def test_get_system_name_list(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {"results": ["test_system_name_1"]}
-        mock_requests.get.return_value = mock_response
+        self.handler.connection.get.return_value = mock_response
         system_name_list = self.handler.GetSystemNames("test_node_name")
         assert system_name_list == ["test_system_name_1"]
         assert (
             "acquisition/chromatographic-systems?nodeName=test_node_name"
-            in mock_requests.get.call_args[0][0]
+            == self.handler.connection.get.call_args[1]["endpoint"]
         )
 
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_login_pwd(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_requests.post.return_value = mock_response
-        self.handler = EmpowerHandler(
-            project="test_project",
-            address="http://test_address/",
-            username="test_username",
-            password="test_password",
-        )
-        assert mock_requests.post.call_args[1]["json"]["password"] == "test_password"
-
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_get_sample_set_method_list(self, mock_requests):
+    def test_get_sample_set_method_list(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {"results": ["test_samplesetmethod_1"]}
-        mock_requests.get.return_value = mock_response
+        self.handler.connection.get.return_value = mock_response
         samplesetmethod_list = self.handler.GetSampleSetMethods()
         assert samplesetmethod_list == ["test_samplesetmethod_1"]
         assert (
             "project/methods/sample-set-method-list"
-            in mock_requests.get.call_args[0][0]
+            == self.handler.connection.get.call_args[1]["endpoint"]
         )
