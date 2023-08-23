@@ -29,7 +29,6 @@ class TestEmpowerHandler(unittest.TestCase):
             self.handler.Status()
 
     def test_empower_handler_post_sample_list(self):
-
         sample_list = [
             {
                 "Method": "test_method_1",
@@ -52,14 +51,19 @@ class TestEmpowerHandler(unittest.TestCase):
             plates={},
             audit_trail_message="test_audit_trail_message",
         )
-        assert "test_sampleset_name" == self.handler.connection.post.call_args[1]["body"]["name"]
+        assert (
+            "test_sampleset_name"
+            == self.handler.connection.post.call_args[1]["body"]["name"]
+        )
         # Testing that the name is correct in the request
         assert (
             "?auditTrailComment=test_audit_trail_message"
             in self.handler.connection.post.call_args[1]["endpoint"]
         )
         # Testing that the audit trail message is correct
-        sample_set_lines = self.handler.connection.post.call_args[1]["body"]["sampleSetLines"]
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ]
         first_line_fields = {
             field["name"]: field["value"] for field in sample_set_lines[0]["fields"]
         }
@@ -125,7 +129,9 @@ class TestEmpowerHandler(unittest.TestCase):
             plates={},
             audit_trail_message="test_audit_trail_message",
         )
-        sample_set_lines = self.handler.connection.post.call_args[1]["body"]["sampleSetLines"]
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ]
         sample_fields = {
             field["name"]: field["value"] for field in sample_set_lines[0]["fields"]
         }
@@ -146,7 +152,10 @@ class TestEmpowerHandler(unittest.TestCase):
             for (plate_pos, plate_name) in plates.items()
         ]
         for plate_definiton in plate_definition_list:
-            assert plate_definiton in self.handler.connection.post.call_args[1]["body"]["plates"]
+            assert (
+                plate_definiton
+                in self.handler.connection.post.call_args[1]["body"]["plates"]
+            )
 
     def test_empower_handler_add_method(self):
         with self.assertRaises(NotImplementedError):
@@ -180,7 +189,8 @@ class TestEmpowerHandler(unittest.TestCase):
         method_list = self.handler.GetMethodList()
         assert method_list == ["test_method_name_1", "test_method_name_2"]
         assert (
-            "methodTypes=MethodSetMethod" in self.handler.connection.get.call_args[1]["endpoint"]
+            "methodTypes=MethodSetMethod"
+            in self.handler.connection.get.call_args[1]["endpoint"]
         )  # Check that the correct parameters are passed to the request
 
     def test_empower_handler_method_with_no_name(self):
@@ -285,7 +295,10 @@ class TestEmpowerHandler(unittest.TestCase):
 
     def test_get_plate_type_names_filter(self):
         self.handler.GetPlateTypeNames(filter_string="test_filter_text")
-        assert "?stringFilter=test_filter_text" in self.handler.connection.get.call_args[1]["endpoint"]
+        assert (
+            "?stringFilter=test_filter_text"
+            in self.handler.connection.get.call_args[1]["endpoint"]
+        )
 
     def test_get_node_name_list(self):
         mock_response = MagicMock()
@@ -293,7 +306,9 @@ class TestEmpowerHandler(unittest.TestCase):
         self.handler.connection.get.return_value = mock_response
         node_name_list = self.handler.GetNodeNames()
         assert node_name_list == ["test_node_name_1"]
-        assert "acquisition/nodes" in self.handler.connection.get.call_args[1]["endpoint"]
+        assert (
+            "acquisition/nodes" in self.handler.connection.get.call_args[1]["endpoint"]
+        )
 
     def test_get_system_name_list(self):
         mock_response = MagicMock()
