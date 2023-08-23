@@ -21,4 +21,4 @@ jobs:
       - name: Run test
         run: |
           eval $(bumpver show --env)
-          gh release create ${{CURRENT_VERSION}} --title ${{CURRENT_VERSION}} --notes "Release ${{CURRENT_VERSION}}" --verify-tag
+          gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag
