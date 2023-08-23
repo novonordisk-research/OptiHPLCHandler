@@ -19,4 +19,4 @@ jobs:
       - name: Run test
         run: |
           eval $(bumpver show --env)
-          echo $CURRENT_VERSION
+          gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }}
