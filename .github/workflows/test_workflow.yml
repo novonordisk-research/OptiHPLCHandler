@@ -1,7 +1,11 @@
 name: test_workflow
 run-name: test_workflow
 on:
-  - workflow_dispatch # Allowing for manual triggering
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allowing for manual triggering
+
 jobs:
   test:
     runs-on: ubuntu-latest
