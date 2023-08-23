@@ -21,4 +21,4 @@ jobs:
       - name: Run test
         run: |
           eval $(bumpver show --env)
-          gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }}
+          gh release create ${{CURRENT_VERSION}} --title ${{CURRENT_VERSION}} --notes "Release ${{CURRENT_VERSION}}" --verify-tag
