@@ -1,0 +1,11 @@
+name: test_workflow
+run-name: test_workflow
+on:
+  - workflow_dispatch # Allowing for manual triggering
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run test
+        run: echo "Hello world"
