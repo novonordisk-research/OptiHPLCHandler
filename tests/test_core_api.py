@@ -49,7 +49,8 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_set_values(self):
         assert self.connection.project == "test_project"
         assert self.connection.username == "test_username"
-        assert self.connection.address == "http://test_address/"
+        assert self.connection.address == "http://test_address"
+        # The trailing slash is removed
         assert self.connection.service == "test_service"
         assert self.connection.token == "test_token"
 
@@ -72,6 +73,18 @@ class TestEmpowerConnection(unittest.TestCase):
             project="test_project",
         )
         assert connection.service == "automatic_test_service"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.get.return_value = mock_response
+        self.connection.get("test_url")
+        # Testing that the get method is called with the correct url
+        assert mock_requests.get.call_args[0][0] == "http://test_address/test_url"
+        self.connection.get("/test_url")
+        # Testing that the get method is called with the correct url when endpoint starts with a slash
+        assert mock_requests.get.call_args[0][0] == "http://test_address/test_url"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get_http_error(self, mock_requests):
@@ -102,32 +115,16 @@ class TestEmpowerConnection(unittest.TestCase):
         # The last call should be to log in, since this should casue an exception.
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_put_http_error(self, mock_requests):
+    def test_post(self, mock_requests):
         mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_requests.put.return_value = mock_response
-        self.connection.put("test_url", body="test_body")
-        assert mock_requests.put.return_value.raise_for_status.called
-
-    @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
-    @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_relogin_put(self, mock_requests, mock_getpass):
-        # Verify that the handler logs in again if the token is invalid on put.
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": [{"token": "test_token"}]}
-        mock_response.status_code = 401
+        mock_response.status_code = 200
         mock_requests.post.return_value = mock_response
-        mock_requests.put.return_value = mock_response
-        mock_getpass.return_value = self.mock_password
-        try:  # When put fails, the connection will try and log in, which should also give an error.
-            # We do not care about that error, we want to verify that it tries to log in again.
-            self.connection.put("test_url", body="test_body")
-        except IOError:
-            pass
-        assert mock_requests.method_calls[-1].args == (
-            "http://test_address/authentication/login",
-        )
-        # The last call should be to log in, since this should casue an exception.
+        self.connection.post("test_url", body={})
+        # Testing that the get method is called with the correct url
+        assert mock_requests.post.call_args[0][0] == "http://test_address/test_url"
+        self.connection.post("/test_url", body={})
+        # Testing that the get method is called with the correct url when endpoint starts with a slash
+        assert mock_requests.post.call_args[0][0] == "http://test_address/test_url"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_post_http_error(self, mock_requests):
