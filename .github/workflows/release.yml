@@ -29,12 +29,15 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
-      - run: pip install .[release]
-      - run: git config --global user.name "GitHub Action"
-      - run: git config --global user.email "build_pipeline@novonordisk.com"
-      - run: git branch -c release
-      - run: git checkout release
-      - run: git push --set-upstream origin release
-      - run: python -m bumpver update --${{ inputs.release_type }}
-      - run: gh pr create --title "Release" --body "Release" --base main --head release --repo ${{ github.repository }}
-      - run: gh pr merge --rebase --delete-branch --auto
+      - run: |
+          pip install .[release]
+          git config --global user.name "GitHub Action"
+          git config --global user.email "build_pipeline@novonordisk.com"
+          git branch -c release
+          git checkout release
+          git push --set-upstream origin release
+          python -m bumpver update --${{ inputs.release_type }}
+          eval $(bumpver show --env) # Saving the new version in an environment variable
+          gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer Release_reviewers --labels Release
+          gh pr merge --rebase --delete-branch --auto
+          gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag
