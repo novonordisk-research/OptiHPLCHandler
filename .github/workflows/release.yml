@@ -38,6 +38,6 @@ jobs:
           git push --set-upstream origin release
           python -m bumpver update --${{ inputs.release_type }}
           eval $(bumpver show --env) # Saving the new version in an environment variable
-          gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }}
+          gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer Release_reviewers --labels Release
           gh pr merge --rebase --delete-branch --admin
           gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag
