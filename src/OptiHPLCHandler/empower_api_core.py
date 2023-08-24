@@ -19,8 +19,7 @@ class EmpowerConnection:
         service: Optional[str] = None,
         password: Optional[str] = None,
     ) -> None:
-        address = address.rstrip("/")  # Remove trailing slash if present
-        self.address = address
+        self.address = address.rstrip("/")  # Remove trailing slash if present
         if username is None:
             logger.debug("No username specified, getting username from system")
             self.username = getpass.getuser()

@@ -49,9 +49,8 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_set_values(self):
         assert self.connection.project == "test_project"
         assert self.connection.username == "test_username"
-        assert (
-            self.connection.address == "http://test_address"
-        )  # The trailing slash is removed
+        assert self.connection.address == "http://test_address"
+        # The trailing slash is removed
         assert self.connection.service == "test_service"
         assert self.connection.token == "test_token"
 
