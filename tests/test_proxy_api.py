@@ -8,7 +8,7 @@ class TestEmpowerHandler(unittest.TestCase):
     @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
     def setUp(self, mock_connection) -> None:
         mock_response = MagicMock()
-        mock_response.address = "http://test_address/"
+        mock_response.address = "http://test_address"
         mock_response.username = "test_username"
         mock_response.project = "test_project"
         mock_connection.return_value = mock_response
@@ -22,7 +22,8 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_empower_handler_initialisation(self):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
-        assert self.handler.address == "http://test_address/"
+        assert self.handler.address == "http://test_address"
+        # Check that the trailing slash is removed from the address
 
     def test_empower_handler_status(self):
         with self.assertRaises(NotImplementedError):
