@@ -19,7 +19,8 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_password.return_value = "test_password"
         self.mock_password = mock_password
         mock_getpass.return_value = mock_password
-        # getpass is used to get the password, so we need to mock that response since interactivity is not possible
+        # getpass is used to get the password, so we need to mock that response since
+        # interactivity is not possible
         self.connection = EmpowerConnection(
             project="test_project",
             address="http://test_address/",
@@ -83,7 +84,8 @@ class TestEmpowerConnection(unittest.TestCase):
         # Testing that the get method is called with the correct url
         assert mock_requests.get.call_args[0][0] == "http://test_address/test_url"
         self.connection.get("/test_url")
-        # Testing that the get method is called with the correct url when endpoint starts with a slash
+        # Testing that the get method is called with the correct url when endpoint
+        # starts with a slash
         assert mock_requests.get.call_args[0][0] == "http://test_address/test_url"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
@@ -104,8 +106,9 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_requests.post.return_value = mock_response
         mock_requests.get.return_value = mock_response
         mock_getpass.return_value = self.mock_password
-        try:  # When get fails, the connection will try and log in, which should also give an error.
-            # We do not care about that error, we want to verify that it tries to log in again.
+        try:  # When get fails, the connection will try and log in, which should also
+            # give an error. We do not care about that error, we want to verify that it
+            # tries to log in again.
             self.connection.get("test_url")
         except IOError:
             pass
@@ -119,11 +122,13 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_requests.post.return_value = mock_response
+        # The last call should be to log in, since this should casue an exception.
         self.connection.post("test_url", body={})
         # Testing that the get method is called with the correct url
         assert mock_requests.post.call_args[0][0] == "http://test_address/test_url"
         self.connection.post("/test_url", body={})
-        # Testing that the get method is called with the correct url when endpoint starts with a slash
+        # Testing that the get method is called with the correct url when endpoint
+        # starts with a slash
         assert mock_requests.post.call_args[0][0] == "http://test_address/test_url"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
@@ -143,8 +148,9 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.status_code = 401
         mock_requests.post.return_value = mock_response
         mock_getpass.return_value = self.mock_password
-        try:  # When put fails, the connection will try and log in, which should also give an error.
-            # We do not care about that error, we want to verify that it tries to log in again.
+        try:  # When put fails, the connection will try and log in, which should also
+            # give an error. We do not care about that error, we want to verify that it
+            # tries to log in again.
             self.connection.post("test_url", body="test_body")
         except IOError:
             pass
