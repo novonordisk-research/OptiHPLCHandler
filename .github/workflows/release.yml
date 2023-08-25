@@ -37,6 +37,6 @@ jobs:
       - run: git push --set-upstream origin release
       - run: python -m bumpver update --${{ inputs.release_type }}
       - run: eval $(bumpver show --env) # Saving the new version in an environment variable
-      - run: gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer @novonordisk-research/Release_reviewers --label Release
+      - run: gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer novonordisk-research/Release_reviewers --label Release
       - run: gh pr merge --rebase --delete-branch --auto
       - run: gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag
