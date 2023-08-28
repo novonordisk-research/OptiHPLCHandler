@@ -11,6 +11,26 @@ logger = logging.getLogger(__name__)
 
 
 class EmpowerConnection:
+    """
+    Class for handling connection to Empower.
+
+    Since the purpose of this handler is not to change date in Empower, it does not have
+    a put() method, only get() and post().
+
+    The connection is kept open by storing a bearer token provided by Empower.
+
+    If the token expires, the connection is automatically  reestablished.
+
+    The password is stored in the keyring if available, otherwise it is asked for every
+    time.
+
+    :attribute address: The address of the Empower server.
+    :attribute username: The username to use for logging in.
+    :attribute project: The project to log into.
+    :attribute service: The service to use for logging in.
+    :attribute token: The bearer token used for authentication.
+    """
+
     def __init__(
         self,
         address: str,
@@ -19,6 +39,20 @@ class EmpowerConnection:
         service: Optional[str] = None,
         password: Optional[str] = None,
     ) -> None:
+        """
+        Initialize the EmpowerConnection.
+
+        :param address: The address of the Empower server.
+        :param username: The username to use for logging in. If None, the username of the
+            user running the script is used.
+        :param project: The project to use for logging in. If None, the default project
+            is used.
+        :param service: The service to use for logging in. If None, the first service in
+            the list is used.
+        :param password: The password to use for logging in. If None, the password is
+            retrieved from the keyring if available, otherwise it is asked for every
+            time.
+        """
         self.address = address.rstrip("/")  # Remove trailing slash if present
         if username is None:
             logger.debug("No username specified, getting username from system")
@@ -36,6 +70,13 @@ class EmpowerConnection:
         self.login(password)
 
     def login(self, password: Optional[str] = None) -> None:
+        """
+        Log into Empower.
+
+        :param password: The password to use for logging in. If None, the password is
+            retrieved from the keyring if available, otherwise it is asked for every
+            time.
+        """
         if not password:
             password = self.password
 
@@ -59,6 +100,11 @@ class EmpowerConnection:
         logger.debug("Login successful, keeping token")
 
     def get(self, endpoint: str) -> requests.Response:
+        """
+        Get data from Empower.
+
+        :param endpoint: The endpoint to get data from.
+        """
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
@@ -78,6 +124,12 @@ class EmpowerConnection:
         return response
 
     def post(self, endpoint: str, body: dict) -> requests.Response:
+        """
+        Post data to Empower.
+
+        :param endpoint: The endpoint to post data to.
+        :param body: The data to post.
+        """
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
