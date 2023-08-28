@@ -250,7 +250,7 @@ class TestEmpowerHandler(unittest.TestCase):
         self.handler.RunExperiment(
             sample_set_method="test_sample_set_method",
             node="test_node",
-            hplc="test_hplc",
+            system="test_hplc",
         )
         assert (
             self.handler.connection.post.call_args[1]["endpoint"]
@@ -272,7 +272,7 @@ class TestEmpowerHandler(unittest.TestCase):
         self.handler.RunExperiment(
             sample_set_method="test_sample_set_method",
             node="test_node",
-            hplc="test_hplc",
+            system="test_hplc",
             sample_set_name="test_sample_set_name",
         )
         assert (
