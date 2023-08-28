@@ -157,7 +157,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         sample_set_method: str,
         node: str,
-        hplc: str = None,
+        system: str = None,
         sample_set_name: Optional[str] = None,
     ) -> HplcResult:
         """Run the experiment on an instrument."""
@@ -173,7 +173,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             "sampleSetId": 0,
             "fromLine": 0,
             "nodeName": node,
-            "systemName": hplc,
+            "systemName": system,
         }
         logger.debug("Running experiment with parameters %s", parameters)
         self.connection.post(

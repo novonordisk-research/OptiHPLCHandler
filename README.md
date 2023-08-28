@@ -119,7 +119,7 @@ handler.RunExperiment(
     sample_set_method="test_sampleset_method_name",
     sample_set_name="test_sample_set",
     node="node_name",
-    hplc="test_hplc",
+    system="test_hplc",
 )
 ```
 
