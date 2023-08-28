@@ -43,8 +43,8 @@ class EmpowerConnection:
         Initialize the EmpowerConnection.
 
         :param address: The address of the Empower server.
-        :param username: The username to use for logging in. If None, the username of the
-            user running the script is used.
+        :param username: The username to use for logging in. If None, the username of
+            the user running the script is used.
         :param project: The project to use for logging in. If None, the default project
             is used.
         :param service: The service to use for logging in. If None, the first service in
