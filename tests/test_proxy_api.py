@@ -19,17 +19,17 @@ class TestEmpowerHandler(unittest.TestCase):
             username="test_username",
         )
 
-    def test_empower_handler_initialisation(self):
+    def test_initialisation(self):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
         assert self.handler.address == "http://test_address"
         # Check that the trailing slash is removed from the address
 
-    def test_empower_handler_status(self):
+    def test_status(self):
         with self.assertRaises(NotImplementedError):
             self.handler.Status()
 
-    def test_empower_handler_post_sample_list(self):
+    def test_post_sample_list(self):
         sample_list = [
             {
                 "Method": "test_method_1",
@@ -115,7 +115,7 @@ class TestEmpowerHandler(unittest.TestCase):
         assert all([dict_type == "Enumerator" for dict_type in dict_type_list])
         # Testing that all dictionary values are strings
 
-    def test_empower_handler_post_sample_list_with_empower_names(self):
+    def test_post_sample_list_with_empower_names(self):
         sample_list = [
             {
                 "MethodSetOrReportMethod": "test_method_1",
@@ -140,7 +140,7 @@ class TestEmpowerHandler(unittest.TestCase):
         assert sample_fields["Vial"] == "test_sample_pos_1"
         assert sample_fields["InjVol"] == 1
 
-    def test_empower_handler_post_sample_list_plates(self):
+    def test_post_sample_list_plates(self):
         plates = {"1": "test_plate_name_1", "2": "test_plate_name_2"}
         self.handler.PostExperiment(
             sample_set_method_name="test_sampleset_name",
@@ -158,7 +158,7 @@ class TestEmpowerHandler(unittest.TestCase):
                 in self.handler.connection.post.call_args[1]["body"]["plates"]
             )
 
-    def test_empower_handler_add_method(self):
+    def test_add_method(self):
         with self.assertRaises(NotImplementedError):
             self.handler.AddMethod(
                 template_method="test_template_method",
@@ -167,7 +167,7 @@ class TestEmpowerHandler(unittest.TestCase):
                 audit_trail_message="test_audit_trail_message",
             )
 
-    def test_empower_handler_get_method_list(self):
+    def test_get_method_list(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "results": [
@@ -194,7 +194,7 @@ class TestEmpowerHandler(unittest.TestCase):
             in self.handler.connection.get.call_args[1]["endpoint"]
         )  # Check that the correct parameters are passed to the request
 
-    def test_empower_handler_method_with_no_name(self):
+    def test_method_with_no_name(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "results": [
@@ -217,7 +217,7 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
-    def test_empower_handler_method_with_two_names(self):
+    def test_method_with_two_names(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "results": [
@@ -239,11 +239,11 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
-    def test_empower_handler_get_setup(self):
+    def test_get_setup(self):
         with self.assertRaises(NotImplementedError):
             self.handler.GetSetup()
 
-    def test_empower_run_experiment(self):
+    def test_run_experiment(self):
         mock_response = MagicMock()
         mock_response.status_code = 200
         self.handler.connection.post.return_value = mock_response
