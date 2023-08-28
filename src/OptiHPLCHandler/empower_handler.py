@@ -49,7 +49,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     list of nodes, systems, plate types, and methods.
 
     This handler is stateful, meaning that you can save methods to the HPLC and run them
-    later.
+    later, and make runs based on the methods that are already on the HPLC.
 
     :attribute project: Name of the project to connect to.
     :attribute address: Address of the Empower server.
