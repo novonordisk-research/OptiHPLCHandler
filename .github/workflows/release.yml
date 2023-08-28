@@ -37,6 +37,7 @@ jobs:
       - run: git push --set-upstream origin release
       - run: python -m bumpver update --${{ inputs.release_type }}
       - run: eval $(python -m bumpver show --env) # Saving the new version in an environment variable
+      - run: python -m bumpver show --env
       - run: echo $CURRENT_VERSION
       - run: echo "current version is $CURRENT_VERSION"
       - run: gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer ***REMOVED***-NN
