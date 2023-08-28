@@ -21,7 +21,7 @@ jobs:
     name: Release # This is not a separate wokflow because it should only run after linting and testing.
     runs-on: ubuntu-latest
     needs: [lint, test]
-    # if: github.ref == 'refs/heads/main' # Only run on main branch
+    if: github.ref == 'refs/heads/main' # Only run on main branch
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -39,7 +39,6 @@ jobs:
       - run: |
           eval $(python -m bumpver show --env) # Saving the new version in an environment variable
           GIT_HASH=$(git rev-parse HEAD) # Saving the git hash in an environment variable
-          echo $GIT_HASH
           gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer ***REMOVED***-NN
           gh pr merge --rebase --delete-branch --auto
           gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag --target $GIT_HASH
