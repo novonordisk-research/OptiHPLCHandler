@@ -43,6 +43,19 @@ class StatefulInstrumentHandler(ABC, Generic[Result, Setup]):
 
 
 class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
+    """
+    Handler for Empower. It allows you to post experiments to Empower and run them. It
+    also allows you to get the information necessary to create an experiment, that is,
+    list of nodes, systems, plate types, and methods.
+
+    This handler is stateful, meaning that you can save methods to the HPLC and run them
+    later.
+
+    :attribute project: Name of the project to connect to.
+    :attribute address: Address of the Empower server.
+    :attribute username: Username to use to connect to Empower.
+    """
+
     def __init__(
         self,
         project: str,
@@ -52,6 +65,19 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         password: Optional[str] = None,
         **kwargs,
     ):
+        """
+        Create a handler for Empower.
+
+        :param project: Name of the project to connect to.
+        :param address: Address of the Empower server.
+        :param username: Username to use to connect to Empower. If not given, the
+            username of the current user will be used.
+        :param service: Name of the service to use to connect to Empower. If not given,
+            the first service in the list of services will be used.
+        :param password: Password to use to connect to Empower. If not given, the
+            password will be retrieved from the keyring. If keyring is not available,
+            the password will be asked for.
+        """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
             project=project,
@@ -88,16 +114,15 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         Post the experiment to the HPLC.
 
 
-        :param sample_set_method_name: Name of the sample set method. This will be the
-            name of the sample set in Empower.
+        :param sample_set_method_name: Name of the sample set method to create.
 
         :param sample_list: List of samples to run. Each sample is a dictionary with
             the following keys:
-            - Method: Name of the method to use for the sample
+            - Method: Name of the method to use for the sample.
             - SamplePos: Position of the sample in the autosampler, including plate and
-                position on the plate
-            - SampleName: Name of the sample
-            - InjectionVolume: Volume of the sample to inject in micro liters
+                position on the plate.
+            - SampleName: Name of the sample.
+            - InjectionVolume: Volume of the sample to inject in micro liters.
             Any other keys will be added as fields to the sample, including custom
                 fields.
             For all fields, the datatype will be autodetermined according the the type
@@ -107,7 +132,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             plate, the value should be the plate type.
 
         :param audit_trail_message: Message to add to the audit trail of the sample set
-            method
+            method.
         """
         logger.debug("Posting experiment to Empower")
         plate_list = []
@@ -157,10 +182,18 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         sample_set_method: str,
         node: str,
-        system: str = None,
+        system: str,
         sample_set_name: Optional[str] = None,
     ) -> HplcResult:
-        """Run the experiment on an instrument."""
+        """
+        Run the experiment on an instrument.
+
+        :param sample_set_method: Name of the sample set method to run.
+        :param node: Name of the node to run the experiment on.
+        :param system: Name of the chromatographic system to run the experiment on.
+        :param sample_set_name: Name of the sample set to run. If not given, the name
+            of the sample set method will be used.
+        """
         parameters = {
             "sampleSetMethodName": sample_set_method,
             "sampleSetName": sample_set_name,
@@ -187,11 +220,20 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         changes: Dict[str, Any],
         audit_trail_message: str,
     ) -> None:
-        """Add a new method based on the template method."""
+        """
+        Add a new method based on the template method.
+
+        :param template_method: Name of the template method to use.
+        :param new_method: Name of the new method to create.
+        :param changes: Dictionary of changes to make to the template method. The keys
+            should be the names of the fields to change, the values should be the new
+            values of the fields.
+        :param audit_trail_message: Message to add to the audit trail of the method.
+        """
         raise NotImplementedError
 
     def GetMethodList(self) -> List[str]:
-        """Get the list of methods"""
+        """Get the list of methods."""
         response = self.connection.get(
             endpoint="project/methods?methodTypes=MethodSetMethod"
         )
@@ -212,29 +254,38 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         return method_name_list
 
     def GetSetup(self) -> List[HPLCSetup]:
-        """Get the list of HPLC setups"""
+        """Get the list of HPLC setups."""
         raise NotImplementedError
 
     def GetNodeNames(self) -> List[str]:
-        """Get the list of node names"""
+        """Get the list of node names."""
         response = self.connection.get(endpoint="acquisition/nodes")
         return response.json()["results"]
 
     def GetSystemNames(self, node: str) -> List[str]:
-        """Get the list of names of chromatographic systems on a node"""
+        """
+        Get the list of names of chromatographic systems on a node.
+
+        :param node: Name of the node to get the systems from.
+        """
         endpoint = f"acquisition/chromatographic-systems?nodeName={node}"
         response = self.connection.get(endpoint=endpoint)
         return response.json()["results"]
 
     def GetSampleSetMethods(self) -> List[str]:
-        """Get the list of sample set methods in project"""
+        """Get the list of sample set methods in project."""
         response = self.connection.get(
             endpoint="project/methods/sample-set-method-list"
         )
         return response.json()["results"]
 
     def GetPlateTypeNames(self, filter_string: Optional[None] = None) -> List[str]:
-        """Get the list of names of available plate types"""
+        """
+        Get the list of names of available plate types
+
+        :param filter_string: String to filter the list of plate types on. Only plate
+            types whose name contains this string will be returned.
+        """
         endpoint = "configuration/plate-types-list"
         if filter_string:
             endpoint += f"?stringFilter={filter_string}"
