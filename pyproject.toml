@@ -1,6 +1,6 @@
 [project]
 name = "Opti_HPLC_Handler"
-version = "0.6.1"
+version = "0.6.2"
 description = "Simplified proxy API for interacting with the Waters Empower Web API."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -87,7 +87,7 @@ pythonpath = [
 ]
 
 [tool.bumpver]
-current_version = "0.6.1"
+current_version = "0.6.2"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 tag_message = "{new_version}"
