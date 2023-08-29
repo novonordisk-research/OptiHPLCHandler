@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Mapping
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from .data_types import HplcResult, HPLCSetup
@@ -106,7 +107,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def PostExperiment(
         self,
         sample_set_method_name: str,
-        sample_list: List[Dict[str, Any]],
+        sample_list: Iterable[Mapping[str, Any]],
         plates: Dict[str, str],
         audit_trail_message: str,
     ):
@@ -217,7 +218,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         template_method: str,
         new_method: str,
-        changes: Dict[str, Any],
+        changes: Mapping[str, Any],
         audit_trail_message: str,
     ) -> None:
         """
@@ -279,7 +280,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         )
         return response.json()["results"]
 
-    def GetPlateTypeNames(self, filter_string: Optional[None] = None) -> List[str]:
+    def GetPlateTypeNames(self, filter_string: Optional[str] = None) -> List[str]:
         """
         Get the list of names of available plate types
 
@@ -292,8 +293,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         response = self.connection.get(endpoint=endpoint)
         return response.json()["results"]
 
-    def _set_data_type(self, field: Dict[str, Any]):
-        """Find and set the data type of the field, based on the type of `value"""
+    def _set_data_type(self, field: Mapping[str, Any]):
+        """Find and set the data type of the field, based on the type of `value`"""
         data_type_dict = {
             str: "String",
             int: "Double",
