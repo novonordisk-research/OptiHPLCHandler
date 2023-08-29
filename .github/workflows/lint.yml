@@ -18,6 +18,6 @@ jobs:
       - name: Linting with flakes8
         run: python -m flake8 --max-complexity=10
       - name: Linting with black
-        run: python -m black --check .
+        run: python -m black --check --diff .
       - name: Linting with isort
-        run: python -m isort --check .
+        run: python -m isort --check --diff .
