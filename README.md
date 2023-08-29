@@ -41,6 +41,17 @@ handler=EmpowerHandler(
 )
 ```
 
+When logged in, the `EmpowerHandler` can be used to access an authorisation key that can
+be used for the Web API directly:
+
+```
+handler.connection.authorization_header["Authorization"]
+```
+
+The authorisation key must be given in the HTTP header with the name `Authorization`.
+If you are using `requests`, you can simply provide
+`handler.connection.authorization_header` as `headers` in the request.
+
 You can now get a list of the methodset methods in the project:
 
 ```
