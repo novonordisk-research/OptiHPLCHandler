@@ -109,16 +109,11 @@ class EmpowerConnection:
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
         logger.debug(f"Getting {address}")
-        response = requests.get(
-            address, headers={"Authorization": "Bearer " + self.token}
-        )
+        response = requests.get(address, headers=self.authorization_header)
         if response.status_code == 401:
             logger.debug("Token expired, logging in again")
             self.login()
-            response = requests.get(
-                address,
-                headers={"Authorization": "Bearer " + self.token},
-            )
+            response = requests.get(address, headers=self.authorization_header)
         logger.debug("Got response %s from %s", response.text, address)
         response.raise_for_status()
         return response
@@ -134,18 +129,14 @@ class EmpowerConnection:
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
         logger.debug("Posting %s to %s", body, address)
-        response = requests.post(
-            address,
-            json=body,
-            headers={"Authorization": "Bearer " + self.token},
-        )
+        response = requests.post(address, json=body, headers=self.authorization_header)
         if response.status_code == 401:
             logger.debug("Token expired, logging in again")
             self.login()
             response = requests.post(
                 address,
                 json=body,
-                headers={"Authorization": "Bearer " + self.token},
+                headers=self.authorization_header,
             )
         logger.debug("Got respones %s from %s", response.text, address)
         response.raise_for_status()
@@ -168,3 +159,7 @@ class EmpowerConnection:
                 f"Please enter the password for user {self.username}: "
             )
         return password
+
+    @property
+    def authorization_header(self):
+        return {"Authorization": "Bearer " + self.token}
