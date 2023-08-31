@@ -1,6 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
+import warnings
 from typing import Any, Dict, Generic, List, Optional, TypeVar
+
+from requests.exceptions import HTTPError
 
 from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
@@ -63,6 +66,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         username: Optional[str] = None,
         service: str = None,
         password: Optional[str] = None,
+        run_without_context: bool = False,
         **kwargs,
     ):
         """
@@ -86,6 +90,24 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             service=service,
             password=password,
         )
+        self.run_without_context = run_without_context
+
+    def __enter__(self):
+        """Start the context manager."""
+        self.login(has_context=True)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """End the context manager."""
+        self.__del__()
+
+    def __del__(self):
+        """Destructor for the EmpowerHandler."""
+        try:
+            self.connection.logout()
+        except HTTPError as e:
+            logger.warning("Error logging out of Empower: %s", e)
+            warnings.warn("Error logging out of Empower: %s" % e)
 
     @property
     def project(self) -> str:
@@ -98,6 +120,25 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     @property
     def username(self) -> str:
         return self.connection.username
+
+    def login(self, has_context: bool = False):
+        """Log into Empower."""
+        if not has_context:
+            if self.run_without_context:
+                logger.warning("Logging in without context.")
+                warnings.warn(
+                    "You are logging in manually without a context manager. "
+                    "This is not recommended."
+                    "Please use a context manager, e.g. "
+                    "`with EmpowerHandler(...) as handler:...`"
+                )
+            else:
+                raise RuntimeError(
+                    "Login without context is not allowed. "
+                    "Please use a context manager, e.g. "
+                    "`with EmpowerHandler(...) as handler:...`"
+                )
+        self.connection.login()
 
     def Status(self) -> List[HplcResult]:
         """Get the status of the HPLC."""
