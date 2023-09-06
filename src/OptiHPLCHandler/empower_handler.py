@@ -182,7 +182,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         sample_set_method: str,
         node: str,
-        system: str,  # TODO: Allow for none, in that case, use the only entry on the list
+        system: str,  # TODO: Allow for none, in that case, use the only entry
         sample_set_name: Optional[str] = None,
     ) -> HplcResult:
         """
