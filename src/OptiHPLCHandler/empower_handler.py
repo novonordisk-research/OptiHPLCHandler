@@ -141,8 +141,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 logger.warning("Logging in without context.")
                 warnings.warn(
                     "You are logging in manually without a context manager. "
-                    "This is not recommended. "
-                    "Please use a context manager, e.g. "
+                    "This is not recommended.\n"
+                    "Please use a context manager, e.g.\n"
                     "`with EmpowerHandler(...) as handler:...`"
                 )
             else:
