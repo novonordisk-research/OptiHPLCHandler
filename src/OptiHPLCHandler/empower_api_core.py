@@ -1,7 +1,6 @@
 import getpass
 import logging
 import warnings
-from requests import HTTPError
 from typing import Optional
 
 import keyring
