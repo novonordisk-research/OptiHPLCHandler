@@ -16,9 +16,14 @@ You can then import package and start an `EmpowerHandler`. You need to select th
 project to log in to. Note that the user logging in needs to have access to both that
 project, and the project `Mobile`.
 
-```
+```python
 from OptiHPLCHandler import EmpowerHandler
-handler=EmpowerHandler(project="project", address="https://API_url.com:3076")
+handler=EmpowerHandler(
+    project="project",
+    address="https://API_url.com:3076",
+    allow_login_without_context_manager=True,
+)
+handler.login()
 ```
 
 Your username will be auto-detected. Add the argument `username` to circumvent this
@@ -30,21 +35,31 @@ keyring, or the keyring does not contain the relevant key, you will be prompted 
 the password. The password will only be used to get a token from the Empower Web API.
 When the token runs out, you will have to input your password again.
 
+This isn't the best way to use EmpowerHandler, since it is easy to forget to log out,
+which can negatively impact the API server. Therefor, you need to tell that you want to
+use it this way, and you will still get a warning. When you are done developing your
+application, you should only login from a context manager:
+
+```python
+handler=EmpowerHandler(
+    project="project",
+    address="https://API_url.com:3076",
+)
+with handler:
+    handler.login()
+```
+
 If you get the password from another source, e.g. a UI element, you can also provide it
 directly when initialising the handler:
 
-```
-handler=EmpowerHandler(
-   project="project",
-   address="https://API_url.com:3076",
-   password="password",
-)
+```python
+handler.login(username="username", password="password")
 ```
 
 When logged in, the `EmpowerHandler` can be used to access an authorisation key that can
 be used for the Web API directly:
 
-```
+```python
 handler.connection.authorization_header["Authorization"]
 ```
 
@@ -54,7 +69,7 @@ If you are using `requests`, you can simply provide
 
 You can now get a list of the methodset methods in the project:
 
-```
+```python
 method_list = handler.GetMethodList()
 ```
 
@@ -64,7 +79,7 @@ possible plate type names. You can also give it a `filter_string`. In that case,
 the plate types with names that contain the filter string are returned. You can then
 define the plate setup of your HPLC:
 
-```
+```python
 plate_type_name_list = handler.GetPlateTypeNames(filter_string="48")
 plates = {"1": plate_type_name_list[0], "2": plate_type_name_list[1]}
 ```
@@ -72,7 +87,7 @@ plates = {"1": plate_type_name_list[0], "2": plate_type_name_list[1]}
 You can also have the plate list be empty, but you will then have to fill it out in
 Empower before you can run the SampleSetMethod:
 
-```
+```python
 plates = {}
 ```
 
