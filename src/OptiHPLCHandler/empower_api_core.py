@@ -111,7 +111,9 @@ class EmpowerConnection:
             headers=self.authorization_header,
         )
         if reply.status_code == 404:
-            logger.debug("Logout failed, session already expired")
+            logger.debug(
+                "Logout no necessary, session already expired or were logged out."
+            )
         else:
             reply.raise_for_status()
         logger.debug("Logout successful")
@@ -125,7 +127,7 @@ class EmpowerConnection:
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
-        logger.debug(f"Getting {address}")
+        logger.debug("Getting %s", address)
         response = requests.get(address, headers=self.authorization_header)
         if response.status_code == 401:
             logger.debug("Token expired, logging in again")
