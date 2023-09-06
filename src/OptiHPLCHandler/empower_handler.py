@@ -108,7 +108,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sample_set_method_name: str,
         sample_list: List[Dict[str, Any]],
         plates: Dict[str, str],
-        audit_trail_message: str,
+        audit_trail_message: str,  # TODO: allow for None
     ):
         """
         Post the experiment to the HPLC.
@@ -182,7 +182,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         sample_set_method: str,
         node: str,
-        system: str,
+        system: str,  # TODO: Allow for none, in that case, use the only entry on the list
         sample_set_name: Optional[str] = None,
     ) -> HplcResult:
         """
