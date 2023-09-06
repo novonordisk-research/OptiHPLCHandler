@@ -1,7 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Mapping
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, Iterable, List, Mapping, Optional, TypeVar
 
 from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
