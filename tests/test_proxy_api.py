@@ -8,21 +8,21 @@ class TestEmpowerHandler(unittest.TestCase):
     @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
     def setUp(self, mock_connection) -> None:
         mock_response = MagicMock()
-        mock_response.address = "http://test_address"
+        mock_response.address = "https://test_address"
         mock_response.username = "test_username"
         mock_response.project = "test_project"
+        mock_response.token = None
         mock_connection.return_value = mock_response
 
         self.handler = EmpowerHandler(
             project="test_project",
-            address="http://test_address/",
-            username="test_username",
+            address="https://test_address/",
         )
 
     def test_initialisation(self):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
-        assert self.handler.address == "http://test_address"
+        assert self.handler.address == "https://test_address"
         # Check that the trailing slash is removed from the address
 
     def test_status(self):
@@ -332,3 +332,35 @@ class TestEmpowerHandler(unittest.TestCase):
             "project/methods/sample-set-method-list"
             == self.handler.connection.get.call_args[1]["endpoint"]
         )
+
+    def test_login_error_without_context_management(self):
+        """
+        Tests that an error is rasied if the used tries to log in without using the
+        context manager if the EmpowerHandler is set to not allow it.
+        """
+        with self.assertRaises(RuntimeError):
+            self.handler.login()
+
+    def test_loging_warning_without_context_management(self):
+        """
+        Tests that a warning is raised if the user tries to log in without using the
+        context manager if the EmpowerHandler is set to allow it.
+        """
+        self.handler.allow_login_without_context_manager = True
+        with self.assertWarns(Warning):
+            self.handler.login()
+
+    def test_context_management(self):
+        with self.handler:
+            pass
+        assert self.handler.connection.logout.call_count == 1
+        # Check that the logout method is called when exiting the context manager
+
+    def test_logout_on_delete(self):
+        """
+        Tests that the connection is logged out when the EmpowerHandler is deleted. This
+        should happen as part of the closing of the Python environment.
+        """
+        connection = self.handler.connection
+        del self.handler
+        assert connection.logout.call_count == 1

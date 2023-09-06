@@ -1,6 +1,7 @@
 import getpass
 import logging
 import warnings
+from requests import HTTPError
 from typing import Optional
 
 import keyring
@@ -34,10 +35,8 @@ class EmpowerConnection:
     def __init__(
         self,
         address: str,
-        username: Optional[str] = None,
         project: Optional[str] = None,
         service: Optional[str] = None,
-        password: Optional[str] = None,
     ) -> None:
         """
         Initialize the EmpowerConnection.
@@ -54,11 +53,8 @@ class EmpowerConnection:
             time.
         """
         self.address = address.rstrip("/")  # Remove trailing slash if present
-        if username is None:
-            logger.debug("No username specified, getting username from system")
-            self.username = getpass.getuser()
-        else:
-            self.username = username
+        logger.debug("No username specified, getting username from system")
+        self.username = getpass.getuser()
         if service is None:
             logger.debug("No service specified, getting service from Empower")
             response = requests.get(self.address + "/authentication/db-service-list")
@@ -67,19 +63,26 @@ class EmpowerConnection:
         else:
             self.service = service
         self.project = project
-        self.login(password)
 
-    def login(self, password: Optional[str] = None) -> None:
+    def login(
+        self, username: Optional[str] = None, password: Optional[str] = None
+    ) -> None:
         """
         Log into Empower.
 
         :param password: The password to use for logging in. If None, the password is
             retrieved from the keyring if available, otherwise it is asked for every
             time.
+        :param username: The username to use for logging in. If None, the username of
+            the default user is used. When EmpowerConnection is initialized, the
+            username of the user running the script is set to the default username. If
+            login is called with a different username, the default username is changed
+            to the given username.
         """
-        if not password:
+        if username is not None:
+            self.username = username
+        if password is None:
             password = self.password
-
         body = {
             "service": self.service,
             "userName": self.username,
@@ -97,7 +100,21 @@ class EmpowerConnection:
             logger.error("Login failed")
             raise IOError("Login failed")
         self.token = reply.json()["results"][0]["token"]
+        self.session_id = reply.json()["results"][0]["id"]
         logger.debug("Login successful, keeping token")
+
+    def logout(self) -> None:
+        """Log out of Empower."""
+        logger.debug("Logging out of Empower")
+        reply = requests.post(
+            self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
+            headers=self.authorization_header,
+        )
+        if reply.status_code == 404:
+            logger.debug("Logout failed, session already expired")
+        else:
+            reply.raise_for_status()
+        logger.debug("Logout successful")
 
     def get(self, endpoint: str) -> requests.Response:
         """
