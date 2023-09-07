@@ -104,15 +104,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def __exit__(self, exc_type, exc_value, traceback):
         """End the context manager."""
         self._has_context = False
-        self.__del__()
-
-    def __del__(self):
-        """Destructor for the EmpowerHandler."""
-        try:
-            self.connection.logout()
-        except HTTPError as e:
-            logger.warning("Error logging out of Empower: %s", e)
-            warnings.warn("Error logging out of Empower: %s" % e)
+        self.connection.logout()
 
     @property
     def project(self) -> str:
