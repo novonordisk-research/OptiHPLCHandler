@@ -65,6 +65,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         address: str,
         service: str = None,
         allow_login_without_context_manager: bool = False,
+        auto_login: bool = True,
         **kwargs,
     ):
         """
@@ -72,13 +73,16 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
         :param project: Name of the project to connect to.
         :param address: Address of the Empower server.
-        :param username: Username to use to connect to Empower. If not given, the
-            username of the current user will be used.
         :param service: Name of the service to use to connect to Empower. If not given,
             the first service in the list of services will be used.
-        :param password: Password to use to connect to Empower. If not given, the
-            password will be retrieved from the keyring. If keyring is not available,
-            the password will be asked for.
+        :param allow_login_without_context_manager: If `False` (default), an error will
+            be raised when logging in without a context manager. If True, logging in
+            without a context manager will merely raise a warning. This is not
+            recommended, as it can lead to forgetting loggin out.
+        :param auto_login: If True (default), the handler will log in automatically when
+            you start a context manager. If `False`, you will have to call `login`
+            manually. If you are to provide the password, you need to set this to
+            `False`.
         """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
@@ -87,13 +91,19 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             service=service,
         )
         self.allow_login_without_context_manager = allow_login_without_context_manager
+        self.auto_login = auto_login
+        self._has_context = False
 
     def __enter__(self):
         """Start the context manager."""
+        if self.auto_login:
+            self.login(has_context=True)
+        self._has_context = True
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         """End the context manager."""
+        self._has_context = False
         self.__del__()
 
     def __del__(self):
