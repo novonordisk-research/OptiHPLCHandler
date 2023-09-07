@@ -23,6 +23,7 @@ class TestEmpowerHandler(unittest.TestCase):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
         assert self.handler.address == "https://test_address"
+        assert self.handler.auto_login == True
         # Check that the trailing slash is removed from the address
 
     def test_status(self):
@@ -353,8 +354,16 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_context_management(self):
         with self.handler:
             pass
+        assert self.handler.connection.login.call_count == 1
+        # Check that the login method is called when entering the context manager
         assert self.handler.connection.logout.call_count == 1
         # Check that the logout method is called when exiting the context manager
+
+    def test_no_autologin(self):
+        self.handler.auto_login = False
+        with self.handler:
+            pass
+        assert self.handler.connection.login.call_count == 0
 
     def test_logout_on_delete(self):
         """
