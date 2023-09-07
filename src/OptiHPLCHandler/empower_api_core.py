@@ -62,6 +62,7 @@ class EmpowerConnection:
         else:
             self.service = service
         self.project = project
+        self.session_id = None
 
     def login(
         self, username: Optional[str] = None, password: Optional[str] = None
@@ -115,6 +116,7 @@ class EmpowerConnection:
             )
         else:
             reply.raise_for_status()
+        self.session_id = None
         logger.debug("Logout successful")
 
     def get(self, endpoint: str) -> requests.Response:
@@ -183,4 +185,5 @@ class EmpowerConnection:
         return {"Authorization": "Bearer " + self.token}
 
     def __del__(self):
-        self.logout()
+        if self.session_id is not None:
+            self.logout()
