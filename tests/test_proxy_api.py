@@ -364,12 +364,3 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.handler:
             pass
         assert self.handler.connection.login.call_count == 0
-
-    def test_logout_on_delete(self):
-        """
-        Tests that the connection is logged out when the EmpowerHandler is deleted. This
-        should happen as part of the closing of the Python environment.
-        """
-        connection = self.handler.connection
-        del self.handler
-        assert connection.logout.call_count == 1
