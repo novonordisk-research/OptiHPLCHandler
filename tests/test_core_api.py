@@ -207,10 +207,36 @@ class TestEmpowerConnection(unittest.TestCase):
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_logout(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_requests.post.return_value = mock_response
         self.connection.logout()
-        assert mock_requests.post.call_args[0][0] == (
+        assert mock_requests.delete.call_args[0][0] == (
+            "https://test_address/authentication/logout?sessionInfoID=test_id"
+        )
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_logout_404(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_requests.delete.return_value = mock_response
+        self.connection.logout()
+        assert mock_requests.delete.call_args[0][0] == (
+            "https://test_address/authentication/logout?sessionInfoID=test_id"
+        )
+        assert mock_response.raise_for_status.called is False
+        # Asserting that an error is not raised if the logout fails with 404. This will
+        # happen if the session has already expired or if the user has already logged
+        # out.
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_logout_http_error(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_requests.delete.return_value = mock_response
+        self.connection.logout()
+        assert mock_requests.delete.return_value.raise_for_status.called
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_delete(self, mock_requests):
+        del self.connection
+        assert mock_requests.delete.call_args[0][0] == (
             "https://test_address/authentication/logout?sessionInfoID=test_id"
         )
