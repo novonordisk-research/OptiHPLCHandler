@@ -1,6 +1,6 @@
 import logging
-from abc import ABC, abstractmethod
 import warnings
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from .data_types import HplcResult, HPLCSetup
