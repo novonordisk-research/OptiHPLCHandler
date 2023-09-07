@@ -181,3 +181,6 @@ class EmpowerConnection:
     @property
     def authorization_header(self):
         return {"Authorization": "Bearer " + self.token}
+
+    def __del__(self):
+        self.logout()
