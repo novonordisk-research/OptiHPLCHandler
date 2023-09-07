@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 import warnings
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from requests.exceptions import HTTPError
-
 from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
 

@@ -1,6 +1,5 @@
 import unittest
 import warnings
-from requests import HTTPError
 from unittest.mock import MagicMock, patch
 
 from OptiHPLCHandler import EmpowerConnection

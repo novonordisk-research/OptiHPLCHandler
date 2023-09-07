@@ -23,7 +23,7 @@ class TestEmpowerHandler(unittest.TestCase):
         assert self.handler.project == "test_project"
         assert self.handler.username == "test_username"
         assert self.handler.address == "https://test_address"
-        assert self.handler.auto_login == True
+        assert self.handler.auto_login is True
         # Check that the trailing slash is removed from the address
 
     def test_status(self):
