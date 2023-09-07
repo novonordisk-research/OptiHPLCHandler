@@ -46,14 +46,22 @@ handler=EmpowerHandler(
     address="https://API_url.com:3076",
 )
 with handler:
-    handler.login()
+    ...
 ```
 
 If you get the password from another source, e.g. a UI element, you can also provide it
-directly when initialising the handler:
+directly when initialising the handler. In order to use this with a context manger, you
+need set EmpowerHnalder to not log in when entering the context:
 
 ```python
-handler.login(username="username", password="password")
+handler=EmpowerHandler(
+    project="project",
+    address="https://API_url.com:3076",
+    auto_login=False,
+)
+with handler:
+    handler.login(username="username", password="password")
+    ...
 ```
 
 When logged in, the `EmpowerHandler` can be used to access an authorisation key that can
