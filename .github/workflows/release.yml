@@ -36,7 +36,9 @@ jobs:
       - run: git checkout release
       - run: git push --set-upstream origin release
       - run: python -m bumpver update --${{ inputs.release_type }}
-      - run: eval $(bumpver show --env) # Saving the new version in an environment variable
-      - run: gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer ***REMOVED***-NN
-      - run: gh pr merge --rebase --delete-branch --auto
-      - run: gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag
+      - run: |
+          eval $(python -m bumpver show --env) # Saving the new version in an environment variable
+          GIT_HASH=$(git rev-parse HEAD) # Saving the git hash in an environment variable
+          gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer ***REMOVED***-NN
+          gh pr merge --rebase --delete-branch --auto
+          gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag --target $GIT_HASH
