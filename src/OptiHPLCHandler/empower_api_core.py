@@ -41,18 +41,12 @@ class EmpowerConnection:
         Initialize the EmpowerConnection.
 
         :param address: The address of the Empower server.
-        :param username: The username to use for logging in. If None, the username of
-            the user running the script is used.
         :param project: The project to use for logging in. If None, the default project
             is used.
         :param service: The service to use for logging in. If None, the first service in
             the list is used.
-        :param password: The password to use for logging in. If None, the password is
-            retrieved from the keyring if available, otherwise it is asked for every
-            time.
         """
         self.address = address.rstrip("/")  # Remove trailing slash if present
-        logger.debug("No username specified, getting username from system")
         self.username = getpass.getuser()
         if service is None:
             logger.debug("No service specified, getting service from Empower")
