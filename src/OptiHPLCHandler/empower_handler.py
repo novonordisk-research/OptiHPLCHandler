@@ -119,9 +119,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def address(self) -> str:
         return self.connection.address
 
-    # Changing the address would require a new lookup for the service, so it is not
-    # allowed.
-
     @property
     def username(self) -> str:
         return self.connection.username
