@@ -1,4 +1,5 @@
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, Iterable, List, Mapping, Optional, TypeVar
 
@@ -60,9 +61,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         project: str,
         address: str,
-        username: Optional[str] = None,
         service: str = None,
-        password: Optional[str] = None,
+        allow_login_without_context_manager: bool = False,
+        auto_login: bool = True,
         **kwargs,
     ):
         """
@@ -70,22 +71,38 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
         :param project: Name of the project to connect to.
         :param address: Address of the Empower server.
-        :param username: Username to use to connect to Empower. If not given, the
-            username of the current user will be used.
         :param service: Name of the service to use to connect to Empower. If not given,
             the first service in the list of services will be used.
-        :param password: Password to use to connect to Empower. If not given, the
-            password will be retrieved from the keyring. If keyring is not available,
-            the password will be asked for.
+        :param allow_login_without_context_manager: If `False` (default), an error will
+            be raised when logging in without a context manager. If True, logging in
+            without a context manager will merely raise a warning. This is not
+            recommended, as it can lead to forgetting loggin out.
+        :param auto_login: If True (default), the handler will log in automatically when
+            you start a context manager. If `False`, you will have to call `login`
+            manually. If you are to provide the password, you need to set this to
+            `False`.
         """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
             project=project,
             address=address,
-            username=username,
             service=service,
-            password=password,
         )
+        self.allow_login_without_context_manager = allow_login_without_context_manager
+        self.auto_login = auto_login
+        self._has_context = False
+
+    def __enter__(self):
+        """Start the context manager."""
+        if self.auto_login:
+            self.login(has_context=True)
+        self._has_context = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """End the context manager."""
+        self._has_context = False
+        self.connection.logout()
 
     @property
     def project(self) -> str:
@@ -99,6 +116,43 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def username(self) -> str:
         return self.connection.username
 
+    def login(
+        self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        has_context: bool = False,
+    ):
+        """
+        Log into Empower.
+
+        :param password: The password to use for logging in. If None, the password is
+            retrieved from the keyring if available, otherwise it is asked for every
+            time.
+        :param username: The username to use for logging in. If None, the username of
+            the default user is used. When EmpowerHandler is initialized, the
+            username of the user running the script is set to the default username. If
+            login is called with a different username, the default username is changed
+            to the given username.
+        """
+        if not has_context:
+            # If the login is not done in a context manager, it is only allowed if
+            # `run_without_context` is True, and even there, it psots a warning.
+            if self.allow_login_without_context_manager:
+                logger.warning("Logging in without context.")
+                warnings.warn(
+                    "You are logging in manually without a context manager. "
+                    "This is not recommended.\n"
+                    "Please use a context manager, e.g.\n"
+                    "`with EmpowerHandler(...) as handler:...`"
+                )
+            else:
+                raise RuntimeError(
+                    "Login without context is not allowed. "
+                    "Please use a context manager, e.g. "
+                    "`with EmpowerHandler(...) as handler:...`"
+                )
+        self.connection.login(password=password, username=username)
+
     def Status(self) -> List[HplcResult]:
         """Get the status of the HPLC."""
         raise NotImplementedError
@@ -108,7 +162,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sample_set_method_name: str,
         sample_list: Iterable[Mapping[str, Any]],
         plates: Dict[str, str],
-        audit_trail_message: str,
+        audit_trail_message: Optional[str] = None,
     ):
         """
         Post the experiment to the HPLC.
@@ -182,7 +236,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         sample_set_method: str,
         node: str,
-        system: str,
+        system: str,  # TODO: Allow for none, in that case, use the only entry
         sample_set_name: Optional[str] = None,
     ) -> HplcResult:
         """
