@@ -97,6 +97,9 @@ class EmpowerConnection:
 
     def logout(self) -> None:
         """Log out of Empower."""
+        if self.session_id is None:
+            logger.debug("No session ID, no need to log out")
+            return
         logger.debug("Logging out of Empower")
         reply = requests.delete(
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
