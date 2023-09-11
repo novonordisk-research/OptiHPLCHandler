@@ -96,9 +96,7 @@ class EmpowerConnection:
             self.address + "/authentication/login",
             json=body,
         )
-        if reply.status_code != 200:
-            logger.error("Login failed")
-            raise IOError("Login failed")
+        reply.raise_for_status()
         self.token = reply.json()["results"][0]["token"]
         self.session_id = reply.json()["results"][0]["id"]
         logger.debug("Login successful, keeping token")
