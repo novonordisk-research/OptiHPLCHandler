@@ -367,20 +367,16 @@ class TestEmpowerHandler(unittest.TestCase):
 
     def test_project_setter(self):
         self.handler.project = "test_project"
-        with self.handler:
-            pass
         assert self.handler.connection.project == "test_project"
 
     def test_address_setter(self):
-        self.handler.address = "test_address"
-        with self.handler:
-            pass
-        assert self.handler.connection.address == "test_address"
+        # Changing the address would require a new lookup for the service, so it is not
+        # allowed.
+        with self.assertRaises(AttributeError):
+            self.handler.address = "test_address"
 
     def test_username_setter(self):
         self.handler.username = "test_username"
-        with self.handler:
-            pass
         assert self.handler.connection.username == "test_username"
 
     @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
