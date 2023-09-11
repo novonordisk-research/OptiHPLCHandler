@@ -34,31 +34,20 @@ class EmpowerConnection:
     def __init__(
         self,
         address: str,
-        username: Optional[str] = None,
         project: Optional[str] = None,
         service: Optional[str] = None,
-        password: Optional[str] = None,
     ) -> None:
         """
         Initialize the EmpowerConnection.
 
         :param address: The address of the Empower server.
-        :param username: The username to use for logging in. If None, the username of
-            the user running the script is used.
         :param project: The project to use for logging in. If None, the default project
             is used.
         :param service: The service to use for logging in. If None, the first service in
             the list is used.
-        :param password: The password to use for logging in. If None, the password is
-            retrieved from the keyring if available, otherwise it is asked for every
-            time.
         """
         self.address = address.rstrip("/")  # Remove trailing slash if present
-        if username is None:
-            logger.debug("No username specified, getting username from system")
-            self.username = getpass.getuser()
-        else:
-            self.username = username
+        self.username = getpass.getuser()
         if service is None:
             logger.debug("No service specified, getting service from Empower")
             response = requests.get(self.address + "/authentication/db-service-list")
@@ -67,19 +56,27 @@ class EmpowerConnection:
         else:
             self.service = service
         self.project = project
-        self.login(password)
+        self.session_id = None
 
-    def login(self, password: Optional[str] = None) -> None:
+    def login(
+        self, username: Optional[str] = None, password: Optional[str] = None
+    ) -> None:
         """
         Log into Empower.
 
         :param password: The password to use for logging in. If None, the password is
             retrieved from the keyring if available, otherwise it is asked for every
             time.
+        :param username: The username to use for logging in. If None, the username of
+            the default user is used. When EmpowerConnection is initialized, the
+            username of the user running the script is set to the default username. If
+            login is called with a different username, the default username is changed
+            to the given username.
         """
-        if not password:
+        if username is not None:
+            self.username = username
+        if password is None:
             password = self.password
-
         body = {
             "service": self.service,
             "userName": self.username,
@@ -93,11 +90,29 @@ class EmpowerConnection:
             self.address + "/authentication/login",
             json=body,
         )
-        if reply.status_code != 200:
-            logger.error("Login failed")
-            raise IOError("Login failed")
+        reply.raise_for_status()
         self.token = reply.json()["results"][0]["token"]
+        self.session_id = reply.json()["results"][0]["id"]
         logger.debug("Login successful, keeping token")
+
+    def logout(self) -> None:
+        """Log out of Empower."""
+        if self.session_id is None:
+            logger.debug("No session ID, no need to log out")
+            return
+        logger.debug("Logging out of Empower")
+        reply = requests.delete(
+            self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
+            headers=self.authorization_header,
+        )
+        if reply.status_code == 404:
+            logger.debug(
+                "Logout no necessary, session already expired or were logged out."
+            )
+        else:
+            reply.raise_for_status()
+        self.session_id = None
+        logger.debug("Logout successful")
 
     def get(self, endpoint: str) -> requests.Response:
         """
@@ -108,7 +123,7 @@ class EmpowerConnection:
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
-        logger.debug(f"Getting {address}")
+        logger.debug("Getting %s", address)
         response = requests.get(address, headers=self.authorization_header)
         if response.status_code == 401:
             logger.debug("Token expired, logging in again")
@@ -163,3 +178,7 @@ class EmpowerConnection:
     @property
     def authorization_header(self):
         return {"Authorization": "Bearer " + self.token}
+
+    def __del__(self):
+        if self.session_id is not None:
+            self.logout()
