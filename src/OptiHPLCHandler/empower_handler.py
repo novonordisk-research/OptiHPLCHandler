@@ -62,6 +62,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         project: str,
         address: str,
         service: str = None,
+        username: Optional[str] = None,
         allow_login_without_context_manager: bool = False,
         auto_login: bool = True,
         **kwargs,
@@ -91,6 +92,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self.allow_login_without_context_manager = allow_login_without_context_manager
         self.auto_login = auto_login
         self._has_context = False
+        if username:
+            self.username = username
 
     def __enter__(self):
         """Start the context manager."""
@@ -108,13 +111,25 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def project(self) -> str:
         return self.connection.project
 
+    @project.setter
+    def project(self, project: str) -> None:
+        self.connection.project = project
+
     @property
     def address(self) -> str:
         return self.connection.address
 
+    @address.setter
+    def address(self, address: str) -> None:
+        self.connection.address = address
+
     @property
     def username(self) -> str:
         return self.connection.username
+
+    @username.setter
+    def username(self, username: str) -> None:
+        self.connection.username = username
 
     def login(
         self,
