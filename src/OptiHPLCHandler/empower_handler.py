@@ -105,7 +105,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def __exit__(self, exc_type, exc_value, traceback):
         """End the context manager."""
         self._has_context = False
-        self.connection.logout()
+        self.logout()
 
     @property
     def project(self) -> str:
@@ -166,6 +166,11 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                     "`with EmpowerHandler(...) as handler:...`"
                 )
         self.connection.login(password=password, username=username)
+
+    def logout(self) -> None:
+        """Log out of Empower."""
+        logger.debug("Logging out of Empower")
+        self.connection.logout()
 
     def Status(self) -> List[HplcResult]:
         """Get the status of the HPLC."""
