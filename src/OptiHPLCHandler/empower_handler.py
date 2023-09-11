@@ -119,9 +119,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def address(self) -> str:
         return self.connection.address
 
-    @address.setter
-    def address(self, address: str) -> None:
-        self.connection.address = address
+    # Changing the address would require a new lookup for the service, so it is not
+    # allowed.
 
     @property
     def username(self) -> str:
