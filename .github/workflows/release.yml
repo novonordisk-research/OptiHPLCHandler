@@ -40,5 +40,5 @@ jobs:
           eval $(python -m bumpver show --env) # Saving the new version in an environment variable
           GIT_HASH=$(git rev-parse HEAD) # Saving the git hash in an environment variable
           gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer ***REMOVED***-NN
-          gh pr merge --rebase --delete-branch --auto
+          gh pr merge --merge --delete-branch --auto
           gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag --target $GIT_HASH
