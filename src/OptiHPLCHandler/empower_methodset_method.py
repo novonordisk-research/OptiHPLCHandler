@@ -21,23 +21,15 @@ class EmpowerMethodSetMethod:
         self.column_oven_list: list[ColumnHandler] = []
         self.instrument_method_list: list[InstrumentMethod] = []
 
-        if isinstance(method_definition, dict):
+        if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
-            method_definition = method_definition["results"]
-        for instrument_method_definition in method_definition:
+            method_definition = method_definition["results"][0]
+        self.original_method = method_definition
+        for instrument_method_definition in method_definition["modules"]:
             instrument_method = instrument_method_factory(instrument_method_definition)
             self.instrument_method_list.append(instrument_method)
             if isinstance(instrument_method, ColumnHandler):
                 self.column_oven_list.append(instrument_method)
-
-    @property
-    def original_method(self):
-        """
-        Return the original method definition.
-
-        :return: The original method definition.
-        """
-        return [method.original_method for method in self.instrument_method_list]
 
     @property
     def current_method(self):
@@ -46,7 +38,11 @@ class EmpowerMethodSetMethod:
 
         :return: The current method definition.
         """
-        return [method.current_method for method in self.instrument_method_list]
+        method = self.original_method.copy()
+        method["modules"] = [
+            method.current_method for method in self.instrument_method_list
+        ]
+        return method
 
     @property
     def column_temperature(self):
@@ -71,5 +67,7 @@ class EmpowerMethodSetMethod:
 
         :param temperature: The column temperature.
         """
+        if len(self.column_oven_list) == 0:
+            raise ValueError("No column oven found in method set method.")
         for instrument in self.column_oven_list:
             instrument.column_temperature = temperature
