@@ -14,6 +14,7 @@ class TestMethodSetMethod(unittest.TestCase):
             file_path = os.path.join(example_folder, file)
             with open(file_path) as f:
                 self.example[file] = json.load(f)
+        self.minimal_definition = {"modules": [{"name": "test", "xml": "test_name"}]}
 
     def test_initialisation_full_response(self):
         for method_definition in self.example.values():
@@ -27,6 +28,9 @@ class TestMethodSetMethod(unittest.TestCase):
         for method_definition in self.example.values():
             method = EmpowerMethodSetMethod(method_definition["results"][0])
             assert isinstance(method, EmpowerMethodSetMethod)
+            assert len(method.instrument_method_list) == len(
+                method_definition["results"][0]["modules"]
+            )
 
     def test_original_method(self):
         for method_definition in self.example.values():
@@ -55,10 +59,8 @@ class TestMethodSetMethod(unittest.TestCase):
         assert method.column_temperature == "43.0"
 
     def test_get_column_temperature_none(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]
-        method_definition["results"][0]["modules"] = method_definition["results"][0][
-            "modules"
-        ][1:]
+        method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
+        method_definition["modules"] = method_definition["modules"][1:]
         method = EmpowerMethodSetMethod(method_definition)
         with self.assertRaises(ValueError):
             method.column_temperature
@@ -70,7 +72,7 @@ class TestMethodSetMethod(unittest.TestCase):
         assert method.column_temperature == "43.0"
 
     def test_get_column_temperature_multiple_mismatching(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]["resutls"][0]
+        method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"].append(method_definition["modules"][0])
         method = EmpowerMethodSetMethod(method_definition)
         method.column_oven_list[0].column_temperature = "50.03"
@@ -80,8 +82,10 @@ class TestMethodSetMethod(unittest.TestCase):
     def test_set_column_temperature(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
         method = EmpowerMethodSetMethod(method_definition)
-        method.column_temperature = "50.03"
-        assert method.column_temperature == "50.03"
+        new_temperature = method.column_temperature + "1"
+        method.column_temperature = new_temperature
+        assert method.column_temperature == new_temperature
+        assert method.column_oven_list[0].column_temperature == new_temperature
 
     def test_set_column_temperature_multiple(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
