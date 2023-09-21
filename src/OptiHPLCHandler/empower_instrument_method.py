@@ -29,7 +29,7 @@ class InstrumentMethod:
         have been made.
     """
 
-    def __init__(self, method_definition: dict[str, str]):
+    def __init__(self, method_definition: Mapping[str, str]):
         """
         Initialize the InstrumentMethod.
 
@@ -51,7 +51,7 @@ class InstrumentMethod:
         self._change_list.append((original, new))
 
     @property
-    def current_method(self) -> dict[str, str]:
+    def current_method(self) -> Mapping[str, str]:
         logger.debug("Applying changes to create current method")
         method = self.original_method.copy()
         try:
