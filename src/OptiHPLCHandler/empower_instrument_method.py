@@ -58,6 +58,10 @@ class InstrumentMethod:
             raise ValueError(f"Found more than one match for key {key}")
         return search_result.groups(1)[0]
 
+    def __setitem__(self, key: str, value: str) -> NoReturn:
+        current_value = self[key]
+        self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
+
 
 class ColumnHandler(InstrumentMethod):
     temperature_key: str
@@ -67,12 +71,8 @@ class ColumnHandler(InstrumentMethod):
         return self[self.temperature_key]
 
     @column_temperature.setter
-    def column_temperature(self, value):
-        current_temperature = self.column_temperature
-        self.replace(
-            f"<{self.temperature_key}>{current_temperature}</{self.temperature_key}>",
-            f"<{self.temperature_key}>{value}</{self.temperature_key}>",
-        )
+    def column_temperature(self, value: str) -> NoReturn:
+        self[self.temperature_key] = value
 
 
 class SampleManager(ColumnHandler):
