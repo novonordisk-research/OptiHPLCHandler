@@ -3,16 +3,16 @@ import os
 import unittest
 
 from OptiHPLCHandler.empower_instrument_method import (
-    instrument_method_factory,
     ColumnHandler,
     InstrumentMethod,
+    instrument_method_factory,
 )
 
 
 class TestInstrumentMethod(unittest.TestCase):
     def setUp(self) -> None:
         self.example = {}
-        example_folder = "tests\empower_method_examples"
+        example_folder = r"tests\empower_method_examples"
         example_files = os.listdir(example_folder)
         for file in example_files:
             file_path = os.path.join(example_folder, file)
@@ -107,6 +107,28 @@ class TestInstrumentMethod(unittest.TestCase):
         instrument_method = instrument_method_factory(minimal_definition)
         with self.assertRaises(ValueError):
             instrument_method["a"]
+
+    def test_instrument_method_setitem(self):
+        minimal_definition = {"name": "test", "xml": "<a>value</a>"}
+        instrument_method = instrument_method_factory(minimal_definition)
+        instrument_method["a"] = "new_value"
+        assert instrument_method.original_method["xml"] == "<a>value</a>"
+        assert instrument_method.current_method["xml"] == "<a>new_value</a>"
+        assert instrument_method["a"] == "new_value"
+        example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
+            "modules"
+        ][2]
+        instrument_method = instrument_method_factory(example_definition)
+        instrument_method["StartWavelength"] = "211"
+        assert (
+            "<StartWavelength>210</StartWavelength>"
+            in instrument_method.original_method["xml"]
+        )
+        assert (
+            "<StartWavelength>211</StartWavelength>"
+            in instrument_method.current_method["xml"]
+        )
+        assert instrument_method["StartWavelength"] == "211"
 
     def test_sample_manager_get_temperature(self):
         minimal_definition = {
