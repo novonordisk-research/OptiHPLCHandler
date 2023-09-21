@@ -14,7 +14,7 @@ class InstrumentMethod:
 
     @property
     def current_method(self):
-        logger.debug(f"Applying changes to create current method")
+        logger.debug("Applying changes to create current method")
         method = self.original_method.copy()
         try:
             xml: str = method["xml"]
@@ -28,7 +28,7 @@ class InstrumentMethod:
                 # there are no changes to apply, we can just return the original method.
                 return method
         for original, new in self._change_list:
-            logger.debug(f"Replacing {original} with {new}")
+            logger.debug("Replacing %s with %s", original, new)
             num_replaced = xml.count(original)
             if num_replaced == 0:
                 logger.warning(
@@ -37,7 +37,7 @@ class InstrumentMethod:
             else:
                 xml = xml.replace(original, new)
                 logger.debug(
-                    f"Replaced {num_replaced} instances of {original} with {new}"
+                    "Replaced %s instances of %s with %s", num_replaced, original, new
                 )
         method["xml"] = xml
         return method
@@ -46,7 +46,7 @@ class InstrumentMethod:
         try:
             xml = self.current_method["xml"]
         except KeyError:
-            raise KeyError(f"No xml found in method definition")
+            raise KeyError("No xml found in method definition")
         search_result = re.search(f"<{key}>(.*)</{key}>", xml)
         if not search_result:
             raise KeyError(f"Could not find key {key}")
