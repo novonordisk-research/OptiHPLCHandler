@@ -2,15 +2,31 @@ import logging
 from typing import Union
 
 from .empower_instrument_method import (
-    instrument_method_factory,
-    InstrumentMethod,
     ColumnHandler,
+    InstrumentMethod,
+    instrument_method_factory,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class EmpowerMethodSetMethod:
+    """
+    A class to handle Empower method set methods.
+
+    : attribute original_method: The original method definition.
+    : attribute current_method: The current method definition.
+    : attribute column_oven_list: A list of column ovens in the method set method.
+    : attribute instrument_method_list: A list of instrument methods in the method set
+        method.
+    : attribute column_temperature: The column temperature. If multiple column ovens are
+        found, the temperature is only returned if all column ovens have the same
+        temperature. Otherwise, a ValueError is raised. If no column ovens are found, a
+        ValueError is raised. When setting the column temperature, all column ovens
+        will be set to the same temperature, regardless of the original temperatures. If
+        no column ovens are found, a ValueError is raised.
+    """
+
     def __init__(self, method_definition: Union[dict, list]):
         """
         Initialize the EmpowerInstrumentMethod.
@@ -62,11 +78,6 @@ class EmpowerMethodSetMethod:
 
     @column_temperature.setter
     def column_temperature(self, temperature: float):
-        """
-        Set the column temperature.
-
-        :param temperature: The column temperature.
-        """
         if len(self.column_oven_list) == 0:
             raise ValueError("No column oven found in method set method.")
         for instrument in self.column_oven_list:
