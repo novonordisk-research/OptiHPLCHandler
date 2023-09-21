@@ -12,7 +12,7 @@ from OptiHPLCHandler.empower_instrument_method import (
 class TestInstrumentMethod(unittest.TestCase):
     def setUp(self) -> None:
         self.example = {}
-        example_folder = r"tests\empower_method_examples"
+        example_folder = os.path.join("tests", "empower_method_examples")
         example_files = os.listdir(example_folder)
         for file in example_files:
             file_path = os.path.join(example_folder, file)
