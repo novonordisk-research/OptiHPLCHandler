@@ -8,7 +8,7 @@ from OptiHPLCHandler.empower_methodset_method import EmpowerMethodSetMethod
 class TestMethodSetMethod(unittest.TestCase):
     def setUp(self) -> None:
         self.example = {}
-        example_folder = "tests\empower_method_examples"
+        example_folder = r"tests\empower_method_examples"
         example_files = os.listdir(example_folder)
         for file in example_files:
             file_path = os.path.join(example_folder, file)
