@@ -1,19 +1,57 @@
 import logging
 import re
+from typing import Mapping, NoReturn
 
 logger = logging.getLogger(__name__)
 
 
 class InstrumentMethod:
-    def __init__(self, method_definition):
+    """
+    Generic instrument mehtod class that can be used for any Empower instrument method.
+    For specific instrument methods, a subclass should be created that inherits from
+    this class.
+
+    Specific parameters for the method can be set and retrieved using the [] operator,
+    e.g `method["ColumnTemperature"] = "50.03"`. This will replace the current value of
+    ColumnTemperature with the new value in the underlying xml. The current value can be
+    retrieved in the same way. This only works if there is exactly one instance of the
+    key in the xml. If there are multiple instances, a ValueError will be raised. If the
+    key is not present, a KeyError will be raised. If more than one key is present, use
+    the xml key to retrieve the xml and make changes to it through the `replace` method.
+    This will replace all instances of the original string with the new string in the
+    xml.
+
+    If no xml key is present in the method definition, no changes can be made to the
+    method, but the original method definition can still be retrieved.
+
+    :attribute original_method: The original method definition.
+    :attribute current_method: The current method definition, including the changes that
+        have been made.
+    """
+
+    def __init__(self, method_definition: dict[str, str]):
+        """
+        Initialize the InstrumentMethod.
+
+        :param method_definition: The method definition from Empower. Should contain at
+            least an xml key. If it is not present, the InstrumentMethod can still be
+            created, but no changes can be made to the method, and no values can be
+            extracted.
+        """
         self.original_method = method_definition
         self._change_list = []
 
-    def replace(self, original, new):
+    def replace(self, original: str, new: str) -> NoReturn:
+        """
+        Replace all instances of a string in the xml of the current method.
+
+        :param original: The string to replace.
+        :param new: The string to replace it with.
+        """
         self._change_list.append((original, new))
 
     @property
-    def current_method(self):
+    def current_method(self) -> dict[str, str]:
         logger.debug("Applying changes to create current method")
         method = self.original_method.copy()
         try:
@@ -64,6 +102,12 @@ class InstrumentMethod:
 
 
 class ColumnHandler(InstrumentMethod):
+    """
+    Class for instrument methods that have a column temperature.
+
+    :attribute column_temperature: The column temperature.
+    """
+
     temperature_key: str
 
     @property
@@ -76,6 +120,8 @@ class ColumnHandler(InstrumentMethod):
 
 
 class SampleManager(ColumnHandler):
+    """Class for instrument methods that control a sample manager."""
+
     temperature_key = "ColumnTemperature"
 
 
