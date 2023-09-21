@@ -56,11 +56,11 @@ class InstrumentMethod:
         method = self.original_method.copy()
         try:
             xml: str = method["xml"]
-        except KeyError:
+        except KeyError as ex:
             if len(self._change_list) > 0:
                 raise ValueError(
                     "Cannot apply changes to method, no xml key in method definition."
-                )
+                ) from ex
             else:
                 # If there is no xml key, we can't do anything with the method. But if
                 # there are no changes to apply, we can just return the original method.
@@ -83,8 +83,8 @@ class InstrumentMethod:
     def __getitem__(self, key: str) -> str:
         try:
             xml = self.current_method["xml"]
-        except KeyError:
-            raise KeyError("No xml found in method definition")
+        except KeyError as ex:
+            raise KeyError("No xml found in method definition") from ex
         search_result = re.search(f"<{key}>(.*)</{key}>", xml)
         if not search_result:
             raise KeyError(f"Could not find key {key}")
