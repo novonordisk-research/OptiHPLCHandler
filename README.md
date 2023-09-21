@@ -81,6 +81,12 @@ You can now get a list of the methodset methods in the project:
 method_list = handler.GetMethodList()
 ```
 
+You can also get a list of the sample set methods in the project:
+
+```python
+sampleset_list = handler.GetSampleSetMethods()
+```
+
 You can also get the plate types that can be used in the project, the method
 `handler.GetPlateTypeNames` is used. If you run it without arguments, it returns all
 possible plate type names. You can also give it a `filter_string`. In that case, only
