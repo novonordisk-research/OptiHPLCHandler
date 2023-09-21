@@ -4,26 +4,6 @@ import re
 logger = logging.getLogger(__name__)
 
 
-def instrument_method_factory(method_definition):
-    try:
-        if method_definition["name"] in ["rAcquityFTN"]:
-            logger.debug(f"Creating SampleManager")
-            return SampleManager(method_definition)
-        # Add more cases as they are coded
-        else:
-            logger.debug(
-                f"Unknown instrument method: {method_definition['name']}, "
-                "creating a generic InstrumentMethod"
-            )
-            raise ValueError(f"Unknown instrument method: {method_definition['name']}")
-    except (KeyError, ValueError) as e:
-        if isinstance(e, KeyError):
-            # If the name key is not present, we don't know what to do with it, but we
-            # can still create a generic InstrumentMethod and just return that.
-            logger.debug(f"KeyError: {e}, creating a generic InstrumentMethod")
-        return InstrumentMethod(method_definition)
-
-
 class InstrumentMethod:
     def __init__(self, method_definition):
         self.original_method = method_definition
@@ -97,3 +77,29 @@ class ColumnHandler(InstrumentMethod):
 
 class SampleManager(ColumnHandler):
     temperature_key = "ColumnTemperature"
+
+
+def instrument_method_factory(method_definition: Mapping[str, str]) -> InstrumentMethod:
+    """
+    Factory function for creating an InstrumentMethod from a method definition. The
+    method definition should contain at least a name key, which is used to determine
+    which subclass of InstrumentMethod should be created. If the name key is not present
+    or the name is not recognized, a generic InstrumentMethod will be created.
+    """
+    try:
+        if method_definition["name"] in ["rAcquityFTN"]:
+            logger.debug("Creating SampleManager")
+            return SampleManager(method_definition)
+        # Add more cases as they are coded
+        else:
+            logger.debug(
+                "Unknown instrument method: %s, creating a generic InstrumentMethod",
+                method_definition["name"],
+            )  # The error is always caught, so we use the debug level here.
+            raise ValueError(f"Unknown instrument method: {method_definition['name']}")
+    except (KeyError, ValueError) as e:
+        if isinstance(e, KeyError):
+            # If the name key is not present, we don't know what to do with it, but we
+            # can still create a generic InstrumentMethod and just return that.
+            logger.debug("KeyError: %s, creating a generic InstrumentMethod", e)
+        return InstrumentMethod(method_definition)
