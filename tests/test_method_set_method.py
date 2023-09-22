@@ -38,6 +38,13 @@ class TestMethodSetMethod(unittest.TestCase):
             assert isinstance(method.original_method, dict)
             assert method.original_method == method_definition["results"][0]
 
+    def test_original_method_immutable(self):
+        method = EmpowerMethodSetMethod(self.minimal_definition)
+        with self.assertRaises(TypeError):
+            method.original_method["modules"] = "new"
+        with self.assertRaises(TypeError):
+            method.original_method["new_key"] = "new_value"
+
     def test_current_method(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
         method = EmpowerMethodSetMethod(method_definition)

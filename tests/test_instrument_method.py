@@ -18,6 +18,9 @@ class TestInstrumentMethod(unittest.TestCase):
             file_path = os.path.join(example_folder, file)
             with open(file_path) as f:
                 self.example[file] = json.load(f)
+        self.example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][
+            0
+        ]["modules"][2]
 
     def test_instrument_method_factory_column_handler(self):
         minimal_definition = {"name": "rAcquityFTN"}
@@ -33,11 +36,8 @@ class TestInstrumentMethod(unittest.TestCase):
         minimal_definition = {"name": "none_of_the_above"}
         instrument_method = instrument_method_factory(minimal_definition)
         assert isinstance(instrument_method, InstrumentMethod)
-        example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
-            "modules"
-        ][2]
         # This is a PDA, we do not have specific classes for detectors
-        instrument_method = instrument_method_factory(example_definition)
+        instrument_method = instrument_method_factory(self.example_definition)
         assert isinstance(instrument_method, InstrumentMethod)
 
     def test_instrument_method_factory_unknown(self):
@@ -46,6 +46,14 @@ class TestInstrumentMethod(unittest.TestCase):
         minimal_definition = {}
         instrument_method = instrument_method_factory(minimal_definition)
         assert isinstance(instrument_method, InstrumentMethod)
+
+    def test_original_method_immutable(self):
+        minimal_definition = {"name": "test", "xml": "old"}
+        instrument_method = instrument_method_factory(minimal_definition)
+        with self.assertRaises(TypeError):
+            instrument_method.original_method["xml"] = "new"
+        with self.assertRaises(TypeError):
+            instrument_method.original_method["new_key"] = "new_value"
 
     def test_instrument_method_replace(self):
         minimal_definition = {"name": "test", "xml": "old"}
@@ -79,10 +87,7 @@ class TestInstrumentMethod(unittest.TestCase):
         minimal_definition = {"name": "test", "xml": "<a>value</a>"}
         instrument_method = instrument_method_factory(minimal_definition)
         assert instrument_method["a"] == "value"
-        example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
-            "modules"
-        ][2]
-        instrument_method = instrument_method_factory(example_definition)
+        instrument_method = instrument_method_factory(self.example_definition)
         assert instrument_method["StartWavelength"] == "210"
 
     def test_instrument_method_getitem_no_xml(self):
@@ -96,10 +101,7 @@ class TestInstrumentMethod(unittest.TestCase):
         instrument_method = instrument_method_factory(minimal_definition)
         with self.assertRaises(KeyError):
             instrument_method["b"]
-        example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
-            "modules"
-        ][2]
-        instrument_method = instrument_method_factory(example_definition)
+        instrument_method = instrument_method_factory(self.example_definition)
         with self.assertRaises(KeyError):
             instrument_method["not_exisiting_key"]
 
@@ -116,10 +118,7 @@ class TestInstrumentMethod(unittest.TestCase):
         assert instrument_method.current_method["xml"] == "<a>new_value</a>"
         assert instrument_method.original_method["xml"] == "<a>value</a>"
         assert instrument_method["a"] == "new_value"
-        example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
-            "modules"
-        ][2]
-        instrument_method = instrument_method_factory(example_definition)
+        instrument_method = instrument_method_factory(self.example_definition)
         instrument_method["StartWavelength"] = "211"
         assert (
             "<StartWavelength>210</StartWavelength>"
@@ -136,7 +135,7 @@ class TestInstrumentMethod(unittest.TestCase):
             "name": "rAcquityFTN",
             "xml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
-        instrument_method = instrument_method_factory(minimal_definition)
+        instrument_method: ColumnHandler = instrument_method_factory(minimal_definition)
         assert instrument_method.column_temperature == "43.0"
         example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
             "modules"
@@ -149,7 +148,7 @@ class TestInstrumentMethod(unittest.TestCase):
             "name": "rAcquityFTN",
             "xml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
-        instrument_method = instrument_method_factory(minimal_definition)
+        instrument_method: ColumnHandler = instrument_method_factory(minimal_definition)
         instrument_method.column_temperature = "44.0"
         assert (
             instrument_method.original_method["xml"]
