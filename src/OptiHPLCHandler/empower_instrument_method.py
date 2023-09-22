@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Mapping, NoReturn
+from types import MappingProxyType
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class InstrumentMethod:
             created, but no changes can be made to the method, and no values can be
             extracted.
         """
-        self.original_method = method_definition
+        self.original_method = MappingProxyType(method_definition)
         self._change_list = []
 
     def replace(self, original: str, new: str) -> NoReturn:
