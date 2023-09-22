@@ -2,14 +2,14 @@ import logging
 import re
 from typing import List, Mapping, Tuple
 
-from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel
+from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
 
 logger = logging.getLogger(__name__)
 
 
 class InstrumentMethod:
     """
-    Generic instrument mehtod class that can be used for any Empower instrument method.
+    Generic instrument method class that can be used for any Empower instrument method.
     For specific instrument methods, a subclass should be created that inherits from
     this class.
 
@@ -40,9 +40,7 @@ class InstrumentMethod:
             created, but no changes can be made to the method, and no values can be
             extracted.
         """
-        self.original_method = EmpowerInstrumentMethodModel(
-            method_definition, mutable=False
-        )
+        self.original_method = DataModel(method_definition, mutable=False)
         self._change_list: List[Tuple[str, str]] = []
 
     def replace(self, original: str, new: str) -> None:
@@ -59,7 +57,7 @@ class InstrumentMethod:
     # also need to implement a `__hash__` method and an `__eq__` method for this to
     # work.
     @property
-    def current_method(self) -> EmpowerInstrumentMethodModel[str, str]:
+    def current_method(self) -> DataModel:
         """The current method definition, including the changes that have been made."""
         logger.debug("Applying changes to create current method")
         return self.alter_method(self.original_method, self._change_list)
@@ -71,6 +69,8 @@ class InstrumentMethod:
             raise KeyError("No xml found in method definition") from ex
         search_result = re.search(f"<{key}>(.*)</{key}>", xml)
         if not search_result:
+            # Consider trying to replace `<` with `&lt` and `>` with `&gt;` and then
+            # trying again.
             raise KeyError(f"Could not find key {key}")
         if f"<{key}>" in search_result.groups(1)[0]:
             # Python regex returns the maximum match, so if the key is found multiple
@@ -87,11 +87,11 @@ class InstrumentMethod:
     @staticmethod
     def alter_method(
         original_method: Mapping[str, str], change_list: List[Tuple[str, str]]
-    ) -> EmpowerInstrumentMethodModel[str, str]:
+    ) -> DataModel:
         """
         Alter the a method definition by applying the changes in the change list.
         """
-        method = EmpowerInstrumentMethodModel(original_method)
+        method = DataModel(original_method)
         try:
             xml: str = method["xml"]
         except KeyError as ex:
@@ -127,21 +127,21 @@ class ColumnHandler(InstrumentMethod):
     :attribute column_temperature: The column temperature.
     """
 
-    temperature_key: str
+    TEMPERATURE_KEY: str
 
     @property
     def column_temperature(self):
-        return self[self.temperature_key]
+        return self[self.TEMPERATURE_KEY]
 
     @column_temperature.setter
     def column_temperature(self, value: str) -> None:
-        self[self.temperature_key] = value
+        self[self.TEMPERATURE_KEY] = value
 
 
 class SampleManager(ColumnHandler):
     """Class for instrument methods that control a sample manager."""
 
-    temperature_key = "ColumnTemperature"
+    TEMPERATURE_KEY = "ColumnTemperature"
 
 
 def instrument_method_factory(method_definition: Mapping[str, str]) -> InstrumentMethod:

@@ -1,7 +1,7 @@
 import logging
 from typing import Union
 
-from OptiHPLCHandler.data_types import EmpowerMethodSetMethodModel
+from OptiHPLCHandler.data_types import EmpowerMethodSetMethodModel as DataModel
 from OptiHPLCHandler.empower_instrument_method import (
     ColumnHandler,
     InstrumentMethod,
@@ -40,10 +40,12 @@ class EmpowerMethodSetMethod:
 
         if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
+            if len(method_definition["results"]) > 1:
+                raise ValueError(
+                    f"Multiple method set methods found: {method_definition['results']}"
+                )
             method_definition = method_definition["results"][0]
-        self.original_method = EmpowerMethodSetMethodModel(
-            method_definition, mutable=False
-        )
+        self.original_method = DataModel(method_definition, mutable=False)
         for instrument_method_definition in method_definition["modules"]:
             instrument_method = instrument_method_factory(instrument_method_definition)
             self.instrument_method_list.append(instrument_method)
@@ -57,11 +59,11 @@ class EmpowerMethodSetMethod:
 
         :return: The current method definition.
         """
-        method = self.original_method.copy()
+        method = dict(self.original_method)
         method["modules"] = [
             method.current_method for method in self.instrument_method_list
         ]
-        return method
+        return DataModel(method)
 
     @property
     def column_temperature(self):
