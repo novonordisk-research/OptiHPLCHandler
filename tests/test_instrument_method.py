@@ -51,16 +51,17 @@ class TestInstrumentMethod(unittest.TestCase):
         minimal_definition = {"name": "test", "xml": "old"}
         instrument_method = instrument_method_factory(minimal_definition)
         instrument_method.replace("old", "new")
-        assert instrument_method.original_method["xml"] == "old"
         assert instrument_method.current_method["xml"] == "new"
+        assert instrument_method.original_method["xml"] == "old"
 
     def test_instrument_method_replace_multiple(self):
         minimal_definition = {"name": "test", "xml": "old"}
         instrument_method = instrument_method_factory(minimal_definition)
         instrument_method.replace("old", "new")
+        assert instrument_method.current_method["xml"] == "new"
         instrument_method.replace("new", "newer")
-        assert instrument_method.original_method["xml"] == "old"
         assert instrument_method.current_method["xml"] == "newer"
+        assert instrument_method.original_method["xml"] == "old"
 
     def test_instrument_method_replace_no_xml_no_changes(self):
         minimal_definition = {"name": "test"}
@@ -112,8 +113,8 @@ class TestInstrumentMethod(unittest.TestCase):
         minimal_definition = {"name": "test", "xml": "<a>value</a>"}
         instrument_method = instrument_method_factory(minimal_definition)
         instrument_method["a"] = "new_value"
-        assert instrument_method.original_method["xml"] == "<a>value</a>"
         assert instrument_method.current_method["xml"] == "<a>new_value</a>"
+        assert instrument_method.original_method["xml"] == "<a>value</a>"
         assert instrument_method["a"] == "new_value"
         example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
             "modules"
