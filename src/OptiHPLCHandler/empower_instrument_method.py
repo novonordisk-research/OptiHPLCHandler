@@ -83,7 +83,7 @@ class InstrumentMethod:
 
     @staticmethod
     def alter_method(
-        original_method: Mapping[str, str], change_list: List[tuple[str, str]]
+        original_method: Mapping[str, str], change_list: List[Tuple[str, str]]
     ) -> Mapping[str, str]:
         """
         Alter the a method definition by applying the changes in the change list.
