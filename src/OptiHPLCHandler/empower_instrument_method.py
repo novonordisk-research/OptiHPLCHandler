@@ -1,7 +1,7 @@
 import logging
 import re
 from types import MappingProxyType
-from typing import List, Mapping
+from typing import List, Mapping, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class InstrumentMethod:
             extracted.
         """
         self.original_method = MappingProxyType(method_definition)
-        self._change_list: List[tuple[str, str]] = []
+        self._change_list: List[Tuple[str, str]] = []
 
     def replace(self, original: str, new: str) -> None:
         """
