@@ -1,6 +1,7 @@
 import logging
 import re
 from types import MappingProxyType
+from typing import List, Mapping
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +40,9 @@ class InstrumentMethod:
             extracted.
         """
         self.original_method = MappingProxyType(method_definition)
-        self._change_list = []
+        self._change_list: List[tuple[str, str]] = []
 
-    def replace(self, original: str, new: str) -> NoReturn:
+    def replace(self, original: str, new: str) -> None:
         """
         Replace all instances of a string in the xml of the current method.
 
@@ -96,7 +97,7 @@ class InstrumentMethod:
             raise ValueError(f"Found more than one match for key {key}")
         return search_result.groups(1)[0]
 
-    def __setitem__(self, key: str, value: str) -> NoReturn:
+    def __setitem__(self, key: str, value: str) -> None:
         current_value = self[key]
         self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
 
@@ -115,7 +116,7 @@ class ColumnHandler(InstrumentMethod):
         return self[self.temperature_key]
 
     @column_temperature.setter
-    def column_temperature(self, value: str) -> NoReturn:
+    def column_temperature(self, value: str) -> None:
         self[self.temperature_key] = value
 
 
