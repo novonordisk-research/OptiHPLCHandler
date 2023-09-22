@@ -1,7 +1,8 @@
 import logging
 import re
-from types import MappingProxyType
 from typing import List, Mapping, Tuple
+
+from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,9 @@ class InstrumentMethod:
             created, but no changes can be made to the method, and no values can be
             extracted.
         """
-        self.original_method = MappingProxyType(method_definition)
+        self.original_method = EmpowerInstrumentMethodModel(
+            method_definition, mutable=False
+        )
         self._change_list: List[Tuple[str, str]] = []
 
     def replace(self, original: str, new: str) -> None:
@@ -56,7 +59,7 @@ class InstrumentMethod:
     # also need to implement a `__hash__` method and an `__eq__` method for this to
     # work.
     @property
-    def current_method(self) -> Mapping[str, str]:
+    def current_method(self) -> EmpowerInstrumentMethodModel[str, str]:
         """The current method definition, including the changes that have been made."""
         logger.debug("Applying changes to create current method")
         return self.alter_method(self.original_method, self._change_list)
@@ -84,11 +87,11 @@ class InstrumentMethod:
     @staticmethod
     def alter_method(
         original_method: Mapping[str, str], change_list: List[Tuple[str, str]]
-    ) -> Mapping[str, str]:
+    ) -> EmpowerInstrumentMethodModel[str, str]:
         """
         Alter the a method definition by applying the changes in the change list.
         """
-        method = dict(original_method)
+        method = EmpowerInstrumentMethodModel(original_method)
         try:
             xml: str = method["xml"]
         except KeyError as ex:

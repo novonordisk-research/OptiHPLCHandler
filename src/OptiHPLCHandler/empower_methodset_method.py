@@ -1,7 +1,8 @@
 import logging
 from typing import Union
 
-from .empower_instrument_method import (
+from OptiHPLCHandler.data_types import EmpowerMethodSetMethodModel
+from OptiHPLCHandler.empower_instrument_method import (
     ColumnHandler,
     InstrumentMethod,
     instrument_method_factory,
@@ -40,7 +41,9 @@ class EmpowerMethodSetMethod:
         if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
             method_definition = method_definition["results"][0]
-        self.original_method = method_definition
+        self.original_method = EmpowerMethodSetMethodModel(
+            method_definition, mutable=False
+        )
         for instrument_method_definition in method_definition["modules"]:
             instrument_method = instrument_method_factory(instrument_method_definition)
             self.instrument_method_list.append(instrument_method)
