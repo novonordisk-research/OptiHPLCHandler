@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, NamedTuple
+from typing import Any, Dict, List, NamedTuple
 
 
 class Eluent(NamedTuple):
@@ -79,7 +79,7 @@ class DataField(NamedTuple):
     """Value of the data field"""
 
 
-class OptiDict(dict):
+class OptiDict(Dict):
     """Class for Empower instrument method"""
 
     def __init__(self, *args, mutable: bool = True, **kwargs):
