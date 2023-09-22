@@ -52,6 +52,7 @@ class TestMethodSetMethod(unittest.TestCase):
             )
             == method_definition["results"][0]["modules"][0]["xml"]
         )
+        assert method.original_method == method_definition["results"][0]
 
     def test_get_column_temperature(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
