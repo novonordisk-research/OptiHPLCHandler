@@ -51,35 +51,15 @@ class InstrumentMethod:
         """
         self._change_list.append((original, new))
 
+    # If this property method is called often, there could be performance issues. In
+    # that case, consider cahcing the result with `@functools.lru_cahce(maxsize=1)`. You
+    # also need to implement a `__hash__` method and an `__eq__` method for this to
+    # work.
     @property
     def current_method(self) -> Mapping[str, str]:
+        """The current method definition, including the changes that have been made."""
         logger.debug("Applying changes to create current method")
-        method = self.original_method.copy()
-        try:
-            xml: str = method["xml"]
-        except KeyError as ex:
-            if len(self._change_list) > 0:
-                raise ValueError(
-                    "Cannot apply changes to method, no xml key in method definition."
-                ) from ex
-            else:
-                # If there is no xml key, we can't do anything with the method. But if
-                # there are no changes to apply, we can just return the original method.
-                return method
-        for original, new in self._change_list:
-            logger.debug("Replacing %s with %s", original, new)
-            num_replaced = xml.count(original)
-            if num_replaced == 0:
-                logger.warning(
-                    f"Could not find {original} in {method}, no changes made to method."
-                )
-            else:
-                xml = xml.replace(original, new)
-                logger.debug(
-                    "Replaced %s instances of %s with %s", num_replaced, original, new
-                )
-        method["xml"] = xml
-        return method
+        return self.alter_method(self.original_method, self._change_list)
 
     def __getitem__(self, key: str) -> str:
         try:
@@ -100,6 +80,41 @@ class InstrumentMethod:
     def __setitem__(self, key: str, value: str) -> None:
         current_value = self[key]
         self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
+
+    @staticmethod
+    def alter_method(
+        original_method: Mapping[str, str], change_list: List[tuple[str, str]]
+    ) -> Mapping[str, str]:
+        """
+        Alter the a method definition by applying the changes in the change list.
+        """
+        method = dict(original_method)
+        try:
+            xml: str = method["xml"]
+        except KeyError as ex:
+            if len(change_list) > 0:
+                raise ValueError(
+                    "Cannot apply changes to method, no xml key in method definition."
+                ) from ex
+            else:
+                # If there is no xml key, we can't do anything with the method. But if
+                # there are no changes to apply, we can just return the original method.
+                return method
+        for original, new in change_list:
+            logger.debug("Replacing %s with %s", original, new)
+            num_replaced = xml.count(original)
+            if num_replaced == 0:
+                logger.warning(
+                    f"Could not find {original} in {method}, no changes made to method."
+                )  # Consider trying to replace `<` with `&lt` aand `>` with `&gt;` and
+                # then trying again.
+            else:
+                xml = xml.replace(original, new)
+                logger.debug(
+                    "Replaced %s instances of %s with %s", num_replaced, original, new
+                )
+        method["xml"] = xml
+        return method
 
 
 class ColumnHandler(InstrumentMethod):
