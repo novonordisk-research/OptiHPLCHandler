@@ -32,6 +32,12 @@ class TestMethodSetMethod(unittest.TestCase):
                 method_definition["results"][0]["modules"]
             )
 
+    def test_initialisation_multiple_methods(self):
+        method_definition = self.example["response-BSM-PDA-Acq.json"]
+        method_definition["results"].append(method_definition["results"][0])
+        with self.assertRaises(ValueError):
+            EmpowerMethodSetMethod(method_definition)
+
     def test_original_method(self):
         for method_definition in self.example.values():
             method = EmpowerMethodSetMethod(method_definition)
