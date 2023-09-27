@@ -207,12 +207,7 @@ Then manually run the
 by clicking `Run workflow`. Select what type of release it is (`patch`, `minor`, or
 `major`) in `The type of release to perform`, and then click `Run workflow`.
 
-Fetch the new tag. Run the commands
+The workflow should create a branch, a tag, a pull request, a Github release and a pypi
+release.
 
-```
-rm -r -fo dist
-py -m build
-py -m twine upload dist/*
-```
-
-you will be prompted for your pipy.org username and password.
+After the workflow is done, you need to approve the pull request.
