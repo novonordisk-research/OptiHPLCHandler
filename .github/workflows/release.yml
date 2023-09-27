@@ -54,11 +54,11 @@ jobs:
           python-version: 3.9
       - run: pip install .[build]
       - run: python -m build
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: wheel
           path: dist/*.whl
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -74,14 +74,14 @@ jobs:
       id-token: write
     steps:
       - name: Downloading wheel
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: wheel
       - name: Downloading sdist
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: sdist
       - name: Uploading to pypi
-        uses: pypa/gh-action-pypi-publish@release-v1
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
