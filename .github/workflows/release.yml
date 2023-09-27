@@ -18,7 +18,7 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
   github_release:
-    name: Github release # This is not a separate wokflow because it should only run after linting and testing.
+    name: Version bump and Github release # This is not a separate wokflow because it should only run after linting and testing.
     runs-on: ubuntu-latest
     needs: [lint, test]
     if: github.ref == 'refs/heads/main' # Only run on main branch
@@ -77,11 +77,13 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: wheel
+          path: dist/
       - name: Downloading sdist
         uses: actions/download-artifact@v3
         with:
           name: sdist
+          path: dist/
       - name: Uploading to pypi
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/
