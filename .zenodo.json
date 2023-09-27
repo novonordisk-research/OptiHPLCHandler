@@ -1,0 +1,47 @@
+{
+    "creators": [
+        {
+            "name": "Furbo, Søren",
+            "affiliation": "Novo Nordisk A/S",
+            "orcid": "0000-0002-2044-7438"
+        },
+        {
+            "name": "Burnage, Samual Charles",
+            "affiliation": "Novo Nordisk A/S",
+            "orcid": "0000-0002-6573-3972"
+        },
+        {
+            "name": "Trygg, Erik",
+            "affiliation": "Novo Nordisk A/S",
+            "orcid": "0009-0008-8521-5559"
+        },
+        {
+            "name": "Kofoed, Jacob",
+            "affiliation": "Novo Nordisk A/S"
+        },
+        {
+            "name": "Bertelsen, Søren",
+            "affiliation": "Novo Nordisk A/S",
+            "orcid": "0000-0003-2401-3650"
+        }
+    ],
+    "access_right": "open",
+    "license": "bsd-3-clause",
+    "title": "Opti-HPLC-Handler",
+    "description": "Simplified proxy API for interacting with the Waters Empower Web API",
+    "keywords": [
+        "HPLC",
+        "UHPLC",
+        "UPLC",
+        "Waters",
+        "Empower",
+        "closed loop",
+        "optimization",
+        "automation",
+        "chromatography",
+        "chromatographic",
+        "chromatographic data system",
+        "CDS",
+        "Python"
+    ]
+}
