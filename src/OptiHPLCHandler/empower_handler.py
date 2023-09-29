@@ -181,6 +181,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sample_set_method_name: str,
         sample_list: Iterable[Mapping[str, Any]],
         plates: Dict[str, str],
+        function: str ="Inject Samples",
         audit_trail_message: Optional[str] = None,
     ):
         """
@@ -230,7 +231,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 "InjectionVolume": "InjVol",
             }  # Key are "human readable" names, values are the names used in Empower.
             field_list = [
-                {"name": "Function", "value": {"member": "Inject Samples"}},
+                {"name": "Function", "value": {"member": function}},
                 {"name": "Processing", "value": {"member": "Normal"}},
             ]
             for key, value in sample.items():
