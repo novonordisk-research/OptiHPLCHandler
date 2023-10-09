@@ -104,3 +104,28 @@ class EmpowerInstrumentMethodModel(OptiDict):
 
 class EmpowerMethodSetMethodModel(OptiDict):
     pass
+
+
+class EmpowerGradientCurve(Enum):
+    ONE = "1"
+    TWO = "2"
+    THREE = "3"
+    FOUR = "4"
+    FIVE = "5"
+    SIX = "6"
+    SEVEN = "7"
+    EIGHT = "8"
+    NINE = "9"
+    TEN = "10"
+    ELEVEN = "11"
+
+    def __str__(self):
+        return self.value
+        # This allows for smooth use in f strings
+
+
+class EmpowerGradientRowModel(NamedTuple):
+    time: str
+    flow: str
+    composition: List[str]
+    curve: EmpowerGradientCurve

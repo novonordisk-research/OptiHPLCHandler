@@ -1,8 +1,10 @@
 import logging
 import re
 from typing import List, Mapping, Tuple
+from xml.etree import ElementTree as ET
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
+from OptiHPLCHandler.data_types import EmpowerGradientRowModel, EmpowerGradientCurve
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,8 @@ class InstrumentMethod:
             xml = self.current_method["xml"]
         except KeyError as ex:
             raise KeyError("No xml found in method definition") from ex
-        search_result = re.search(f"<{key}>(.*)</{key}>", xml)
+        search_result = re.search(f"<{key}>(.*)</{key}>", xml, re.DOTALL)
+        # The re.DOTALL flag ensures that newline charaters are also matched by the dot.
         if not search_result:
             # Consider trying to replace `<` with `&lt` and `>` with `&gt;` and then
             # trying again.
@@ -144,6 +147,75 @@ class SampleManager(ColumnHandler):
     TEMPERATURE_KEY = "ColumnTemperature"
 
 
+class SolventManagerMethod(InstrumentMethod):
+    """
+    Parent class for instrument methods that control a solvent manager.
+
+    :attribute valve_position: The current valve position for each solvent line.
+    :attribute gradient_table: The gradient table for the method.
+    """
+
+    valve_tag_prefix: str
+    valve_tag_suffix: str
+    solvent_lines: List[str]
+
+    def __init__(self, method_definition: Mapping[str, str]):
+        super().__init__(method_definition)
+        self.gradient_table = self.interpret_gradient_table(self["GradientTable"])
+
+    @property
+    def valve_position(self) -> List[str]:
+        valve_position_tags = [
+            self.valve_tag_prefix + solvent + self.valve_tag_suffix
+            for solvent in self.solvent_lines
+        ]
+        valve_positions = [self[tag] for tag in valve_position_tags]
+        return valve_positions
+
+    def __str__(self):
+        return f"{type(self).__name__} with valve positions {[line + pos for (line, pos) in zip(self.solvent_lines, self.valve_position)]}"
+
+    def interpret_gradient_table(self, xml: str) -> List[EmpowerGradientRowModel]:
+        gradient_table = []
+        e_tree = ET.fromstring(f"<root>{xml}</root>")
+        for gradient_row in e_tree:
+            if gradient_row.tag != "GradientRow":
+                raise ValueError(
+                    f"Expected GradientRow, got {gradient_row.tag} instead."
+                )
+            gradient_row_dict = {}
+            for field in gradient_row:
+                gradient_row_dict[field.tag] = field.text
+            composition = []
+            for line in self.solvent_lines:
+                composition.append(gradient_row_dict[f"Composition{line}"])
+            gradient_table.append(
+                EmpowerGradientRowModel(
+                    time=gradient_row_dict["Time"],
+                    flow=gradient_row_dict["Flow"],
+                    composition=composition,
+                    curve=EmpowerGradientCurve(gradient_row_dict["Curve"]),
+                )
+            )
+        return gradient_table
+
+
+class BSMMethod(SolventManagerMethod):
+    """Class for instrument methods that control a binary solvent manager (BSM)."""
+
+    valve_tag_prefix = "FlowSource"
+    valve_tag_suffix = ""
+    solvent_lines = ["A", "B"]
+
+
+class QSMMethod(SolventManagerMethod):
+    """Class for instrument methods that control a quaternary solvent manager (QSM)."""
+
+    valve_tag_prefix = "SolventSelectionValve"
+    valve_tag_suffix = "Position"
+    solvent_lines = ["A", "B", "C", "D"]
+
+
 def instrument_method_factory(method_definition: Mapping[str, str]) -> InstrumentMethod:
     """
     Factory function for creating an InstrumentMethod from a method definition. The
@@ -155,6 +227,9 @@ def instrument_method_factory(method_definition: Mapping[str, str]) -> Instrumen
         if method_definition["name"] in ["rAcquityFTN"]:
             logger.debug("Creating SampleManager")
             return SampleManager(method_definition)
+        elif method_definition["name"] in ["AcquityBSM"]:
+            logger.debug("Creating BSM")
+            return BSMMethod(method_definition)
         # Add more cases as they are coded
         else:
             logger.debug(
