@@ -181,7 +181,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sample_set_method_name: str,
         sample_list: Iterable[Mapping[str, Any]],
         plates: Dict[str, str],
-        function: str ="Inject Samples",
         audit_trail_message: Optional[str] = None,
     ):
         """
@@ -199,11 +198,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             - InjectionVolume: Volume of the sample to inject in micro liters.
             Any other keys will be added as fields to the sample, including custom
                 fields.
+            If the key Function does not exist, the Function is set to "Inject Sample"
             For all fields, the datatype will be autodetermined according the the type
                 of the value.
 
         :param plate_list: Dict of plates to use. The keys should be the position of the
             plate, the value should be the plate type.
+
 
         :param audit_trail_message: Message to add to the audit trail of the sample set
             method.
@@ -220,10 +221,15 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
+            if not "Function" in sample:
+                sample["Function"] = {"member": "Inject Sample"}
+            else:
+                sample["Function"] = {"member": sample["Function"]}
+                # Function is an enumerator in Empower, 
+                # so it needs to be a dict with a member key.
             logger.debug(
-                "Adding sample number %s with name %s to sample list",
+                "Adding sampleset line number %s to sample list",
                 num,
-                sample["SampleName"],
             )
             alias_dict = {
                 "Method": "MethodSetOrReportMethod",
@@ -231,7 +237,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 "InjectionVolume": "InjVol",
             }  # Key are "human readable" names, values are the names used in Empower.
             field_list = [
-                {"name": "Function", "value": {"member": function}},
                 {"name": "Processing", "value": {"member": "Normal"}},
             ]
             for key, value in sample.items():
