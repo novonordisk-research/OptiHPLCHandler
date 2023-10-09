@@ -3,6 +3,7 @@ import os
 import unittest
 
 from OptiHPLCHandler.empower_instrument_method import (
+    BSMMethod,
     ColumnHandler,
     InstrumentMethod,
     instrument_method_factory,
@@ -173,3 +174,60 @@ class TestInstrumentMethod(unittest.TestCase):
             in instrument_method.current_method["xml"]
         )
         assert instrument_method.column_temperature == "44.0"
+
+    def test_bsm_init(self):
+        minimal_definition = {
+            "name": "AcquityBSM",
+            "xml": (
+                "<FlowSourceA>1</FlowSourceA><FlowSourceB>1</FlowSourceB>"
+                "<GradientTable><GradientRow><Time>0.00</Time><Flow>0.600</Flow>"
+                "<CompositionA>100.0</CompositionA><CompositionB>0.0</CompositionB>"
+                "<Curve>6</Curve></GradientRow></GradientTable>"
+            ),
+        }
+        instrument_method = instrument_method_factory(minimal_definition)
+        assert isinstance(instrument_method, BSMMethod)
+        assert instrument_method.valve_position == ["1", "1"]
+        assert "A1" in str(instrument_method)
+        assert "B1" in str(instrument_method)
+        assert len(instrument_method.gradient_table) == 1
+        assert instrument_method.gradient_table[0].time == "0.00"
+        minimal_definition = {
+            "name": "AcquityBSM",
+            "xml": (
+                "<FlowSourceA>2</FlowSourceA><FlowSourceB>1</FlowSourceB>"
+                "<GradientTable>"
+                "<GradientRow>"
+                "<Time>0.00</Time><Flow>0.300</Flow>"
+                "<CompositionA>90.0</CompositionA>"
+                "<CompositionB>10.0</CompositionB>"
+                "<Curve>6</Curve>"
+                "</GradientRow>"
+                "<GradientRow>"
+                "<Time>10.00</Time>"
+                "<Flow>0.500</Flow>"
+                "<CompositionA>10.0</CompositionA>"
+                "<CompositionB>90.0</CompositionB>"
+                "<Curve>6</Curve>"
+                "</GradientRow>"
+                "</GradientTable>"
+            ),
+        }
+        instrument_method = instrument_method_factory(minimal_definition)
+        assert isinstance(instrument_method, BSMMethod)
+        assert instrument_method.valve_position == ["2", "1"]
+        assert "A2" in str(instrument_method)
+        assert "B1" in str(instrument_method)
+        bsm_method_list = [
+            definition["results"][0]["modules"]
+            for name, definition in self.example.items()
+            if "BSM" in name
+        ]  # Finding all BSM methodset method definitions
+        for bsm_method in bsm_method_list:
+            bsm_method = [
+                module for module in bsm_method if module["name"] == "AcquityBSM"
+            ][0]
+            # Finding the BSM instrument method in the methodset method
+            bsm = instrument_method_factory(bsm_method)
+            assert isinstance(bsm, BSMMethod)
+            assert bsm.valve_position == ["1", "1"]  # All examples us A1 and B1
