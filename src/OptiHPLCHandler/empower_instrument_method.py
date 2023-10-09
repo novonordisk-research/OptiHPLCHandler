@@ -120,7 +120,7 @@ class InstrumentMethod:
         return method
 
 
-class ColumnHandler(InstrumentMethod):
+class ColumnHandlerMethod(InstrumentMethod):
     """
     Class for instrument methods that have a column temperature.
 
@@ -138,7 +138,7 @@ class ColumnHandler(InstrumentMethod):
         self[self.TEMPERATURE_KEY] = value
 
 
-class SampleManager(ColumnHandler):
+class SampleManagerMethod(ColumnHandlerMethod):
     """Class for instrument methods that control a sample manager."""
 
     TEMPERATURE_KEY = "ColumnTemperature"
@@ -154,7 +154,7 @@ def instrument_method_factory(method_definition: Mapping[str, str]) -> Instrumen
     try:
         if method_definition["name"] in ["rAcquityFTN"]:
             logger.debug("Creating SampleManager")
-            return SampleManager(method_definition)
+            return SampleManagerMethod(method_definition)
         # Add more cases as they are coded
         else:
             logger.debug(
