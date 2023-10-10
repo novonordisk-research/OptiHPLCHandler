@@ -427,3 +427,6 @@ class testBSMMethod(unittest.TestCase):
             },
         ]
         assert instrument_method.gradient_xml in instrument_method.current_method["xml"]
+        new_method = BSMMethod(instrument_method.current_method)
+        assert new_method.gradient_xml in instrument_method.current_method["xml"]
+        assert new_method.gradient_table == instrument_method.gradient_table
