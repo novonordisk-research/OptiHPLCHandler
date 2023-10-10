@@ -10,20 +10,25 @@ from OptiHPLCHandler.empower_instrument_method import (
 )
 
 
-class TestInstrumentMethod(unittest.TestCase):
+def load_example_files() -> dict:
+    example = {}
+    example_folder = os.path.join("tests", "empower_method_examples")
+    example_files = os.listdir(example_folder)
+    for file in example_files:
+        file_path = os.path.join(example_folder, file)
+        with open(file_path) as f:
+            example[file] = json.load(f)
+    return example
+
+
+class TestInstrumentMethodFactory(unittest.TestCase):
     def setUp(self) -> None:
-        self.example = {}
-        example_folder = os.path.join("tests", "empower_method_examples")
-        example_files = os.listdir(example_folder)
-        for file in example_files:
-            file_path = os.path.join(example_folder, file)
-            with open(file_path) as f:
-                self.example[file] = json.load(f)
+        self.example = load_example_files()
         self.example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][
             0
         ]["modules"][2]
 
-    def test_instrument_method_factory_column_handler(self):
+    def test_column_handler(self):
         minimal_definition = {"name": "rAcquityFTN"}
         instrument_method = instrument_method_factory(minimal_definition)
         assert isinstance(instrument_method, ColumnHandler)
@@ -33,7 +38,7 @@ class TestInstrumentMethod(unittest.TestCase):
         instrument_method = instrument_method_factory(example_definition)
         assert isinstance(instrument_method, ColumnHandler)
 
-    def test_instrument_method_factory_instrument_method(self):
+    def test_instrument_method(self):
         minimal_definition = {"name": "none_of_the_above"}
         instrument_method = instrument_method_factory(minimal_definition)
         assert isinstance(instrument_method, InstrumentMethod)
@@ -41,12 +46,20 @@ class TestInstrumentMethod(unittest.TestCase):
         instrument_method = instrument_method_factory(self.example_definition)
         assert isinstance(instrument_method, InstrumentMethod)
 
-    def test_instrument_method_factory_unknown(self):
+    def test_unknown(self):
         # Verify that an unknown instrument method will be returned as a generic
         # InstrumentMethod
         minimal_definition = {}
         instrument_method = instrument_method_factory(minimal_definition)
         assert isinstance(instrument_method, InstrumentMethod)
+
+
+class TestInstrumentMethod(unittest.TestCase):
+    def setUp(self) -> None:
+        self.example = load_example_files()
+        self.example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][
+            0
+        ]["modules"][2]
 
     def test_original_method_immutable(self):
         minimal_definition = {"name": "test", "xml": "old"}
@@ -131,6 +144,14 @@ class TestInstrumentMethod(unittest.TestCase):
         )
         assert instrument_method["StartWavelength"] == "211"
 
+
+class TestSampleManager(unittest.TestCase):
+    def setUp(self) -> None:
+        self.example = load_example_files()
+        self.example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][
+            0
+        ]["modules"][0]
+
     def test_sample_manager_get_temperature(self):
         minimal_definition = {
             "name": "rAcquityFTN",
@@ -138,10 +159,7 @@ class TestInstrumentMethod(unittest.TestCase):
         }
         instrument_method: ColumnHandler = instrument_method_factory(minimal_definition)
         assert instrument_method.column_temperature == "43.0"
-        example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
-            "modules"
-        ][0]
-        instrument_method = instrument_method_factory(example_definition)
+        instrument_method = instrument_method_factory(self.example_definition)
         assert instrument_method.column_temperature == "43.0"
 
     def test_sample_manager_set_temperature(self):
@@ -160,10 +178,7 @@ class TestInstrumentMethod(unittest.TestCase):
             == "<ColumnTemperature>44.0</ColumnTemperature>"
         )
         assert instrument_method.column_temperature == "44.0"
-        example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
-            "modules"
-        ][0]
-        instrument_method = instrument_method_factory(example_definition)
+        instrument_method = instrument_method_factory(self.example_definition)
         instrument_method.column_temperature = "44.0"
         assert (
             "<ColumnTemperature>43.0</ColumnTemperature>"
@@ -175,8 +190,21 @@ class TestInstrumentMethod(unittest.TestCase):
         )
         assert instrument_method.column_temperature == "44.0"
 
-    def test_bsm_init(self):
-        minimal_definition = {
+
+class testBSMMethod(unittest.TestCase):
+    def setUp(self) -> None:
+        bsm_method_list = [
+            definition["results"][0]["modules"]
+            for name, definition in load_example_files().items()
+            if "BSM" in name
+        ]  # Finding all BSM methodset method definitions
+        for i, bsm_method in enumerate(bsm_method_list):
+            bsm_method_list[i] = [
+                module for module in bsm_method if module["name"] == "AcquityBSM"
+            ][0]
+        # Finding the BSM instrument method in the methodset method definition
+        self.bsm_method_list = bsm_method_list
+        self.minimal_definition = {
             "name": "AcquityBSM",
             "xml": (
                 "<FlowSourceA>1</FlowSourceA><FlowSourceB>1</FlowSourceB>"
@@ -185,14 +213,7 @@ class TestInstrumentMethod(unittest.TestCase):
                 "<Curve>6</Curve></GradientRow></GradientTable>"
             ),
         }
-        instrument_method = instrument_method_factory(minimal_definition)
-        assert isinstance(instrument_method, BSMMethod)
-        assert instrument_method.valve_position == ["1", "1"]
-        assert "A1" in str(instrument_method)
-        assert "B1" in str(instrument_method)
-        assert len(instrument_method.gradient_table) == 1
-        assert instrument_method.gradient_table[0].time == "0.00"
-        minimal_definition = {
+        self.medium_definition = {
             "name": "AcquityBSM",
             "xml": (
                 "<FlowSourceA>2</FlowSourceA><FlowSourceB>1</FlowSourceB>"
@@ -213,21 +234,62 @@ class TestInstrumentMethod(unittest.TestCase):
                 "</GradientTable>"
             ),
         }
-        instrument_method = instrument_method_factory(minimal_definition)
+
+    def test_factory(self):
+        instrument_method = instrument_method_factory(self.minimal_definition)
         assert isinstance(instrument_method, BSMMethod)
-        assert instrument_method.valve_position == ["2", "1"]
-        assert "A2" in str(instrument_method)
-        assert "B1" in str(instrument_method)
-        bsm_method_list = [
-            definition["results"][0]["modules"]
-            for name, definition in self.example.items()
-            if "BSM" in name
-        ]  # Finding all BSM methodset method definitions
-        for bsm_method in bsm_method_list:
-            bsm_method = [
-                module for module in bsm_method if module["name"] == "AcquityBSM"
-            ][0]
-            # Finding the BSM instrument method in the methodset method
+
+        instrument_method = instrument_method_factory(self.medium_definition)
+        assert isinstance(instrument_method, BSMMethod)
+
+        for bsm_method in self.bsm_method_list:
             bsm = instrument_method_factory(bsm_method)
             assert isinstance(bsm, BSMMethod)
-            assert bsm.valve_position == ["1", "1"]  # All examples us A1 and B1
+
+    def test_valve_position(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        assert instrument_method.valve_position == ["A1", "B1"]
+        assert "A1" in str(instrument_method)
+        assert "B1" in str(instrument_method)
+        instrument_method = BSMMethod(self.medium_definition)
+        assert instrument_method.valve_position == ["A2", "B1"]
+        assert "A2" in str(instrument_method)
+        assert "B1" in str(instrument_method)
+        for bsm_method in self.bsm_method_list:
+            bsm = BSMMethod(bsm_method)
+            assert bsm.valve_position == ["A1", "B1"]  # All examples us A1 and B1
+
+    def test_valve_position_setter(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        instrument_method.valve_position = ["A2", "B2"]
+        assert instrument_method.valve_position == ["A2", "B2"]
+        assert "A2" in str(instrument_method)
+        assert "B2" in str(instrument_method)
+        assert "<FlowSourceA>2</FlowSourceA>" in instrument_method.current_method["xml"]
+        assert "<FlowSourceB>2</FlowSourceB>" in instrument_method.current_method["xml"]
+        instrument_method.valve_position = "A1"
+        assert instrument_method.valve_position == ["A1", "B2"]
+        assert "A1" in str(instrument_method)
+        assert "B2" in str(instrument_method)
+        assert "<FlowSourceA>1</FlowSourceA>" in instrument_method.current_method["xml"]
+        assert "<FlowSourceB>2</FlowSourceB>" in instrument_method.current_method["xml"]
+
+    def test_gradient_values(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        assert len(instrument_method.gradient_data) == 1
+        assert instrument_method.gradient_data[0].time == "0.00"
+        assert instrument_method.gradient_data[0].flow == "0.600"
+        assert instrument_method.gradient_data[0].composition == ["100.0", "0.0"]
+        assert str(instrument_method.gradient_data[0].curve) == "6"
+        instrument_method = BSMMethod(self.medium_definition)
+        assert len(instrument_method.gradient_data) == 2
+        assert instrument_method.gradient_data[0].time == "0.00"
+        assert instrument_method.gradient_data[1].time == "10.00"
+        assert instrument_method.gradient_data[0].flow == "0.300"
+        assert instrument_method.gradient_data[1].flow == "0.500"
+        assert instrument_method.gradient_data[0].composition == ["90.0", "10.0"]
+        assert instrument_method.gradient_data[1].composition == ["10.0", "90.0"]
+        assert str(instrument_method.gradient_data[0].curve) == "6"
+        assert str(instrument_method.gradient_data[1].curve) == "6"
+        for bsm_method in self.bsm_method_list:
+            bsm = BSMMethod(bsm_method)
