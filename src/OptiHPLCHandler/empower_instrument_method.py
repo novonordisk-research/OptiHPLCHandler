@@ -81,6 +81,7 @@ class InstrumentMethod:
 
     @staticmethod
     def find_value(xml: str, key: str):
+        """Find the value of a key in an xml from Empower."""
         search_result = re.search(f"<{key}>(.*)</{key}>", xml, re.DOTALL)
         # The re.DOTALL flag ensures that newline charaters are also matched by the dot.
         if not search_result:
@@ -142,6 +143,7 @@ class ColumnHandlerMethod(InstrumentMethod):
 
     @property
     def column_temperature(self):
+        """The column temperature."""
         return self[self.TEMPERATURE_KEY]
 
     @column_temperature.setter
@@ -159,6 +161,7 @@ class SolventManagerMethod(InstrumentMethod):
     """
     Parent class for instrument methods that control a solvent manager.
 
+    Attributes in addition to the ones from InstrumentMethod:
     :attribute valve_position: The current valve position for each solvent line.
     :attribute gradient_table: The gradient table for the method.
     """
@@ -174,6 +177,7 @@ class SolventManagerMethod(InstrumentMethod):
 
     @property
     def current_method(self) -> DataModel:
+        """The current method definition, including the changes that have been made."""
         method = super().current_method
         original_gradient_xml = (
             "<GradientTable>"
@@ -184,6 +188,7 @@ class SolventManagerMethod(InstrumentMethod):
 
     @property
     def valve_position(self) -> List[str]:
+        """The current valve position for each solvent line."""
         valve_position_tags = [
             self.valve_tag_prefix + solvent + self.valve_tag_suffix
             for solvent in self.solvent_lines
@@ -215,6 +220,15 @@ class SolventManagerMethod(InstrumentMethod):
 
     @property
     def gradient_table(self) -> List[Dict[str, str]]:
+        """
+        The gradient table for the method. It is a list of dicts, one for each row.
+
+        The keys are:
+        - Time: The time in minutes.
+        - Flow: The flow in mL/min.
+        - CompositionX: The composition of solvent line X (A, B, C, D) in %.
+        - Curve: The curve type (1-11, 6 is linear and default)
+        """
         gradient_table = []
         for row in self.gradient_data:
             row_dict = {"Time": row.time, "Flow": row.flow}
@@ -244,7 +258,8 @@ class SolventManagerMethod(InstrumentMethod):
         self.gradient_data = gradient_rows
 
     @property
-    def gradient_xml(self):
+    def gradient_xml(self) -> str:
+        """The gradient table as xml for use with Empower API"""
         xml = ET.Element("GradientTable")
         for row in self.gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
@@ -254,6 +269,7 @@ class SolventManagerMethod(InstrumentMethod):
 
     @classmethod
     def interpret_gradient_table(cls, xml: str) -> List[EmpowerGradientRowModel]:
+        """Create the internal representation of the gradient table from the xml."""
         gradient_row_list = []
         e_tree = ET.fromstring(f"<root>{xml}</root>")
         for gradient_row in e_tree:
