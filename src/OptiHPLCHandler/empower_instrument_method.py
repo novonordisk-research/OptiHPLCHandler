@@ -223,11 +223,11 @@ class SolventManagerMethod(InstrumentMethod):
         """
         The gradient table for the method. It is a list of dicts, one for each row.
 
-        The keys are:
+        The dicts have the following keys:
         - Time: The time in minutes.
         - Flow: The flow in mL/min.
         - CompositionX: The composition of solvent line X (A, B, C, D) in %.
-        - Curve: The curve type (1-11, 6 is linear and default)
+        - Curve: The curve type (1-11, 6 is linear and default).
         """
         gradient_table = []
         for row in self.gradient_data:
