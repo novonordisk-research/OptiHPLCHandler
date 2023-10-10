@@ -54,6 +54,10 @@ class InstrumentMethod:
         """
         self._change_list.append((original, new))
 
+    def undo(self) -> None:
+        """Undo the last change made to the method."""
+        self._change_list.pop()
+
     # If this property method is called often, there could be performance issues. In
     # that case, consider cahcing the result with `@functools.lru_cahce(maxsize=1)`. You
     # also need to implement a `__hash__` method and an `__eq__` method for this to
@@ -69,6 +73,14 @@ class InstrumentMethod:
             xml = self.current_method["xml"]
         except KeyError as ex:
             raise KeyError("No xml found in method definition") from ex
+        return self.find_value(xml, key)
+
+    def __setitem__(self, key: str, value: str) -> None:
+        current_value = self[key]
+        self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
+
+    @staticmethod
+    def find_value(xml: str, key: str):
         search_result = re.search(f"<{key}>(.*)</{key}>", xml, re.DOTALL)
         # The re.DOTALL flag ensures that newline charaters are also matched by the dot.
         if not search_result:
@@ -82,10 +94,6 @@ class InstrumentMethod:
             # happens.
             raise ValueError(f"Found more than one match for key {key}")
         return search_result.groups(1)[0]
-
-    def __setitem__(self, key: str, value: str) -> None:
-        current_value = self[key]
-        self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
 
     @staticmethod
     def alter_method(
@@ -161,7 +169,18 @@ class SolventManagerMethod(InstrumentMethod):
 
     def __init__(self, method_definition: Mapping[str, str]):
         super().__init__(method_definition)
-        self.gradient_data = self.interpret_gradient_table(self["GradientTable"])
+        _gradient_xml = self.find_value(self.original_method["xml"], "GradientTable")
+        self.gradient_data = self.interpret_gradient_table(_gradient_xml)
+
+    @property
+    def current_method(self) -> DataModel:
+        method = super().current_method
+        original_gradient_xml = (
+            "<GradientTable>"
+            + self.find_value(self.original_method["xml"], "GradientTable")
+            + "</GradientTable>"
+        )
+        return self.alter_method(method, [(original_gradient_xml, self.gradient_xml)])
 
     @property
     def valve_position(self) -> List[str]:
@@ -208,6 +227,8 @@ class SolventManagerMethod(InstrumentMethod):
     def gradient_table(self, value: List[Dict[str, str]]) -> None:
         gradient_rows = []
         for row in value:
+            curve = row.get("Curve", "6")
+            # "6" is linear, which covers 90% of the use cases
             composition = []
             for line in self.solvent_lines:
                 composition.append(row[f"Composition{line}"])
@@ -216,7 +237,7 @@ class SolventManagerMethod(InstrumentMethod):
                     time=row["Time"],
                     flow=row["Flow"],
                     composition=composition,
-                    curve=EmpowerGradientCurve(row["Curve"]),
+                    curve=EmpowerGradientCurve(curve),
                 )
             )
         self.gradient_data = gradient_rows

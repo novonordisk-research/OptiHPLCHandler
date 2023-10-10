@@ -85,6 +85,20 @@ class TestInstrumentMethod(unittest.TestCase):
         assert instrument_method.current_method["xml"] == "newer"
         assert instrument_method.original_method["xml"] == "old"
 
+    def test_instrument_method_undo(self):
+        minimal_definition = {"name": "test", "xml": "old"}
+        instrument_method = instrument_method_factory(minimal_definition)
+        instrument_method.replace("old", "new")
+        assert instrument_method.current_method["xml"] == "new"
+        instrument_method.replace("new", "newer")
+        assert instrument_method.current_method["xml"] == "newer"
+        instrument_method.undo()
+        assert instrument_method.current_method["xml"] == "new"
+        instrument_method.undo()
+        assert instrument_method.current_method["xml"] == "old"
+        with self.assertRaises(IndexError):
+            instrument_method.undo()
+
     def test_instrument_method_replace_no_xml_no_changes(self):
         minimal_definition = {"name": "test"}
         instrument_method = instrument_method_factory(minimal_definition)
@@ -331,6 +345,18 @@ class testBSMMethod(unittest.TestCase):
         assert instrument_method.gradient_table[0]["CompositionB"] == "50.0"
         assert str(instrument_method.gradient_table[0]["Curve"]) == "11"
 
+    def test_gradient_table_setter_default(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        instrument_method.gradient_table = [
+            {
+                "Time": "0.00",
+                "Flow": "1",
+                "CompositionA": "50.0",
+                "CompositionB": "50.0",
+            }
+        ]
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "6"
+
     def test_gradient_table_setter_multiple(self):
         instrument_method = BSMMethod(self.minimal_definition)
         instrument_method.gradient_table = [
@@ -374,3 +400,23 @@ class testBSMMethod(unittest.TestCase):
             bsm = BSMMethod(bsm_method)
             assert bsm.gradient_xml in strip(bsm_method["xml"])
             assert strip(bsm["GradientTable"]) in bsm.gradient_xml
+
+    def test_gradient_xml_setter(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        instrument_method.gradient_table = [
+            {
+                "Time": "0.00",
+                "Flow": "0.500",
+                "CompositionA": "70.0",
+                "CompositionB": "30.0",
+                "Curve": "11",
+            },
+            {
+                "Time": "10.00",
+                "Flow": "0.600",
+                "CompositionA": "20.0",
+                "CompositionB": "80.0",
+                "Curve": "10",
+            },
+        ]
+        assert instrument_method.gradient_xml in instrument_method.current_method["xml"]
