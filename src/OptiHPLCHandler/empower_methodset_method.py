@@ -3,7 +3,7 @@ from typing import Union
 
 from OptiHPLCHandler.data_types import EmpowerMethodSetMethodModel as DataModel
 from OptiHPLCHandler.empower_instrument_method import (
-    ColumnHandler,
+    ColumnHandlerMethod,
     InstrumentMethod,
     instrument_method_factory,
 )
@@ -35,7 +35,7 @@ class EmpowerMethodSetMethod:
         :param method_definition: A method definition from Empower. If the entire result
             is passed, the method set method definition will be extracted.
         """
-        self.column_oven_list: list[ColumnHandler] = []
+        self.column_oven_list: list[ColumnHandlerMethod] = []
         self.instrument_method_list: list[InstrumentMethod] = []
 
         if isinstance(method_definition, dict) and "results" in method_definition:
@@ -49,7 +49,7 @@ class EmpowerMethodSetMethod:
         for instrument_method_definition in method_definition["modules"]:
             instrument_method = instrument_method_factory(instrument_method_definition)
             self.instrument_method_list.append(instrument_method)
-            if isinstance(instrument_method, ColumnHandler):
+            if isinstance(instrument_method, ColumnHandlerMethod):
                 self.column_oven_list.append(instrument_method)
 
     @property
