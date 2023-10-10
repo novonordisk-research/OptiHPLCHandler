@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Mapping, Tuple, Union
+from typing import Dict, List, Mapping, Tuple, Union
 from xml.etree import ElementTree as ET
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
@@ -192,6 +192,33 @@ class SolventManagerMethod(InstrumentMethod):
             self[
                 self.valve_tag_prefix + position[0] + self.valve_tag_suffix
             ] = position[1:]
+
+    @property
+    def gradient_table(self) -> List[Dict[str, str]]:
+        gradient_table = []
+        for row in self.gradient_data:
+            row_dict = {"Time": row.time, "Flow": row.flow, "Curve": row.curve.value}
+            for solvent, composition in zip(self.solvent_lines, row.composition):
+                row_dict[f"Composition{solvent}"] = composition
+            gradient_table.append(row_dict)
+        return gradient_table
+
+    @gradient_table.setter
+    def gradient_table(self, value: List[Dict[str, str]]) -> None:
+        gradient_rows = []
+        for row in value:
+            composition = []
+            for line in self.solvent_lines:
+                composition.append(row[f"Composition{line}"])
+            gradient_rows.append(
+                EmpowerGradientRowModel(
+                    time=row["Time"],
+                    flow=row["Flow"],
+                    composition=composition,
+                    curve=EmpowerGradientCurve(row["Curve"]),
+                )
+            )
+        self.gradient_data = gradient_rows
 
     @classmethod
     def interpret_gradient_table(cls, xml: str) -> List[EmpowerGradientRowModel]:
