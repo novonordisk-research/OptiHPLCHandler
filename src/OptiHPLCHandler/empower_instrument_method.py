@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Mapping, Tuple
+from typing import List, Mapping, Tuple, Union
 from xml.etree import ElementTree as ET
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
@@ -161,7 +161,7 @@ class SolventManagerMethod(InstrumentMethod):
 
     def __init__(self, method_definition: Mapping[str, str]):
         super().__init__(method_definition)
-        self.gradient_table = self.interpret_gradient_table(self["GradientTable"])
+        self.gradient_data = self.interpret_gradient_table(self["GradientTable"])
 
     @property
     def valve_position(self) -> List[str]:
@@ -169,14 +169,32 @@ class SolventManagerMethod(InstrumentMethod):
             self.valve_tag_prefix + solvent + self.valve_tag_suffix
             for solvent in self.solvent_lines
         ]
-        valve_positions = [self[tag] for tag in valve_position_tags]
+        valve_positions = [
+            solvent + self[tag]
+            for solvent, tag in zip(self.solvent_lines, valve_position_tags)
+        ]
+        # Consider removing the ones that have position 0, to make QSM easier to read.
         return valve_positions
 
     def __str__(self):
-        return f"{type(self).__name__} with valve positions {[line + pos for (line, pos) in zip(self.solvent_lines, self.valve_position)]}"
+        return f"{type(self).__name__} with valve positions {self.valve_position}"
 
-    def interpret_gradient_table(self, xml: str) -> List[EmpowerGradientRowModel]:
-        gradient_table = []
+    @valve_position.setter
+    def valve_position(self, value: Union[str, List[str]]) -> None:
+        if isinstance(value, str):
+            value = [value]
+        for position in value:
+            if position[0] not in self.solvent_lines:
+                raise ValueError(
+                    f"Invalid valve position {position}, must start with one of {self.solvent_lines}"
+                )
+            self[
+                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
+            ] = position[1:]
+
+    @classmethod
+    def interpret_gradient_table(cls, xml: str) -> List[EmpowerGradientRowModel]:
+        gradient_row_list = []
         e_tree = ET.fromstring(f"<root>{xml}</root>")
         for gradient_row in e_tree:
             if gradient_row.tag != "GradientRow":
@@ -187,9 +205,9 @@ class SolventManagerMethod(InstrumentMethod):
             for field in gradient_row:
                 gradient_row_dict[field.tag] = field.text
             composition = []
-            for line in self.solvent_lines:
+            for line in cls.solvent_lines:
                 composition.append(gradient_row_dict[f"Composition{line}"])
-            gradient_table.append(
+            gradient_row_list.append(
                 EmpowerGradientRowModel(
                     time=gradient_row_dict["Time"],
                     flow=gradient_row_dict["Flow"],
@@ -197,7 +215,7 @@ class SolventManagerMethod(InstrumentMethod):
                     curve=EmpowerGradientCurve(gradient_row_dict["Curve"]),
                 )
             )
-        return gradient_table
+        return gradient_row_list
 
 
 class BSMMethod(SolventManagerMethod):
