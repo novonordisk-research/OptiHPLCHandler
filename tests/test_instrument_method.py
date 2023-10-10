@@ -360,3 +360,17 @@ class testBSMMethod(unittest.TestCase):
         assert instrument_method.gradient_table[1]["CompositionA"] == "20.0"
         assert instrument_method.gradient_table[1]["CompositionB"] == "80.0"
         assert str(instrument_method.gradient_table[1]["Curve"]) == "10"
+
+    def test_gradient_xml(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        assert instrument_method.gradient_xml in self.minimal_definition["xml"]
+        assert instrument_method["GradientTable"] in instrument_method.gradient_xml
+        instrument_method = BSMMethod(self.medium_definition)
+        assert instrument_method.gradient_xml in self.medium_definition["xml"]
+        assert instrument_method["GradientTable"] in instrument_method.gradient_xml
+        strip = lambda x: x.replace("\r\n", "").replace(" ", "")
+        # Removes the whitespaces and newlines from the xml from Waters
+        for bsm_method in self.bsm_method_list:
+            bsm = BSMMethod(bsm_method)
+            assert bsm.gradient_xml in strip(bsm_method["xml"])
+            assert strip(bsm["GradientTable"]) in bsm.gradient_xml

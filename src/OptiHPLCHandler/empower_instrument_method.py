@@ -197,9 +197,10 @@ class SolventManagerMethod(InstrumentMethod):
     def gradient_table(self) -> List[Dict[str, str]]:
         gradient_table = []
         for row in self.gradient_data:
-            row_dict = {"Time": row.time, "Flow": row.flow, "Curve": row.curve.value}
+            row_dict = {"Time": row.time, "Flow": row.flow}
             for solvent, composition in zip(self.solvent_lines, row.composition):
                 row_dict[f"Composition{solvent}"] = composition
+            row_dict["Curve"] = row.curve.value
             gradient_table.append(row_dict)
         return gradient_table
 
@@ -219,6 +220,15 @@ class SolventManagerMethod(InstrumentMethod):
                 )
             )
         self.gradient_data = gradient_rows
+
+    @property
+    def gradient_xml(self):
+        xml = ET.Element("GradientTable")
+        for row in self.gradient_table:
+            row_xml = ET.SubElement(xml, "GradientRow")
+            for key, value in row.items():
+                ET.SubElement(row_xml, key).text = value
+        return ET.tostring(xml, encoding="unicode")
 
     @classmethod
     def interpret_gradient_table(cls, xml: str) -> List[EmpowerGradientRowModel]:
