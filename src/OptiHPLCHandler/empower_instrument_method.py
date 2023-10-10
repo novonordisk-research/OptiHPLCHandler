@@ -173,7 +173,8 @@ class SolventManagerMethod(InstrumentMethod):
             solvent + self[tag]
             for solvent, tag in zip(self.solvent_lines, valve_position_tags)
         ]
-        # Consider removing the ones that have position 0, to make QSM easier to read.
+        # Consider removing the ones that have position 0,
+        # to make QSM methods easier to read.
         return valve_positions
 
     def __str__(self):
