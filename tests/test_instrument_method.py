@@ -398,7 +398,10 @@ class testBSMMethod(unittest.TestCase):
         instrument_method = BSMMethod(self.medium_definition)
         assert instrument_method.gradient_xml in self.medium_definition["xml"]
         assert instrument_method["GradientTable"] in instrument_method.gradient_xml
-        strip = lambda x: x.replace("\r\n", "").replace(" ", "")
+
+        def strip(x: str) -> str:
+            return x.replace("\r\n", "").replace(" ", "")
+
         # Removes the whitespaces and newlines from the xml from Waters
         for bsm_method in self.bsm_method_list:
             bsm = BSMMethod(bsm_method)

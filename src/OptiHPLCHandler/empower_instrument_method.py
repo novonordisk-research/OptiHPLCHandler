@@ -3,8 +3,8 @@ import re
 from typing import Dict, List, Mapping, Tuple, Union
 from xml.etree import ElementTree as ET
 
+from OptiHPLCHandler.data_types import EmpowerGradientCurve, EmpowerGradientRowModel
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
-from OptiHPLCHandler.data_types import EmpowerGradientRowModel, EmpowerGradientCurve
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +206,8 @@ class SolventManagerMethod(InstrumentMethod):
         for position in value:
             if position[0] not in self.solvent_lines:
                 raise ValueError(
-                    f"Invalid valve position {position}, must start with one of {self.solvent_lines}"
+                    f"Invalid valve position {position}, "
+                    f"must start with one of {self.solvent_lines}"
                 )
             self[
                 self.valve_tag_prefix + position[0] + self.valve_tag_suffix
