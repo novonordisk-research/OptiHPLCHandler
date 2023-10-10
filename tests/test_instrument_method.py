@@ -274,7 +274,7 @@ class testBSMMethod(unittest.TestCase):
         assert "<FlowSourceA>1</FlowSourceA>" in instrument_method.current_method["xml"]
         assert "<FlowSourceB>2</FlowSourceB>" in instrument_method.current_method["xml"]
 
-    def test_gradient_values(self):
+    def test_gradient_data(self):
         instrument_method = BSMMethod(self.minimal_definition)
         assert len(instrument_method.gradient_data) == 1
         assert instrument_method.gradient_data[0].time == "0.00"
@@ -284,12 +284,79 @@ class testBSMMethod(unittest.TestCase):
         instrument_method = BSMMethod(self.medium_definition)
         assert len(instrument_method.gradient_data) == 2
         assert instrument_method.gradient_data[0].time == "0.00"
-        assert instrument_method.gradient_data[1].time == "10.00"
         assert instrument_method.gradient_data[0].flow == "0.300"
-        assert instrument_method.gradient_data[1].flow == "0.500"
         assert instrument_method.gradient_data[0].composition == ["90.0", "10.0"]
-        assert instrument_method.gradient_data[1].composition == ["10.0", "90.0"]
         assert str(instrument_method.gradient_data[0].curve) == "6"
+        assert instrument_method.gradient_data[1].time == "10.00"
+        assert instrument_method.gradient_data[1].flow == "0.500"
+        assert instrument_method.gradient_data[1].composition == ["10.0", "90.0"]
         assert str(instrument_method.gradient_data[1].curve) == "6"
-        for bsm_method in self.bsm_method_list:
-            bsm = BSMMethod(bsm_method)
+
+    def test_gradient_table(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        assert len(instrument_method.gradient_table) == 1
+        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Flow"] == "0.600"
+        assert instrument_method.gradient_table[0]["CompositionA"] == "100.0"
+        assert instrument_method.gradient_table[0]["CompositionB"] == "0.0"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "6"
+        instrument_method = BSMMethod(self.medium_definition)
+        assert len(instrument_method.gradient_table) == 2
+        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Flow"] == "0.300"
+        assert instrument_method.gradient_table[0]["CompositionA"] == "90.0"
+        assert instrument_method.gradient_table[0]["CompositionB"] == "10.0"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "6"
+        assert instrument_method.gradient_table[1]["Time"] == "10.00"
+        assert instrument_method.gradient_table[1]["Flow"] == "0.500"
+        assert instrument_method.gradient_table[1]["CompositionA"] == "10.0"
+        assert instrument_method.gradient_table[1]["CompositionB"] == "90.0"
+        assert str(instrument_method.gradient_table[1]["Curve"]) == "6"
+
+    def test_gradient_table_setter(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        instrument_method.gradient_table = [
+            {
+                "Time": "0.00",
+                "Flow": "0.500",
+                "CompositionA": "50.0",
+                "CompositionB": "50.0",
+                "Curve": "11",
+            }
+        ]
+        assert len(instrument_method.gradient_table) == 1
+        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Flow"] == "0.500"
+        assert instrument_method.gradient_table[0]["CompositionA"] == "50.0"
+        assert instrument_method.gradient_table[0]["CompositionB"] == "50.0"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "11"
+
+    def test_gradient_table_setter_multiple(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        instrument_method.gradient_table = [
+            {
+                "Time": "0.00",
+                "Flow": "0.500",
+                "CompositionA": "70.0",
+                "CompositionB": "30.0",
+                "Curve": "11",
+            },
+            {
+                "Time": "10.00",
+                "Flow": "0.600",
+                "CompositionA": "20.0",
+                "CompositionB": "80.0",
+                "Curve": "10",
+            },
+        ]
+        assert len(instrument_method.gradient_table) == 2
+        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Flow"] == "0.500"
+        assert instrument_method.gradient_table[0]["CompositionA"] == "70.0"
+        assert instrument_method.gradient_table[0]["CompositionB"] == "30.0"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "11"
+        assert instrument_method.gradient_table[1]["Time"] == "10.00"
+        assert instrument_method.gradient_table[1]["Flow"] == "0.600"
+        assert instrument_method.gradient_table[1]["CompositionA"] == "20.0"
+        assert instrument_method.gradient_table[1]["CompositionB"] == "80.0"
+        assert str(instrument_method.gradient_table[1]["Curve"]) == "10"
