@@ -1,6 +1,7 @@
 import logging
 import re
 from typing import Dict, List, Mapping, Tuple, Union
+from warnings import warn
 from xml.etree import ElementTree as ET
 
 from OptiHPLCHandler.data_types import EmpowerGradientCurve, EmpowerGradientRowModel
@@ -184,6 +185,13 @@ class SolventManagerMethod(InstrumentMethod):
             + self.find_value(method["xml"], "GradientTable")
             + "</GradientTable>"
         )
+        if original_gradient_xml not in self.original_method["xml"]:
+            warn(
+                "Gradient table not found in original method, probably because it is "
+                "has been manually changed. These changes will be overwritten, and the "
+                "gradient table will be set to the one set through the gradient_table "
+                "property, or the original, if that has not been changed."
+            )
         return self.alter_method(method, [(original_gradient_xml, self.gradient_xml)])
 
     @property
