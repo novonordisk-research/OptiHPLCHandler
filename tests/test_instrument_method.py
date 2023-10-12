@@ -430,3 +430,22 @@ class testBSMMethod(unittest.TestCase):
         new_method = BSMMethod(instrument_method.current_method)
         assert new_method.gradient_xml in instrument_method.current_method["xml"]
         assert new_method.gradient_table == instrument_method.gradient_table
+
+    def test_gradient_manually_changed(self):
+        # Checks that manual changes in the gradient table does not proclude the use
+        # of the gradient_table setter. This should not happen, as changes
+        # should be done through the gradient_table setter, and manual changes will be
+        # overwritten.
+        instrument_method = BSMMethod(self.minimal_definition)
+        instrument_method.replace("<Flow>0.600</Flow>", "<Flow>0.010</Flow>")
+        new_gradient_table = [
+            {
+                "Time": "0.00",
+                "Flow": "0.500",
+                "CompositionA": "50.0",
+                "CompositionB": "50.0",
+                "Curve": "11",
+            },
+        ]
+        instrument_method.gradient_table = new_gradient_table
+        assert instrument_method.gradient_xml in instrument_method.current_method["xml"]
