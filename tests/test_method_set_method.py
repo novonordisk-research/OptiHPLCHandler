@@ -54,8 +54,10 @@ class TestMethodSetMethod(unittest.TestCase):
     def test_current_method(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
         method = EmpowerMethodSetMethod(method_definition)
-        original_column_temperature = method.column_oven_list[0].column_temperature
-        method.column_oven_list[0].column_temperature = "50.03"
+        original_column_temperature = method.column_oven_method_list[
+            0
+        ].column_temperature
+        method.column_oven_method_list[0].column_temperature = "50.03"
         assert isinstance(method.current_method, dict)
         assert method.current_method != method_definition["results"][0]
         assert method.current_method["modules"][0]["xml"].count("50.03") == 1
@@ -89,7 +91,7 @@ class TestMethodSetMethod(unittest.TestCase):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"].append(method_definition["modules"][0])
         method = EmpowerMethodSetMethod(method_definition)
-        method.column_oven_list[0].column_temperature = "50.03"
+        method.column_oven_method_list[0].column_temperature = "50.03"
         with self.assertRaises(ValueError):
             method.column_temperature
 
@@ -99,13 +101,13 @@ class TestMethodSetMethod(unittest.TestCase):
         new_temperature = method.column_temperature + "1"
         method.column_temperature = new_temperature
         assert method.column_temperature == new_temperature
-        assert method.column_oven_list[0].column_temperature == new_temperature
+        assert method.column_oven_method_list[0].column_temperature == new_temperature
 
     def test_set_column_temperature_multiple(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"].append(method_definition["modules"][0])
         method = EmpowerMethodSetMethod(method_definition)
-        method.column_oven_list[0].column_temperature = "5"
+        method.column_oven_method_list[0].column_temperature = "5"
         method.column_temperature = "50.03"
         assert method.column_temperature == "50.03"
 

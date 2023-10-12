@@ -4,7 +4,7 @@ import unittest
 
 from OptiHPLCHandler.empower_instrument_method import (
     BSMMethod,
-    ColumnHandlerMethod,
+    ColumnOvenMethod,
     InstrumentMethod,
     instrument_method_factory,
 )
@@ -31,12 +31,12 @@ class TestInstrumentMethodFactory(unittest.TestCase):
     def test_column_handler(self):
         minimal_definition = {"name": "rAcquityFTN"}
         instrument_method = instrument_method_factory(minimal_definition)
-        assert isinstance(instrument_method, ColumnHandlerMethod)
+        assert isinstance(instrument_method, ColumnOvenMethod)
         example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
             "modules"
         ][0]
         instrument_method = instrument_method_factory(example_definition)
-        assert isinstance(instrument_method, ColumnHandlerMethod)
+        assert isinstance(instrument_method, ColumnOvenMethod)
 
     def test_instrument_method(self):
         minimal_definition = {"name": "none_of_the_above"}
@@ -171,7 +171,7 @@ class TestSampleManager(unittest.TestCase):
             "name": "rAcquityFTN",
             "xml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
-        instrument_method: ColumnHandlerMethod = instrument_method_factory(
+        instrument_method: ColumnOvenMethod = instrument_method_factory(
             minimal_definition
         )
         assert instrument_method.column_temperature == "43.0"
@@ -183,7 +183,7 @@ class TestSampleManager(unittest.TestCase):
             "name": "rAcquityFTN",
             "xml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
-        instrument_method: ColumnHandlerMethod = instrument_method_factory(
+        instrument_method: ColumnOvenMethod = instrument_method_factory(
             minimal_definition
         )
         instrument_method.column_temperature = "44.0"
