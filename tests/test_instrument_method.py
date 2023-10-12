@@ -449,3 +449,6 @@ class testBSMMethod(unittest.TestCase):
         ]
         instrument_method.gradient_table = new_gradient_table
         assert instrument_method.gradient_xml in instrument_method.current_method["xml"]
+        # test that a warning is raised
+        with self.assertWarns(UserWarning):
+            instrument_method.current_method["xml"]
