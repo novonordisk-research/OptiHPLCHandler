@@ -181,7 +181,7 @@ class SolventManagerMethod(InstrumentMethod):
         method = super().current_method
         original_gradient_xml = (
             "<GradientTable>"
-            + self.find_value(self.original_method["xml"], "GradientTable")
+            + self.find_value(method["xml"], "GradientTable")
             + "</GradientTable>"
         )
         return self.alter_method(method, [(original_gradient_xml, self.gradient_xml)])
