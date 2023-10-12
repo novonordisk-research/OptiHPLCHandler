@@ -132,7 +132,7 @@ class InstrumentMethod:
         return method
 
 
-class ColumnHandlerMethod(InstrumentMethod):
+class ColumnOvenMethod(InstrumentMethod):
     """
     Class for instrument methods that have a column temperature.
 
@@ -151,7 +151,7 @@ class ColumnHandlerMethod(InstrumentMethod):
         self[self.TEMPERATURE_KEY] = value
 
 
-class SampleManagerMethod(ColumnHandlerMethod):
+class SampleManagerMethod(ColumnOvenMethod):
     """Class for instrument methods that control a sample manager."""
 
     TEMPERATURE_KEY = "ColumnTemperature"
