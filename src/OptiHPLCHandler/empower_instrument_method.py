@@ -1,6 +1,7 @@
 import logging
 import re
-from typing import List, Mapping, Tuple
+from typing import Dict, List, Mapping, Tuple, Union
+from xml.etree import ElementTree as ET
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
 
@@ -52,6 +53,10 @@ class InstrumentMethod:
         """
         self._change_list.append((original, new))
 
+    def undo(self) -> None:
+        """Undo the last change made to the method."""
+        self._change_list.pop()
+
     # If this property method is called often, there could be performance issues. In
     # that case, consider cahcing the result with `@functools.lru_cahce(maxsize=1)`. You
     # also need to implement a `__hash__` method and an `__eq__` method for this to
@@ -67,7 +72,17 @@ class InstrumentMethod:
             xml = self.current_method["xml"]
         except KeyError as ex:
             raise KeyError("No xml found in method definition") from ex
-        search_result = re.search(f"<{key}>(.*)</{key}>", xml)
+        return self.find_value(xml, key)
+
+    def __setitem__(self, key: str, value: str) -> None:
+        current_value = self[key]
+        self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
+
+    @staticmethod
+    def find_value(xml: str, key: str):
+        """Find the value of a key in an xml from Empower."""
+        search_result = re.search(f"<{key}>(.*)</{key}>", xml, re.DOTALL)
+        # The re.DOTALL flag ensures that newline charaters are also matched by the dot.
         if not search_result:
             # Consider trying to replace `<` with `&lt` and `>` with `&gt;` and then
             # trying again.
@@ -79,10 +94,6 @@ class InstrumentMethod:
             # happens.
             raise ValueError(f"Found more than one match for key {key}")
         return search_result.groups(1)[0]
-
-    def __setitem__(self, key: str, value: str) -> None:
-        current_value = self[key]
-        self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
 
     @staticmethod
     def alter_method(
@@ -120,7 +131,7 @@ class InstrumentMethod:
         return method
 
 
-class ColumnHandlerMethod(InstrumentMethod):
+class ColumnOvenMethod(InstrumentMethod):
     """
     Class for instrument methods that have a column temperature.
 
@@ -131,6 +142,7 @@ class ColumnHandlerMethod(InstrumentMethod):
 
     @property
     def column_temperature(self):
+        """The column temperature."""
         return self[self.TEMPERATURE_KEY]
 
     @column_temperature.setter
@@ -138,10 +150,116 @@ class ColumnHandlerMethod(InstrumentMethod):
         self[self.TEMPERATURE_KEY] = value
 
 
-class SampleManagerMethod(ColumnHandlerMethod):
+class SampleManagerMethod(ColumnOvenMethod):
     """Class for instrument methods that control a sample manager."""
 
     TEMPERATURE_KEY = "ColumnTemperature"
+
+
+class SolventManagerMethod(InstrumentMethod):
+    """
+    Parent class for instrument methods that control a solvent manager.
+
+    Attributes in addition to the ones from InstrumentMethod:
+    :attribute valve_position: The current valve position for each solvent line.
+    :attribute gradient_table: The gradient table for the method.
+    """
+
+    valve_tag_prefix: str
+    valve_tag_suffix: str
+    solvent_lines: List[str]
+
+    @property
+    def valve_position(self) -> List[str]:
+        """The current valve position for each solvent line."""
+        valve_position_tags = [
+            self.valve_tag_prefix + solvent + self.valve_tag_suffix
+            for solvent in self.solvent_lines
+        ]
+        valve_positions = [
+            solvent + self[tag]
+            for solvent, tag in zip(self.solvent_lines, valve_position_tags)
+        ]
+        # Consider removing the ones that have position 0,
+        # to make QSM methods easier to read.
+        return valve_positions
+
+    def __str__(self):
+        return f"{type(self).__name__} with valve positions {self.valve_position}"
+
+    @valve_position.setter
+    def valve_position(self, value: Union[str, List[str]]) -> None:
+        if isinstance(value, str):
+            value = [value]
+        for position in value:
+            if position[0] not in self.solvent_lines:
+                raise ValueError(
+                    f"Invalid valve position {position}, "
+                    f"must start with one of {self.solvent_lines}"
+                )
+            self[
+                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
+            ] = position[1:]
+
+    @property
+    def gradient_table(self) -> List[Dict[str, str]]:
+        """
+        The gradient table for the method. It is a list of dicts, one for each row.
+
+        The dicts have the following keys:
+        - Time: The time in minutes.
+        - Flow: The flow in mL/min.
+        - CompositionX: The composition of solvent line X (A, B, C, D) in %.
+        - Curve: The curve type (1-11, 6 is linear and default).
+        """
+        gradient_table = []
+        e_tree = ET.fromstring(f"<root>{self['GradientTable']}</root>")
+        for gradient_row in e_tree:
+            if gradient_row.tag != "GradientRow":
+                raise ValueError(
+                    f"Expected GradientRow, got {gradient_row.tag} instead."
+                )
+            row_dict = {}
+            for field in gradient_row:
+                row_dict[field.tag] = field.text
+            gradient_table.append(row_dict)
+        return gradient_table
+
+    @gradient_table.setter
+    def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
+        xml = ET.Element("GradientTable")
+        for row in new_gradient_table:
+            row_xml = ET.SubElement(xml, "GradientRow")
+            curve = row.get("Curve", "6")
+            ET.SubElement(row_xml, "Time").text = row["Time"]
+            ET.SubElement(row_xml, "Flow").text = row["Flow"]
+            # "6" is linear, which covers 90% of the use cases
+            for line in self.solvent_lines:
+                line_name = f"Composition{line}"
+                ET.SubElement(row_xml, line_name).text = row[line_name]
+            ET.SubElement(row_xml, "Curve").text = curve
+            # Consider validating curve (1-11)
+        gradient_xml = ET.tostring(xml, encoding="unicode")
+        gradient_xml = gradient_xml.replace("<GradientTable>", "").replace(
+            "</GradientTable>", ""
+        )  # Stripping root tag, as it is set by __setitem__()
+        self["GradientTable"] = gradient_xml
+
+
+class BSMMethod(SolventManagerMethod):
+    """Class for instrument methods that control a binary solvent manager (BSM)."""
+
+    valve_tag_prefix = "FlowSource"
+    valve_tag_suffix = ""
+    solvent_lines = ["A", "B"]
+
+
+class QSMMethod(SolventManagerMethod):
+    """Class for instrument methods that control a quaternary solvent manager (QSM)."""
+
+    valve_tag_prefix = "SolventSelectionValve"
+    valve_tag_suffix = "Position"
+    solvent_lines = ["A", "B", "C", "D"]
 
 
 def instrument_method_factory(method_definition: Mapping[str, str]) -> InstrumentMethod:
@@ -155,6 +273,9 @@ def instrument_method_factory(method_definition: Mapping[str, str]) -> Instrumen
         if method_definition["name"] in ["rAcquityFTN"]:
             logger.debug("Creating SampleManager")
             return SampleManagerMethod(method_definition)
+        elif method_definition["name"] in ["AcquityBSM"]:
+            logger.debug("Creating BSM")
+            return BSMMethod(method_definition)
         # Add more cases as they are coded
         else:
             logger.debug(
