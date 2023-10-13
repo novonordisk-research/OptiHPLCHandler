@@ -171,28 +171,31 @@ class SolventManagerMethod(InstrumentMethod):
     valve_tag_suffix: str
     solvent_lines: List[str]
 
-    def __init__(self, method_definition: Mapping[str, str]):
-        super().__init__(method_definition)
-        _gradient_xml = self.find_value(self.original_method["xml"], "GradientTable")
-        self.gradient_data = self.interpret_gradient_table(_gradient_xml)
-
     @property
-    def current_method(self) -> DataModel:
-        """The current method definition, including the changes that have been made."""
-        method = super().current_method
-        original_gradient_xml = (
-            "<GradientTable>"
-            + self.find_value(method["xml"], "GradientTable")
-            + "</GradientTable>"
-        )
-        if original_gradient_xml not in self.original_method["xml"]:
-            warn(
-                "Gradient table not found in original method, probably because it is "
-                "has been manually changed. These changes will be overwritten, and the "
-                "gradient table will be set to the one set through the gradient_table "
-                "property, or the original, if that has not been changed."
+    def gradient_data(self) -> List[EmpowerGradientRowModel]:
+        """The gradient table for the method."""
+        gradient_row_list = []
+        e_tree = ET.fromstring(f"<root>{self['GradientTable']}</root>")
+        for gradient_row in e_tree:
+            if gradient_row.tag != "GradientRow":
+                raise ValueError(
+                    f"Expected GradientRow, got {gradient_row.tag} instead."
+                )
+            gradient_row_dict = {}
+            for field in gradient_row:
+                gradient_row_dict[field.tag] = field.text
+            composition = []
+            for line in self.solvent_lines:
+                composition.append(gradient_row_dict[f"Composition{line}"])
+            gradient_row_list.append(
+                EmpowerGradientRowModel(
+                    time=gradient_row_dict["Time"],
+                    flow=gradient_row_dict["Flow"],
+                    composition=composition,
+                    curve=EmpowerGradientCurve(gradient_row_dict["Curve"]),
+                )
             )
-        return self.alter_method(method, [(original_gradient_xml, self.gradient_xml)])
+        return gradient_row_list
 
     @property
     def valve_position(self) -> List[str]:
@@ -247,59 +250,27 @@ class SolventManagerMethod(InstrumentMethod):
         return gradient_table
 
     @gradient_table.setter
-    def gradient_table(self, value: List[Dict[str, str]]) -> None:
-        gradient_rows = []
-        for row in value:
-            curve = row.get("Curve", "6")
-            # "6" is linear, which covers 90% of the use cases
-            composition = []
-            for line in self.solvent_lines:
-                composition.append(row[f"Composition{line}"])
-            gradient_rows.append(
-                EmpowerGradientRowModel(
-                    time=row["Time"],
-                    flow=row["Flow"],
-                    composition=composition,
-                    curve=EmpowerGradientCurve(curve),
-                )
-            )
-        self.gradient_data = gradient_rows
-
-    @property
-    def gradient_xml(self) -> str:
-        """The gradient table as xml for use with Empower API"""
+    def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
         xml = ET.Element("GradientTable")
-        for row in self.gradient_table:
+        for row in new_gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
-            for key, value in row.items():
-                ET.SubElement(row_xml, key).text = value
-        return ET.tostring(xml, encoding="unicode")
+            curve = row.get("Curve", "6")
+            ET.SubElement(row_xml, "Time").text = row["Time"]
+            ET.SubElement(row_xml, "Flow").text = row["Flow"]
+            # "6" is linear, which covers 90% of the use cases
+            for line in self.solvent_lines:
+                line_name = f"Composition{line}"
+                ET.SubElement(row_xml, line_name).text = row[line_name]
+            ET.SubElement(row_xml, "Curve").text = curve
+        gradient_xml = ET.tostring(xml, encoding="unicode")
+        gradient_xml = gradient_xml.replace("<GradientTable>", "").replace(
+            "</GradientTable>", ""
+        )  # Stripping root tag, as it is set by __setitem__()
+        self["GradientTable"] = gradient_xml
 
     @classmethod
     def interpret_gradient_table(cls, xml: str) -> List[EmpowerGradientRowModel]:
         """Create the internal representation of the gradient table from the xml."""
-        gradient_row_list = []
-        e_tree = ET.fromstring(f"<root>{xml}</root>")
-        for gradient_row in e_tree:
-            if gradient_row.tag != "GradientRow":
-                raise ValueError(
-                    f"Expected GradientRow, got {gradient_row.tag} instead."
-                )
-            gradient_row_dict = {}
-            for field in gradient_row:
-                gradient_row_dict[field.tag] = field.text
-            composition = []
-            for line in cls.solvent_lines:
-                composition.append(gradient_row_dict[f"Composition{line}"])
-            gradient_row_list.append(
-                EmpowerGradientRowModel(
-                    time=gradient_row_dict["Time"],
-                    flow=gradient_row_dict["Flow"],
-                    composition=composition,
-                    curve=EmpowerGradientCurve(gradient_row_dict["Curve"]),
-                )
-            )
-        return gradient_row_list
 
 
 class BSMMethod(SolventManagerMethod):
