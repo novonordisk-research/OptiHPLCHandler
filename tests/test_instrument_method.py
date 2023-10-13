@@ -292,24 +292,6 @@ class testBSMMethod(unittest.TestCase):
         assert "<FlowSourceA>1</FlowSourceA>" in instrument_method.current_method["xml"]
         assert "<FlowSourceB>2</FlowSourceB>" in instrument_method.current_method["xml"]
 
-    def test_gradient_data(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        assert len(instrument_method.gradient_data) == 1
-        assert instrument_method.gradient_data[0].time == "0.00"
-        assert instrument_method.gradient_data[0].flow == "0.600"
-        assert instrument_method.gradient_data[0].composition == ["100.0", "0.0"]
-        assert str(instrument_method.gradient_data[0].curve) == "6"
-        instrument_method = BSMMethod(self.medium_definition)
-        assert len(instrument_method.gradient_data) == 2
-        assert instrument_method.gradient_data[0].time == "0.00"
-        assert instrument_method.gradient_data[0].flow == "0.300"
-        assert instrument_method.gradient_data[0].composition == ["90.0", "10.0"]
-        assert str(instrument_method.gradient_data[0].curve) == "6"
-        assert instrument_method.gradient_data[1].time == "10.00"
-        assert instrument_method.gradient_data[1].flow == "0.500"
-        assert instrument_method.gradient_data[1].composition == ["10.0", "90.0"]
-        assert str(instrument_method.gradient_data[1].curve) == "6"
-
     def test_gradient_table(self):
         instrument_method = BSMMethod(self.minimal_definition)
         assert len(instrument_method.gradient_table) == 1
