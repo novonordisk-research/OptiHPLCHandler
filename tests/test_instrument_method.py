@@ -226,9 +226,9 @@ class testBSMMethod(unittest.TestCase):
             "name": "AcquityBSM",
             "xml": (
                 "<FlowSourceA>1</FlowSourceA><FlowSourceB>1</FlowSourceB>"
-                "<GradientTable><GradientRow><Time>0.00</Time><Flow>0.600</Flow>"
+                "<GradientTable><GradientRow><Time>Initial</Time><Flow>0.600</Flow>"
                 "<CompositionA>100.0</CompositionA><CompositionB>0.0</CompositionB>"
-                "<Curve>6</Curve></GradientRow></GradientTable>"
+                "<Curve>Initial</Curve></GradientRow></GradientTable>"
             ),
         }
         self.medium_definition = {
@@ -237,10 +237,10 @@ class testBSMMethod(unittest.TestCase):
                 "<FlowSourceA>2</FlowSourceA><FlowSourceB>1</FlowSourceB>"
                 "<GradientTable>"
                 "<GradientRow>"
-                "<Time>0.00</Time><Flow>0.300</Flow>"
+                "<Time>Initial</Time><Flow>0.300</Flow>"
                 "<CompositionA>90.0</CompositionA>"
                 "<CompositionB>10.0</CompositionB>"
-                "<Curve>6</Curve>"
+                "<Curve>Initial</Curve>"
                 "</GradientRow>"
                 "<GradientRow>"
                 "<Time>10.00</Time>"
@@ -295,18 +295,18 @@ class testBSMMethod(unittest.TestCase):
     def test_gradient_table(self):
         instrument_method = BSMMethod(self.minimal_definition)
         assert len(instrument_method.gradient_table) == 1
-        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Time"] == "Initial"
         assert instrument_method.gradient_table[0]["Flow"] == "0.600"
         assert instrument_method.gradient_table[0]["CompositionA"] == "100.0"
         assert instrument_method.gradient_table[0]["CompositionB"] == "0.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "6"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
         instrument_method = BSMMethod(self.medium_definition)
         assert len(instrument_method.gradient_table) == 2
-        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Time"] == "Initial"
         assert instrument_method.gradient_table[0]["Flow"] == "0.300"
         assert instrument_method.gradient_table[0]["CompositionA"] == "90.0"
         assert instrument_method.gradient_table[0]["CompositionB"] == "10.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "6"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
         assert instrument_method.gradient_table[1]["Time"] == "10.00"
         assert instrument_method.gradient_table[1]["Flow"] == "0.500"
         assert instrument_method.gradient_table[1]["CompositionA"] == "10.0"
@@ -317,19 +317,19 @@ class testBSMMethod(unittest.TestCase):
         instrument_method = BSMMethod(self.minimal_definition)
         instrument_method.gradient_table = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.500",
                 "CompositionA": "50.0",
                 "CompositionB": "50.0",
-                "Curve": "11",
+                "Curve": "Initial",
             }
         ]
         assert len(instrument_method.gradient_table) == 1
-        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Time"] == "Initial"
         assert instrument_method.gradient_table[0]["Flow"] == "0.500"
         assert instrument_method.gradient_table[0]["CompositionA"] == "50.0"
         assert instrument_method.gradient_table[0]["CompositionB"] == "50.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "11"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
 
     def test_gradient_table_setter_default(self):
         instrument_method = BSMMethod(self.minimal_definition)
@@ -347,11 +347,11 @@ class testBSMMethod(unittest.TestCase):
         instrument_method = BSMMethod(self.minimal_definition)
         instrument_method.gradient_table = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.500",
                 "CompositionA": "70.0",
                 "CompositionB": "30.0",
-                "Curve": "11",
+                "Curve": "Initial",
             },
             {
                 "Time": "10.00",
@@ -362,11 +362,11 @@ class testBSMMethod(unittest.TestCase):
             },
         ]
         assert len(instrument_method.gradient_table) == 2
-        assert instrument_method.gradient_table[0]["Time"] == "0.00"
+        assert instrument_method.gradient_table[0]["Time"] == "Initial"
         assert instrument_method.gradient_table[0]["Flow"] == "0.500"
         assert instrument_method.gradient_table[0]["CompositionA"] == "70.0"
         assert instrument_method.gradient_table[0]["CompositionB"] == "30.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "11"
+        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
         assert instrument_method.gradient_table[1]["Time"] == "10.00"
         assert instrument_method.gradient_table[1]["Flow"] == "0.600"
         assert instrument_method.gradient_table[1]["CompositionA"] == "20.0"
@@ -377,11 +377,11 @@ class testBSMMethod(unittest.TestCase):
         instrument_method = BSMMethod(self.minimal_definition)
         instrument_method.gradient_table = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.500",
                 "CompositionA": "70.0",
                 "CompositionB": "30.0",
-                "Curve": "11",
+                "Curve": "Initial",
             },
             {
                 "Time": "10.00",
@@ -394,18 +394,18 @@ class testBSMMethod(unittest.TestCase):
         new_method = BSMMethod(instrument_method.current_method)
         assert new_method.gradient_table == instrument_method.gradient_table
 
-    def test_gradient_manually_changed(self):
+    def test_manually_than_gradient_table_changed(self):
         # Checks that manual changes in the gradient table does not proclude the use
         # of the gradient_table setter.
         instrument_method = BSMMethod(self.minimal_definition)
         instrument_method.replace("<Flow>0.600</Flow>", "<Flow>0.010</Flow>")
         new_gradient_table = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.500",
                 "CompositionA": "50.0",
                 "CompositionB": "50.0",
-                "Curve": "11",
+                "Curve": "Initial",
             },
         ]
         instrument_method.gradient_table = new_gradient_table
@@ -415,11 +415,11 @@ class testBSMMethod(unittest.TestCase):
         instrument_method = BSMMethod(self.minimal_definition)
         new_gradient_table = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.500",
                 "CompositionA": "50.0",
                 "CompositionB": "50.0",
-                "Curve": "11",
+                "Curve": "Initial",
             },
         ]
         instrument_method.gradient_table = new_gradient_table
