@@ -207,10 +207,10 @@ class SolventManagerMethod(InstrumentMethod):
         The gradient table for the method. It is a list of dicts, one for each row.
 
         The dicts have the following keys:
-        - Time: The time in minutes.
+        - Time: The time in minutes (or Initial).
         - Flow: The flow in mL/min.
         - CompositionX: The composition of solvent line X (A, B, C, D) in %.
-        - Curve: The curve type (1-11, 6 is linear and default).
+        - Curve: The curve type (Initial, or 1-11, 6 is linear and default).
         """
         gradient_table = []
         e_tree = ET.fromstring(f"<root>{self['GradientTable']}</root>")
