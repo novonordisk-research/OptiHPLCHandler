@@ -10,7 +10,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def setUp(self, mock_requests) -> None:
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [{"token": "test_token", "id": "test_id"}]
+            "result": [{"token": "test_token", "id": "test_id"}]
         }
         mock_response.status_code = 200
         mock_requests.post.return_value = mock_response
@@ -32,7 +32,8 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_auto_service(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [{"netServiceName": "auto_test_service", "token": "test_token"}]
+            "results": [{"netServiceName": "auto_test_service"}],
+            "result": {"token": "test_token"},
         }
         mock_response.status_code = 200
         # Service name is automatically requested, so we need to mock that response
@@ -56,9 +57,8 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_automatic_service_name(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [
-                {"netServiceName": "automatic_test_service", "token": "test_token"}
-            ]
+            "results": [{"netServiceName": "auto_test_service"}],
+            "result": {"token": "test_token"},
         }
         mock_response.status_code = 200
         mock_requests.get.return_value = mock_response
@@ -95,7 +95,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_relogin_get(self, mock_requests, mock_getpass):
         # Verify that the handler logs in again if the token is invalid on get.
         mock_response = MagicMock()
-        mock_response.json.return_value = {"results": [{"token": "test_token"}]}
+        mock_response.json.return_value = {"result": [{"token": "test_token"}]}
         mock_response.status_code = 401
         mock_requests.get.return_value = mock_response
         mock_response = MagicMock()
@@ -136,7 +136,7 @@ class TestEmpowerConnection(unittest.TestCase):
         # Verify that the handler logs in again if the token is invalid on put.
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [{"token": "test_token", "id": "test_id"}]
+            "result": [{"token": "test_token", "id": "test_id"}]
         }
         mock_response.status_code = 401
         mock_requests.post.return_value = mock_response
