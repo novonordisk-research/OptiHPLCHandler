@@ -57,7 +57,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_automatic_service_name(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [{"netServiceName": "auto_test_service"}],
+            "results": [{"netServiceName": "automatic_test_service"}],
             "result": {"token": "test_token"},
         }
         mock_response.status_code = 200
