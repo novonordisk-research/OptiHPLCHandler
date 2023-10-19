@@ -91,8 +91,8 @@ class EmpowerConnection:
             json=body,
         )
         reply.raise_for_status()
-        self.token = reply.json()["results"][0]["token"]
-        self.session_id = reply.json()["results"][0]["id"]
+        self.token = reply.json()["result"]["token"]
+        self.session_id = reply.json()["result"]["id"]
         logger.debug("Login successful, keeping token")
 
     def logout(self) -> None:
