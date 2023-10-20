@@ -431,7 +431,7 @@ class TestEmpowerHandler(unittest.TestCase):
         method.instrument_method_list[0]["test_tag2"] = "newer_value"
         self.handler.PostMethodsetMethod(method)
         assert self.handler.connection.post.call_args[1]["endpoint"] == (
-            "project/methods/instrument-method"
+            "project/methods/instrument-method?overWriteExisting=false"
         )
         assert (
             self.handler.connection.post.call_args[1]["body"]["modules"][0]["nativeXml"]
