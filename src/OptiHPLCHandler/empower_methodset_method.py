@@ -5,8 +5,8 @@ from OptiHPLCHandler.data_types import EmpowerMethodSetMethodModel as DataModel
 from OptiHPLCHandler.empower_instrument_method import (
     ColumnOvenMethod,
     EmpowerInstrumentMethod,
-    instrument_method_factory,
     SolventManagerMethod,
+    instrument_method_factory,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,7 +107,8 @@ class EmpowerMethodSetMethod:
         """
         if self.solvent_handler_method is None:
             raise ValueError(
-                "Can't get gradient table, no solvent manager found in method set method."
+                "Can't get gradient table, "
+                "no solvent manager found in method set method."
             )
         return self.solvent_handler_method.gradient_table
 
@@ -115,7 +116,8 @@ class EmpowerMethodSetMethod:
     def gradient_table(self, gradient_table: list[dict]):
         if self.solvent_handler_method is None:
             raise ValueError(
-                "Can't set gradient table, no solvent manager found in method set method."
+                "Can't set gradient table, "
+                "no solvent manager found in method set method."
             )
         self.solvent_handler_method.gradient_table = gradient_table
 
@@ -128,7 +130,8 @@ class EmpowerMethodSetMethod:
         """
         if self.solvent_handler_method is None:
             raise ValueError(
-                "Can't get valve position, no solvent manager found in method set method."
+                "Can't get valve position, "
+                "no solvent manager found in method set method."
             )
         return self.solvent_handler_method.valve_position
 
@@ -136,9 +139,14 @@ class EmpowerMethodSetMethod:
     def valve_position(self, valve_position: str):
         if self.solvent_handler_method is None:
             raise ValueError(
-                "Can't set valve position, no solvent manager found in method set method."
+                "Can't set valve position, "
+                "no solvent manager found in method set method."
             )
         self.solvent_handler_method.valve_position = valve_position
 
     def __str__(self):
-        return f"EmpowerMethodSetMethod with {len(self.instrument_method_list)} instrument methods of types {', '.join([type(method).__name__ for method in self.instrument_method_list])}"
+        return (
+            "EmpowerMethodSetMethod with "
+            f"{len(self.instrument_method_list)} instrument methods of types "
+            ", ".join([type(method).__name__ for method in self.instrument_method_list])
+        )
