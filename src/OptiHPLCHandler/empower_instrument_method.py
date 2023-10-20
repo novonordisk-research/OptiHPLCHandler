@@ -8,7 +8,7 @@ from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
 logger = logging.getLogger(__name__)
 
 
-class InstrumentMethod:
+class EmpowerInstrumentMethod:
     """
     Generic instrument method class that can be used for any Empower instrument method.
     For specific instrument methods, a subclass should be created that inherits from
@@ -69,7 +69,7 @@ class InstrumentMethod:
 
     def __getitem__(self, key: str) -> str:
         try:
-            xml = self.current_method["xml"]
+            xml = self.current_method["nativeXml"]
         except KeyError as ex:
             raise KeyError("No xml found in method definition") from ex
         return self.find_value(xml, key)
@@ -104,7 +104,7 @@ class InstrumentMethod:
         """
         method = DataModel(original_method)
         try:
-            xml: str = method["xml"]
+            xml: str = method["nativeXml"]
         except KeyError as ex:
             if len(change_list) > 0:
                 raise ValueError(
@@ -127,11 +127,11 @@ class InstrumentMethod:
                 logger.debug(
                     "Replaced %s instances of %s with %s", num_replaced, original, new
                 )
-        method["xml"] = xml
+        method["nativeXml"] = xml
         return method
 
 
-class ColumnOvenMethod(InstrumentMethod):
+class ColumnOvenMethod(EmpowerInstrumentMethod):
     """
     Class for instrument methods that have a column temperature.
 
@@ -156,7 +156,7 @@ class SampleManagerMethod(ColumnOvenMethod):
     TEMPERATURE_KEY = "ColumnTemperature"
 
 
-class SolventManagerMethod(InstrumentMethod):
+class SolventManagerMethod(EmpowerInstrumentMethod):
     """
     Parent class for instrument methods that control a solvent manager.
 
@@ -231,13 +231,13 @@ class SolventManagerMethod(InstrumentMethod):
         for row in new_gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
             curve = row.get("Curve", "6")
-            ET.SubElement(row_xml, "Time").text = row["Time"]
-            ET.SubElement(row_xml, "Flow").text = row["Flow"]
+            ET.SubElement(row_xml, "Time").text = str(row["Time"])
+            ET.SubElement(row_xml, "Flow").text = str(row["Flow"])
             # "6" is linear, which covers 90% of the use cases
             for line in self.solvent_lines:
                 line_name = f"Composition{line}"
-                ET.SubElement(row_xml, line_name).text = row[line_name]
-            ET.SubElement(row_xml, "Curve").text = curve
+                ET.SubElement(row_xml, line_name).text = str(row[line_name])
+            ET.SubElement(row_xml, "Curve").text = str(curve)
             # Consider validating curve (1-11)
         gradient_xml = ET.tostring(xml, encoding="unicode")
         gradient_xml = gradient_xml.replace("<GradientTable>", "").replace(
@@ -262,7 +262,9 @@ class QSMMethod(SolventManagerMethod):
     solvent_lines = ["A", "B", "C", "D"]
 
 
-def instrument_method_factory(method_definition: Mapping[str, str]) -> InstrumentMethod:
+def instrument_method_factory(
+    method_definition: Mapping[str, str]
+) -> EmpowerInstrumentMethod:
     """
     Factory function for creating an InstrumentMethod from a method definition. The
     method definition should contain at least a name key, which is used to determine
@@ -273,7 +275,7 @@ def instrument_method_factory(method_definition: Mapping[str, str]) -> Instrumen
         if method_definition["name"] in ["rAcquityFTN"]:
             logger.debug("Creating SampleManager")
             return SampleManagerMethod(method_definition)
-        elif method_definition["name"] in ["AcquityBSM"]:
+        elif method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
             logger.debug("Creating BSM")
             return BSMMethod(method_definition)
         # Add more cases as they are coded
@@ -288,4 +290,4 @@ def instrument_method_factory(method_definition: Mapping[str, str]) -> Instrumen
             # If the name key is not present, we don't know what to do with it, but we
             # can still create a generic InstrumentMethod and just return that.
             logger.debug("KeyError: %s, creating a generic InstrumentMethod", e)
-        return InstrumentMethod(method_definition)
+        return EmpowerInstrumentMethod(method_definition)

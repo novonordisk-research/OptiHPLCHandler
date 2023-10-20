@@ -5,6 +5,7 @@ from typing import Any, Dict, Generic, Iterable, List, Mapping, Optional, TypeVa
 
 from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
+from .empower_methodset_method import EmpowerMethodSetMethod
 
 Result = TypeVar("Result")
 
@@ -326,6 +327,16 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         logger.debug("Found methods %s", method_name_list)
         return method_name_list
 
+    def GetMethodsetMethod(self, method_name: str) -> EmpowerMethodSetMethod:
+        response = self.connection.get(
+            endpoint=f"project/methods/instrument-method?name={method_name}"
+        )
+        return EmpowerMethodSetMethod(response.json()["result"])
+
+    def PostMethodsetMethod(self, method: EmpowerMethodSetMethod) -> None:
+        endpoint = "project/methods/instrument-method?overWriteExisting=false"
+        self.connection.post(endpoint=endpoint, body=method.current_method)
+
     def GetSetup(self) -> List[HPLCSetup]:
         """Get the list of HPLC setups."""
         raise NotImplementedError
@@ -376,3 +387,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         data_type = type(field["value"])
         logger.debug("Setting data type of field %s to %s", field["name"], data_type)
         field["dataType"] = data_type_dict[data_type]
+
+    def __str__(self):
+        return f"EmpowerHandler for project {self.project}, user {self.username}"

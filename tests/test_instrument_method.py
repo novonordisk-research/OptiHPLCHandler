@@ -5,7 +5,7 @@ import unittest
 from OptiHPLCHandler.empower_instrument_method import (
     BSMMethod,
     ColumnOvenMethod,
-    InstrumentMethod,
+    EmpowerInstrumentMethod,
     instrument_method_factory,
 )
 
@@ -41,17 +41,17 @@ class TestInstrumentMethodFactory(unittest.TestCase):
     def test_instrument_method(self):
         minimal_definition = {"name": "none_of_the_above"}
         instrument_method = instrument_method_factory(minimal_definition)
-        assert isinstance(instrument_method, InstrumentMethod)
+        assert isinstance(instrument_method, EmpowerInstrumentMethod)
         # This is a PDA, we do not have specific classes for detectors
         instrument_method = instrument_method_factory(self.example_definition)
-        assert isinstance(instrument_method, InstrumentMethod)
+        assert isinstance(instrument_method, EmpowerInstrumentMethod)
 
     def test_unknown(self):
         # Verify that an unknown instrument method will be returned as a generic
         # InstrumentMethod
         minimal_definition = {}
         instrument_method = instrument_method_factory(minimal_definition)
-        assert isinstance(instrument_method, InstrumentMethod)
+        assert isinstance(instrument_method, EmpowerInstrumentMethod)
 
 
 class TestInstrumentMethod(unittest.TestCase):
@@ -62,40 +62,40 @@ class TestInstrumentMethod(unittest.TestCase):
         ]["modules"][2]
 
     def test_original_method_immutable(self):
-        minimal_definition = {"name": "test", "xml": "old"}
+        minimal_definition = {"name": "test", "nativeXml": "old"}
         instrument_method = instrument_method_factory(minimal_definition)
         with self.assertRaises(TypeError):
-            instrument_method.original_method["xml"] = "new"
+            instrument_method.original_method["nativeXml"] = "new"
         with self.assertRaises(TypeError):
             instrument_method.original_method["new_key"] = "new_value"
 
     def test_instrument_method_replace(self):
-        minimal_definition = {"name": "test", "xml": "old"}
+        minimal_definition = {"name": "test", "nativeXml": "old"}
         instrument_method = instrument_method_factory(minimal_definition)
         instrument_method.replace("old", "new")
-        assert instrument_method.current_method["xml"] == "new"
-        assert instrument_method.original_method["xml"] == "old"
+        assert instrument_method.current_method["nativeXml"] == "new"
+        assert instrument_method.original_method["nativeXml"] == "old"
 
     def test_instrument_method_replace_multiple(self):
-        minimal_definition = {"name": "test", "xml": "old"}
+        minimal_definition = {"name": "test", "nativeXml": "old"}
         instrument_method = instrument_method_factory(minimal_definition)
         instrument_method.replace("old", "new")
-        assert instrument_method.current_method["xml"] == "new"
+        assert instrument_method.current_method["nativeXml"] == "new"
         instrument_method.replace("new", "newer")
-        assert instrument_method.current_method["xml"] == "newer"
-        assert instrument_method.original_method["xml"] == "old"
+        assert instrument_method.current_method["nativeXml"] == "newer"
+        assert instrument_method.original_method["nativeXml"] == "old"
 
     def test_instrument_method_undo(self):
-        minimal_definition = {"name": "test", "xml": "old"}
+        minimal_definition = {"name": "test", "nativeXml": "old"}
         instrument_method = instrument_method_factory(minimal_definition)
         instrument_method.replace("old", "new")
-        assert instrument_method.current_method["xml"] == "new"
+        assert instrument_method.current_method["nativeXml"] == "new"
         instrument_method.replace("new", "newer")
-        assert instrument_method.current_method["xml"] == "newer"
+        assert instrument_method.current_method["nativeXml"] == "newer"
         instrument_method.undo()
-        assert instrument_method.current_method["xml"] == "new"
+        assert instrument_method.current_method["nativeXml"] == "new"
         instrument_method.undo()
-        assert instrument_method.current_method["xml"] == "old"
+        assert instrument_method.current_method["nativeXml"] == "old"
         with self.assertRaises(IndexError):
             instrument_method.undo()
 
@@ -112,7 +112,7 @@ class TestInstrumentMethod(unittest.TestCase):
             instrument_method.current_method
 
     def test_instrument_method_getitem(self):
-        minimal_definition = {"name": "test", "xml": "<a>value</a>"}
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
         instrument_method = instrument_method_factory(minimal_definition)
         assert instrument_method["a"] == "value"
         instrument_method = instrument_method_factory(self.example_definition)
@@ -125,7 +125,7 @@ class TestInstrumentMethod(unittest.TestCase):
             instrument_method["a"]
 
     def test_instrument_method_getitem_no_key(self):
-        minimal_definition = {"name": "test", "xml": "<a>value</a>"}
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
         instrument_method = instrument_method_factory(minimal_definition)
         with self.assertRaises(KeyError):
             instrument_method["b"]
@@ -134,27 +134,27 @@ class TestInstrumentMethod(unittest.TestCase):
             instrument_method["not_exisiting_key"]
 
     def test_instrument_method_getitem_more_occurences(self):
-        minimal_definition = {"name": "test", "xml": "<a>value</a><a>value2</a>"}
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a><a>value2</a>"}
         instrument_method = instrument_method_factory(minimal_definition)
         with self.assertRaises(ValueError):
             instrument_method["a"]
 
     def test_instrument_method_setitem(self):
-        minimal_definition = {"name": "test", "xml": "<a>value</a>"}
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
         instrument_method = instrument_method_factory(minimal_definition)
         instrument_method["a"] = "new_value"
-        assert instrument_method.current_method["xml"] == "<a>new_value</a>"
-        assert instrument_method.original_method["xml"] == "<a>value</a>"
+        assert instrument_method.current_method["nativeXml"] == "<a>new_value</a>"
+        assert instrument_method.original_method["nativeXml"] == "<a>value</a>"
         assert instrument_method["a"] == "new_value"
         instrument_method = instrument_method_factory(self.example_definition)
         instrument_method["StartWavelength"] = "211"
         assert (
             "<StartWavelength>210</StartWavelength>"
-            in instrument_method.original_method["xml"]
+            in instrument_method.original_method["nativeXml"]
         )
         assert (
             "<StartWavelength>211</StartWavelength>"
-            in instrument_method.current_method["xml"]
+            in instrument_method.current_method["nativeXml"]
         )
         assert instrument_method["StartWavelength"] == "211"
 
@@ -169,7 +169,7 @@ class TestSampleManager(unittest.TestCase):
     def test_sample_manager_get_temperature(self):
         minimal_definition = {
             "name": "rAcquityFTN",
-            "xml": "<ColumnTemperature>43.0</ColumnTemperature>",
+            "nativeXml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
         instrument_method: ColumnOvenMethod = instrument_method_factory(
             minimal_definition
@@ -181,18 +181,18 @@ class TestSampleManager(unittest.TestCase):
     def test_sample_manager_set_temperature(self):
         minimal_definition = {
             "name": "rAcquityFTN",
-            "xml": "<ColumnTemperature>43.0</ColumnTemperature>",
+            "nativeXml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
         instrument_method: ColumnOvenMethod = instrument_method_factory(
             minimal_definition
         )
         instrument_method.column_temperature = "44.0"
         assert (
-            instrument_method.original_method["xml"]
+            instrument_method.original_method["nativeXml"]
             == "<ColumnTemperature>43.0</ColumnTemperature>"
         )
         assert (
-            instrument_method.current_method["xml"]
+            instrument_method.current_method["nativeXml"]
             == "<ColumnTemperature>44.0</ColumnTemperature>"
         )
         assert instrument_method.column_temperature == "44.0"
@@ -200,11 +200,11 @@ class TestSampleManager(unittest.TestCase):
         instrument_method.column_temperature = "44.0"
         assert (
             "<ColumnTemperature>43.0</ColumnTemperature>"
-            in instrument_method.original_method["xml"]
+            in instrument_method.original_method["nativeXml"]
         )
         assert (
             "<ColumnTemperature>44.0</ColumnTemperature>"
-            in instrument_method.current_method["xml"]
+            in instrument_method.current_method["nativeXml"]
         )
         assert instrument_method.column_temperature == "44.0"
 
@@ -224,7 +224,7 @@ class testBSMMethod(unittest.TestCase):
         self.bsm_method_list = bsm_method_list
         self.minimal_definition = {
             "name": "AcquityBSM",
-            "xml": (
+            "nativeXml": (
                 "<FlowSourceA>1</FlowSourceA><FlowSourceB>1</FlowSourceB>"
                 "<GradientTable><GradientRow><Time>Initial</Time><Flow>0.600</Flow>"
                 "<CompositionA>100.0</CompositionA><CompositionB>0.0</CompositionB>"
@@ -233,7 +233,7 @@ class testBSMMethod(unittest.TestCase):
         }
         self.medium_definition = {
             "name": "AcquityBSM",
-            "xml": (
+            "nativeXml": (
                 "<FlowSourceA>2</FlowSourceA><FlowSourceB>1</FlowSourceB>"
                 "<GradientTable>"
                 "<GradientRow>"
@@ -283,14 +283,26 @@ class testBSMMethod(unittest.TestCase):
         assert instrument_method.valve_position == ["A2", "B2"]
         assert "A2" in str(instrument_method)
         assert "B2" in str(instrument_method)
-        assert "<FlowSourceA>2</FlowSourceA>" in instrument_method.current_method["xml"]
-        assert "<FlowSourceB>2</FlowSourceB>" in instrument_method.current_method["xml"]
+        assert (
+            "<FlowSourceA>2</FlowSourceA>"
+            in instrument_method.current_method["nativeXml"]
+        )
+        assert (
+            "<FlowSourceB>2</FlowSourceB>"
+            in instrument_method.current_method["nativeXml"]
+        )
         instrument_method.valve_position = "A1"
         assert instrument_method.valve_position == ["A1", "B2"]
         assert "A1" in str(instrument_method)
         assert "B2" in str(instrument_method)
-        assert "<FlowSourceA>1</FlowSourceA>" in instrument_method.current_method["xml"]
-        assert "<FlowSourceB>2</FlowSourceB>" in instrument_method.current_method["xml"]
+        assert (
+            "<FlowSourceA>1</FlowSourceA>"
+            in instrument_method.current_method["nativeXml"]
+        )
+        assert (
+            "<FlowSourceB>2</FlowSourceB>"
+            in instrument_method.current_method["nativeXml"]
+        )
 
     def test_gradient_table(self):
         instrument_method = BSMMethod(self.minimal_definition)
@@ -425,3 +437,24 @@ class testBSMMethod(unittest.TestCase):
         instrument_method.gradient_table = new_gradient_table
         instrument_method.replace("<Flow>0.500</Flow>", "<Flow>0.010</Flow>")
         assert instrument_method.gradient_table[0]["Flow"] == "0.010"
+
+    def test_gradient_table_float(self):
+        instrument_method = BSMMethod(self.minimal_definition)
+        new_gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 50.0,
+                "Curve": "Initial",
+            },
+            {
+                "Time": 10,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 50.0,
+                "Curve": 6,
+            },
+        ]
+        instrument_method.gradient_table = new_gradient_table
+        assert instrument_method.gradient_table[0]["Flow"] == "0.5"
