@@ -111,6 +111,24 @@ class TestInstrumentMethod(unittest.TestCase):
         with self.assertRaises(ValueError):
             instrument_method.current_method
 
+    def test_get_keys(self):
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a><bc>value</bc>"}
+        instrument_method = instrument_method_factory(minimal_definition)
+        assert instrument_method.keys() == ["a", "bc"]
+        repeated_definition = {
+            "name": "test",
+            "nativeXml": "<a>value</a><a>value</a><b>value</b>",
+        }
+        instrument_method = instrument_method_factory(repeated_definition)
+        assert instrument_method.keys() == ["b"]
+        instrument_method = instrument_method_factory(self.example_definition)
+        key_list = instrument_method.keys()
+        assert "module" in key_list
+        # There are several WaveLength1 keys, check that this means that the key is
+        # not returned in the key list.
+        assert "Wavelength1" in instrument_method._all_keys()
+        assert "Wavelength1" not in key_list
+
     def test_instrument_method_getitem(self):
         minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
         instrument_method = instrument_method_factory(minimal_definition)
