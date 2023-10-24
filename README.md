@@ -32,13 +32,13 @@ handler=EmpowerHandler(
 Your username will be auto-detected. Add the argument `username` to circumvent this
 auto-detection.
 
-EmpowerHandler will first try to find a password for Empower for the `username` in the
+`EmpowerHandler` will first try to find a password for Empower for the `username` in the
 OS's system keyring, e.g. Windows Credential Locker. If it can't access a system
 keyring, or the keyring does not contain the relevant key, you will be prompted you for
 the password. The password will only be used to get a token from the Empower Web API.
 When the token runs out, you will have to input your password again.
 
-To log in, use the EMpowerHandler with a context manager:
+To log in, use the `EmpowerHandler` with a context manager:
 
 ```python
 handler=EmpowerHandler(
@@ -51,7 +51,7 @@ with handler:
 
 If you get the password from another source, e.g. a UI element, you can also manually
 log in with the password. In order to use this with a context manger, you
-need set EmpowerHandler to not log in when entering the context:
+need set `EmpowerHandler` to not log in when entering the context:
 
 ```python
 handler=EmpowerHandler(
