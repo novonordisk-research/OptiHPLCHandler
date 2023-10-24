@@ -67,6 +67,31 @@ class EmpowerInstrumentMethod:
         logger.debug("Applying changes to create current method")
         return self.alter_method(self.original_method, self._change_list)
 
+    def keys(self) -> List[str]:
+        """
+        Return a list of keys in the method definition where the value is accessible.
+        """
+        key_list = []
+        for key in self._all_keys():
+            try:
+                self[key]
+                key_list.append(key)
+            except (ValueError, KeyError):
+                pass
+        return key_list
+
+    def _all_keys(self) -> List[str]:
+        """
+        Return a list of all tags in the method definition, regardless of whether the
+        value can be retrieved or not.
+        """
+        key_list = []
+        raw_tag_list = re.findall("<(.*?)>", self.current_method["nativeXml"])
+        for tag in raw_tag_list:
+            if tag not in key_list and tag[0] != "/":
+                key_list.append(tag)
+        return key_list
+
     def __getitem__(self, key: str) -> str:
         try:
             xml = self.current_method["nativeXml"]
@@ -79,7 +104,7 @@ class EmpowerInstrumentMethod:
         self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
 
     @staticmethod
-    def find_value(xml: str, key: str):
+    def find_value(xml: str, key: str) -> str:
         """Find the value of a key in an xml from Empower."""
         search_result = re.search(f"<{key}>(.*)</{key}>", xml, re.DOTALL)
         # The re.DOTALL flag ensures that newline charaters are also matched by the dot.
