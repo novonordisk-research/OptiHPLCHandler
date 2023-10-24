@@ -17,8 +17,8 @@ jobs:
     uses: ./.github/workflows/lint.yml
   test:
     uses: ./.github/workflows/test.yml
-  release:
-    name: Release # This is not a separate wokflow because it should only run after linting and testing.
+  bump_version:
+    name: Version bump, Github release and build # This is not a separate wokflow because it should only run after linting and testing.
     runs-on: ubuntu-latest
     needs: [lint, test]
     if: github.ref == 'refs/heads/main' # Only run on main branch
@@ -42,3 +42,38 @@ jobs:
           gh pr create --title "Release $CURRENT_VERSION" --body "Release $CURRENT_VERSION" --base main --head release --repo ${{ github.repository }} --reviewer ***REMOVED***-NN
           gh pr merge --merge --delete-branch --auto
           gh release create $CURRENT_VERSION --title $CURRENT_VERSION --notes "Release $CURRENT_VERSION" --verify-tag --target $GIT_HASH
+      - run: pip install .[build]
+      - run: python -m build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: dist/*.whl
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+  pypi_release:
+    name: PyPI Release
+    runs-on: ubuntu-latest
+    needs: [bump_version]
+    # Specifying an environment, since upload to PyPI is only allowed from the release
+    # environment. NOTE: do NOT use this environemnt for anything else, including build,
+    # as this would be a security risk.
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+      - name: Downloading wheel
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: dist/
+      - name: Downloading sdist
+        uses: actions/download-artifact@v3
+        with:
+          name: sdist
+          path: dist/
+      - name: Uploading to pypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://upload.pypi.org/legacy/

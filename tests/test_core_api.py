@@ -10,7 +10,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def setUp(self, mock_requests) -> None:
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [{"token": "test_token", "id": "test_id"}]
+            "result": {"token": "test_token", "id": "test_id"}
         }
         mock_response.status_code = 200
         mock_requests.post.return_value = mock_response
@@ -30,14 +30,13 @@ class TestEmpowerConnection(unittest.TestCase):
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_auto_service(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "results": [{"netServiceName": "auto_test_service", "token": "test_token"}]
+        mock_response_service = MagicMock()
+        mock_response_service.json.return_value = {
+            "results": [{"netServiceName": "auto_test_service"}]
         }
-        mock_response.status_code = 200
         # Service name is automatically requested, so we need to mock that response
-        mock_requests.get.return_value = mock_response
-        mock_requests.post.return_value = mock_response
+        mock_response_service.status_code = 200
+        mock_requests.get.return_value = mock_response_service
         connection = EmpowerConnection(
             project="test_project",
             address="http://test_address/",
@@ -54,20 +53,18 @@ class TestEmpowerConnection(unittest.TestCase):
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_automatic_service_name(self, mock_requests):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "results": [
-                {"netServiceName": "automatic_test_service", "token": "test_token"}
-            ]
+        mock_response_service = MagicMock()
+        mock_response_service.json.return_value = {
+            "results": [{"netServiceName": "auto_test_service"}]
         }
-        mock_response.status_code = 200
-        mock_requests.get.return_value = mock_response
-        mock_requests.post.return_value = mock_response
+        # Service name is automatically requested, so we need to mock that response
+        mock_response_service.status_code = 200
+        mock_requests.get.return_value = mock_response_service
         connection = EmpowerConnection(
             address="http://test_address/",
             project="test_project",
         )
-        assert connection.service == "automatic_test_service"
+        assert connection.service == "auto_test_service"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get(self, mock_requests):
@@ -95,7 +92,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_relogin_get(self, mock_requests, mock_getpass):
         # Verify that the handler logs in again if the token is invalid on get.
         mock_response = MagicMock()
-        mock_response.json.return_value = {"results": [{"token": "test_token"}]}
+        mock_response.json.return_value = {"result": {"token": "test_token"}}
         mock_response.status_code = 401
         mock_requests.get.return_value = mock_response
         mock_response = MagicMock()
@@ -136,7 +133,7 @@ class TestEmpowerConnection(unittest.TestCase):
         # Verify that the handler logs in again if the token is invalid on put.
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [{"token": "test_token", "id": "test_id"}]
+            "result": {"token": "test_token", "id": "test_id"}
         }
         mock_response.status_code = 401
         mock_requests.post.return_value = mock_response
