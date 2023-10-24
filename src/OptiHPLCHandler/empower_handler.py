@@ -222,11 +222,12 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
             if not "Function" in sample:
-                sample["Function"] = {"member": "Inject Sample"}
+                sample["Function"] = {"member": "Inject Samples"}
+                field_list = [
+                    {"name": "Processing", "value": {"member": "Normal"}},
+                ]
             else:
-                sample["Function"] = {"member": sample["Function"]}
-                # Function is an enumerator in Empower, 
-                # so it needs to be a dict with a member key.
+                field_list = []
             logger.debug(
                 "Adding sampleset line number %s to sample list",
                 num,
@@ -236,9 +237,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 "SamplePos": "Vial",
                 "InjectionVolume": "InjVol",
             }  # Key are "human readable" names, values are the names used in Empower.
-            field_list = [
-                {"name": "Processing", "value": {"member": "Normal"}},
-            ]
             for key, value in sample.items():
                 if key in alias_dict:
                     key = alias_dict[key]
