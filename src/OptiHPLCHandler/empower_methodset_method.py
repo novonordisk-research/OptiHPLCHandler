@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import List, Union
 
 from OptiHPLCHandler.data_types import EmpowerMethodSetMethodModel as DataModel
 from OptiHPLCHandler.empower_instrument_method import (
@@ -99,7 +99,7 @@ class EmpowerMethodSetMethod:
             instrument.column_temperature = temperature
 
     @property
-    def gradient_table(self) -> list[dict]:
+    def gradient_table(self) -> List[dict]:
         """
         Return the gradient table.
 
@@ -113,7 +113,7 @@ class EmpowerMethodSetMethod:
         return self.solvent_handler_method.gradient_table
 
     @gradient_table.setter
-    def gradient_table(self, gradient_table: list[dict]):
+    def gradient_table(self, gradient_table: List[dict]):
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set gradient table, "
