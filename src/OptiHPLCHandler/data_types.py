@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, NamedTuple
+from typing import Any, List, NamedTuple
 
 
 class Eluent(NamedTuple):
@@ -77,3 +77,30 @@ class DataField(NamedTuple):
     """Name of the data field"""
     Value: str
     """Value of the data field"""
+
+
+class OptiDict(dict):
+    """Class for Empower instrument method"""
+
+    def __init__(self, *args, mutable: bool = True, **kwargs):
+        """
+        Initialize the EmpowerInstrumentMethod.
+
+        :param mutable: Whether the object is mutable. If False, an error will be raised
+            when trying to modify the object.
+        """
+        super().__init__(*args, **kwargs)
+        self.mutable = mutable
+
+    def __setitem__(self, __key: Any, __value: Any) -> None:
+        if self.mutable:
+            return super().__setitem__(__key, __value)
+        raise TypeError("Object is immutable")
+
+
+class EmpowerInstrumentMethodModel(OptiDict):
+    pass
+
+
+class EmpowerMethodSetMethodModel(OptiDict):
+    pass
