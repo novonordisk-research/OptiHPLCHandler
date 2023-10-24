@@ -222,7 +222,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
-            if not "Function" in sample:
+            if "Function" not in sample:
                 sample["Function"] = {"member": "Inject Samples"}
                 field_list = [
                     {"name": "Processing", "value": {"member": "Normal"}},
