@@ -16,9 +16,9 @@ The package can be installed into a Python environment with the command
 pip install Opti-HPLC-Handler
 ```
 
-You can then import package and start an `EmpowerHandler`. You need to select the Empower
-project to log in to. Note that the user logging in needs to have access to both that
-project, and the project `Mobile`.
+You can then import package and start an `EmpowerHandler`. You need to select the
+Empower project to log in to. Note that the user logging in needs to have access to both
+that project, and the project `Mobile`.
 
 ```python
 from OptiHPLCHandler import EmpowerHandler
@@ -27,22 +27,18 @@ handler=EmpowerHandler(
     address="https://API_url.com:3076",
     allow_login_without_context_manager=True,
 )
-handler.login()
 ```
 
 Your username will be auto-detected. Add the argument `username` to circumvent this
 auto-detection.
 
-EmpowerHandler will first try to find a password for Empower for the `username` in the
+`EmpowerHandler` will first try to find a password for Empower for the `username` in the
 OS's system keyring, e.g. Windows Credential Locker. If it can't access a system
 keyring, or the keyring does not contain the relevant key, you will be prompted you for
 the password. The password will only be used to get a token from the Empower Web API.
 When the token runs out, you will have to input your password again.
 
-This isn't the best way to use EmpowerHandler, since it is easy to forget to log out,
-which can negatively impact the API server. Therefor, you need to tell that you want to
-use it this way, and you will still get a warning. When you are done developing your
-application, you should only login from a context manager:
+To log in, use the `EmpowerHandler` with a context manager:
 
 ```python
 handler=EmpowerHandler(
@@ -53,9 +49,9 @@ with handler:
     ...
 ```
 
-If you get the password from another source, e.g. a UI element, you can also provide it
-directly when initialising the handler. In order to use this with a context manger, you
-need set EmpowerHnalder to not log in when entering the context:
+If you get the password from another source, e.g. a UI element, you can also manually
+log in with the password. In order to use this with a context manger, you
+need set `EmpowerHandler` to not log in when entering the context:
 
 ```python
 handler=EmpowerHandler(
@@ -79,11 +75,42 @@ The authorisation key must be given in the HTTP header with the name `Authorizat
 If you are using `requests`, you can simply provide
 `handler.connection.authorization_header` as `headers` in the request.
 
+## Methodset methods
+
 You can now get a list of the methodset methods in the project:
 
 ```python
 method_list = handler.GetMethodList()
 ```
+
+You can get one such method and inspect its contents:
+
+```python
+import pprin
+
+pp = pprint.PrettyPrinter(indent=2)
+full_method = handler.GetMethodsetMethod(method_name)
+print(f"Valve positions: {full_method.instrument_method_list[-1].valve_position}")
+print(f"Column temperature: {full_method.column_temperature}")
+print("\n\nStart of gradient table:\n")
+pp.pprint(full_method.gradient_table[0:2])
+```
+
+You can modify the method, give it a new name, and post it to Empower:
+
+```python
+gradient_table = full_method.gradient_table
+for step in gradient_table:
+    step["Flow"] = 0.5
+full_method.gradient_table = gradient_table
+full_method.valve_position = ["A2", "B1"]
+full_method.column_temperature = 40
+full_method.method_name ="New method name"
+with handler:
+    handler.PostMethodsetMethod(full_method) # Post the updated method to Empower
+```
+
+## Sampleset method
 
 You can also get a list of the sample set methods in the project:
 

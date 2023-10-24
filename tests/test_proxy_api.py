@@ -1,7 +1,11 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from OptiHPLCHandler import EmpowerHandler
+from OptiHPLCHandler import (
+    EmpowerHandler,
+    EmpowerInstrumentMethod,
+    EmpowerMethodSetMethod,
+)
 
 
 class TestEmpowerHandler(unittest.TestCase):
@@ -389,3 +393,47 @@ class TestEmpowerHandler(unittest.TestCase):
             username="test_username",
         )
         assert mock_response.username == "test_username"
+
+    def test_get_method(self):
+        mock_response = MagicMock()
+        minimal_module = {
+            "name": "test",
+            "nativeXml": "test_name",
+        }
+        mock_response.json.return_value = {
+            "result": {"methodName": "test_method", "modules": [minimal_module]},
+        }
+        self.handler.connection.get.return_value = mock_response
+        method = self.handler.GetMethodsetMethod("test_method_name")
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/methods/instrument-method?name=test_method_name"
+        )
+        assert isinstance(method, EmpowerMethodSetMethod)
+        assert len(method.instrument_method_list) == 1
+        assert isinstance(method.instrument_method_list[0], EmpowerInstrumentMethod)
+        assert method.instrument_method_list[0].original_method == minimal_module
+
+    def test_post_method(self):
+        mock_response = MagicMock()
+        minimal_module = {
+            "name": "test",
+            "nativeXml": (
+                "<test_tag1>test_value1</test_tag1>"
+                "<test_tag2>test_value2</test_tag2>"
+            ),
+        }
+        mock_response.json.return_value = {
+            "result": {"methodName": "test_method", "modules": [minimal_module]},
+        }
+        self.handler.connection.get.return_value = mock_response
+        method = self.handler.GetMethodsetMethod("test_method_name")
+        method.instrument_method_list[0].replace("test_value1", "new_value")
+        method.instrument_method_list[0]["test_tag2"] = "newer_value"
+        self.handler.PostMethodsetMethod(method)
+        assert self.handler.connection.post.call_args[1]["endpoint"] == (
+            "project/methods/instrument-method?overWriteExisting=false"
+        )
+        assert (
+            self.handler.connection.post.call_args[1]["body"]["modules"][0]["nativeXml"]
+            == "<test_tag1>new_value</test_tag1><test_tag2>newer_value</test_tag2>"
+        )
