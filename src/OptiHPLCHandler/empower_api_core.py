@@ -57,6 +57,7 @@ class EmpowerConnection:
             self.service = service
         self.project = project
         self.session_id = None
+        self.token = None
 
     def login(
         self, username: Optional[str] = None, password: Optional[str] = None
@@ -159,6 +160,7 @@ class EmpowerConnection:
 
     @property
     def password(self):
+        """Get the password to use for logging in."""
         try:
             password = keyring.get_password("Empower", self.username)
             logger.debug("Password found in keyring")
@@ -177,6 +179,7 @@ class EmpowerConnection:
 
     @property
     def authorization_header(self):
+        """Get the authorization header to use for requests."""
         return {"Authorization": "Bearer " + self.token}
 
     def __del__(self):

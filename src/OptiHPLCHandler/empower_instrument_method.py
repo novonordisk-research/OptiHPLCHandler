@@ -110,10 +110,9 @@ class EmpowerInstrumentMethod:
                 raise ValueError(
                     "Cannot apply changes to method, no xml key in method definition."
                 ) from ex
-            else:
-                # If there is no xml key, we can't do anything with the method. But if
-                # there are no changes to apply, we can just return the original method.
-                return method
+            # If there is no xml key, we can't do anything with the method. But if
+            # there are no changes to apply, we can just return the original method.
+            return method
         for original, new in change_list:
             logger.debug("Replacing %s with %s", original, new)
             num_replaced = xml.count(original)
@@ -275,16 +274,15 @@ def instrument_method_factory(
         if method_definition["name"] in ["rAcquityFTN"]:
             logger.debug("Creating SampleManager")
             return SampleManagerMethod(method_definition)
-        elif method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
+        if method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
             logger.debug("Creating BSM")
             return BSMMethod(method_definition)
         # Add more cases as they are coded
-        else:
-            logger.debug(
-                "Unknown instrument method: %s, creating a generic InstrumentMethod",
-                method_definition["name"],
-            )  # The error is always caught, so we use the debug level here.
-            raise ValueError(f"Unknown instrument method: {method_definition['name']}")
+        logger.debug(
+            "Unknown instrument method: %s, creating a generic InstrumentMethod",
+            method_definition["name"],
+        )  # The error is always caught, so we use the debug level here.
+        raise ValueError(f"Unknown instrument method: {method_definition['name']}")
     except (KeyError, ValueError) as e:
         if isinstance(e, KeyError):
             # If the name key is not present, we don't know what to do with it, but we
