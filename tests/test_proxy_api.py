@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 
 from OptiHPLCHandler import (
     EmpowerHandler,
+    EmpowerModuleMethod,
     EmpowerInstrumentMethod,
-    EmpowerMethodSetMethod,
 )
 
 
@@ -408,10 +408,10 @@ class TestEmpowerHandler(unittest.TestCase):
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
             "project/methods/instrument-method?name=test_method_name"
         )
-        assert isinstance(method, EmpowerMethodSetMethod)
-        assert len(method.instrument_method_list) == 1
-        assert isinstance(method.instrument_method_list[0], EmpowerInstrumentMethod)
-        assert method.instrument_method_list[0].original_method == minimal_module
+        assert isinstance(method, EmpowerInstrumentMethod)
+        assert len(method.module_method_list) == 1
+        assert isinstance(method.module_method_list[0], EmpowerModuleMethod)
+        assert method.module_method_list[0].original_method == minimal_module
 
     def test_post_method(self):
         mock_response = MagicMock()
@@ -427,8 +427,8 @@ class TestEmpowerHandler(unittest.TestCase):
         }
         self.handler.connection.get.return_value = mock_response
         method = self.handler.GetMethodsetMethod("test_method_name")
-        method.instrument_method_list[0].replace("test_value1", "new_value")
-        method.instrument_method_list[0]["test_tag2"] = "newer_value"
+        method.module_method_list[0].replace("test_value1", "new_value")
+        method.module_method_list[0]["test_tag2"] = "newer_value"
         self.handler.PostMethodsetMethod(method)
         assert self.handler.connection.post.call_args[1]["endpoint"] == (
             "project/methods/instrument-method?overWriteExisting=false"

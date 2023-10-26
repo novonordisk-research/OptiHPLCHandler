@@ -98,7 +98,7 @@ class OptiDict(dict):
         raise TypeError("Object is immutable")
 
 
-class EmpowerInstrumentMethodModel(OptiDict):
+class EmpowerModuleMethodModel(OptiDict):
     pass
 
 
