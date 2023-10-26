@@ -21,27 +21,25 @@ class StatefulInstrumentHandler(ABC, Generic[Result, Setup]):
     @property
     @abstractmethod
     def Status(self) -> List[Result]:
-        pass
+        """Get the status of the instrument."""
 
     @abstractmethod
-    def PostExperiment(experiment: Any):
+    def PostExperiment(self, experiment: Any):
         """
         Post the experiment to the instrument.
         """
-        pass
 
     @abstractmethod
-    def RunExperiment(experiment: Any) -> Result:
+    def RunExperiment(self, experiment: Any) -> Result:
         """
         Run the experiment on the instrument.
 
         This will run an experiment that already exists .
         """
-        pass
 
     @abstractmethod
-    def GetSetup() -> List[Setup]:
-        pass
+    def GetSetup(self) -> List[Setup]:
+        """Get the setup of the instrument."""
 
 
 class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
@@ -110,6 +108,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
     @property
     def project(self) -> str:
+        """Get the Empower project name."""
         return self.connection.project
 
     @project.setter
@@ -118,6 +117,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
     @property
     def address(self) -> str:
+        """Get the URL for the Empower Web API to connect to."""
         return self.connection.address
 
     # Changing the address would require a new lookup for the service, so it is not
@@ -173,6 +173,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         logger.debug("Logging out of Empower")
         self.connection.logout()
 
+    @property
     def Status(self) -> List[HplcResult]:
         """Get the status of the HPLC."""
         raise NotImplementedError
@@ -235,8 +236,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 {"name": "Processing", "value": {"member": "Normal"}},
             ]
             for key, value in sample.items():
-                if key in alias_dict:
-                    key = alias_dict[key]
+                key = alias_dict.get(key, key)
                 logger.debug("Adding field %s with value %s to sample.", key, value)
                 field_list.append({"name": key, "value": value})
             for field in field_list:
@@ -315,10 +315,10 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             [name_dict for name_dict in method["fields"] if name_dict["name"] == "Name"]
             for method in response.json()["results"]
         ]
-        if any([len(name_dict) > 1 for name_dict in method_name_dict_list]):
+        if any(len(name_dict) > 1 for name_dict in method_name_dict_list):
             logger.error("Multiple names found for a method.")
             raise ValueError("Multiple names found for a method.")
-        if any([len(name_dict) == 0 for name_dict in method_name_dict_list]):
+        if any(len(name_dict) == 0 for name_dict in method_name_dict_list):
             logger.error("No name found for a method.")
             raise ValueError("No name found for a method.")
         method_name_list = [
@@ -328,12 +328,20 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         return method_name_list
 
     def GetMethodsetMethod(self, method_name: str) -> EmpowerMethodSetMethod:
+        """
+        Get a method set method.
+
+        :param method_name: Name of the method set method to get."""
         response = self.connection.get(
             endpoint=f"project/methods/instrument-method?name={method_name}"
         )
         return EmpowerMethodSetMethod(response.json()["result"])
 
     def PostMethodsetMethod(self, method: EmpowerMethodSetMethod) -> None:
+        """
+        Post a method set method to Empower.
+
+        :param method: The method set method to post."""
         endpoint = "project/methods/instrument-method?overWriteExisting=false"
         self.connection.post(endpoint=endpoint, body=method.current_method)
 
