@@ -51,6 +51,10 @@ release = [
 build = [
   "build==0.10.0",
 ]
+doc = [
+  "pylint==3.0.2",
+]
+
 
 [project.urls]
 Repository = "https://github.com/novonordisk-research/OptiHPLCHandler.git"
