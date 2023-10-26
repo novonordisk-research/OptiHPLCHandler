@@ -2,8 +2,8 @@ import json
 import os
 import unittest
 
-from OptiHPLCHandler.empower_module_method import SolventManagerMethod
 from OptiHPLCHandler.empower_instrument_method import EmpowerInstrumentMethod
+from OptiHPLCHandler.empower_module_method import SolventManagerMethod
 
 
 def get_example_file_dict() -> dict:

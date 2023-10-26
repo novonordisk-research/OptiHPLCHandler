@@ -1,11 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from OptiHPLCHandler import (
-    EmpowerHandler,
-    EmpowerModuleMethod,
-    EmpowerInstrumentMethod,
-)
+from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod, EmpowerModuleMethod
 
 
 class TestEmpowerHandler(unittest.TestCase):
