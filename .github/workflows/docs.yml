@@ -4,7 +4,7 @@ on:
   - workflow_call # Allowing for calling from other workflows
   - workflow_dispatch # Allowing for manual triggering
 env:
-  source_file_list: ./src/OptiHPLCHandler/empower_methodset_method.py ./src/OptiHPLCHandler/empower_handler.py
+  source_file_list: ./src/OptiHPLCHandler/empower_instrument_method.py ./src/OptiHPLCHandler/empower_handler.py
 jobs:
   class_diagrams:
     runs-on: ubuntu-latest
