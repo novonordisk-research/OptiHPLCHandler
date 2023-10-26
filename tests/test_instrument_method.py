@@ -2,11 +2,11 @@ import json
 import os
 import unittest
 
-from OptiHPLCHandler.empower_instrument_method import (
+from OptiHPLCHandler.empower_module_method import (
     BSMMethod,
     ColumnOvenMethod,
-    EmpowerInstrumentMethod,
-    instrument_method_factory,
+    EmpowerModuleMethod,
+    module_method_factory,
 )
 
 
@@ -21,7 +21,7 @@ def load_example_files() -> dict:
     return example
 
 
-class TestInstrumentMethodFactory(unittest.TestCase):
+class TestModuleMethodFactory(unittest.TestCase):
     def setUp(self) -> None:
         self.example = load_example_files()
         self.example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][
@@ -30,31 +30,31 @@ class TestInstrumentMethodFactory(unittest.TestCase):
 
     def test_column_handler(self):
         minimal_definition = {"name": "rAcquityFTN"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        assert isinstance(instrument_method, ColumnOvenMethod)
+        module_method = module_method_factory(minimal_definition)
+        assert isinstance(module_method, ColumnOvenMethod)
         example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
             "modules"
         ][0]
-        instrument_method = instrument_method_factory(example_definition)
-        assert isinstance(instrument_method, ColumnOvenMethod)
+        module_method = module_method_factory(example_definition)
+        assert isinstance(module_method, ColumnOvenMethod)
 
-    def test_instrument_method(self):
+    def test_module_method(self):
         minimal_definition = {"name": "none_of_the_above"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        assert isinstance(instrument_method, EmpowerInstrumentMethod)
+        module_method = module_method_factory(minimal_definition)
+        assert isinstance(module_method, EmpowerModuleMethod)
         # This is a PDA, we do not have specific classes for detectors
-        instrument_method = instrument_method_factory(self.example_definition)
-        assert isinstance(instrument_method, EmpowerInstrumentMethod)
+        module_method = module_method_factory(self.example_definition)
+        assert isinstance(module_method, EmpowerModuleMethod)
 
     def test_unknown(self):
-        # Verify that an unknown instrument method will be returned as a generic
-        # InstrumentMethod
+        # Verify that an unknown module method will be returned as a generic
+        # EmpowerModuleMethod
         minimal_definition = {}
-        instrument_method = instrument_method_factory(minimal_definition)
-        assert isinstance(instrument_method, EmpowerInstrumentMethod)
+        module_method = module_method_factory(minimal_definition)
+        assert isinstance(module_method, EmpowerModuleMethod)
 
 
-class TestInstrumentMethod(unittest.TestCase):
+class TestModuleMethod(unittest.TestCase):
     def setUp(self) -> None:
         self.example = load_example_files()
         self.example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][
@@ -63,100 +63,100 @@ class TestInstrumentMethod(unittest.TestCase):
 
     def test_original_method_immutable(self):
         minimal_definition = {"name": "test", "nativeXml": "old"}
-        instrument_method = instrument_method_factory(minimal_definition)
+        module_method = module_method_factory(minimal_definition)
         with self.assertRaises(TypeError):
-            instrument_method.original_method["nativeXml"] = "new"
+            module_method.original_method["nativeXml"] = "new"
         with self.assertRaises(TypeError):
-            instrument_method.original_method["new_key"] = "new_value"
+            module_method.original_method["new_key"] = "new_value"
 
-    def test_instrument_method_replace(self):
+    def test_module_method_replace(self):
         minimal_definition = {"name": "test", "nativeXml": "old"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        instrument_method.replace("old", "new")
-        assert instrument_method.current_method["nativeXml"] == "new"
-        assert instrument_method.original_method["nativeXml"] == "old"
+        module_method = module_method_factory(minimal_definition)
+        module_method.replace("old", "new")
+        assert module_method.current_method["nativeXml"] == "new"
+        assert module_method.original_method["nativeXml"] == "old"
 
-    def test_instrument_method_replace_multiple(self):
+    def test_module_method_replace_multiple(self):
         minimal_definition = {"name": "test", "nativeXml": "old"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        instrument_method.replace("old", "new")
-        assert instrument_method.current_method["nativeXml"] == "new"
-        instrument_method.replace("new", "newer")
-        assert instrument_method.current_method["nativeXml"] == "newer"
-        assert instrument_method.original_method["nativeXml"] == "old"
+        module_method = module_method_factory(minimal_definition)
+        module_method.replace("old", "new")
+        assert module_method.current_method["nativeXml"] == "new"
+        module_method.replace("new", "newer")
+        assert module_method.current_method["nativeXml"] == "newer"
+        assert module_method.original_method["nativeXml"] == "old"
 
-    def test_instrument_method_undo(self):
+    def test_module_method_undo(self):
         minimal_definition = {"name": "test", "nativeXml": "old"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        instrument_method.replace("old", "new")
-        assert instrument_method.current_method["nativeXml"] == "new"
-        instrument_method.replace("new", "newer")
-        assert instrument_method.current_method["nativeXml"] == "newer"
-        instrument_method.undo()
-        assert instrument_method.current_method["nativeXml"] == "new"
-        instrument_method.undo()
-        assert instrument_method.current_method["nativeXml"] == "old"
+        module_method = module_method_factory(minimal_definition)
+        module_method.replace("old", "new")
+        assert module_method.current_method["nativeXml"] == "new"
+        module_method.replace("new", "newer")
+        assert module_method.current_method["nativeXml"] == "newer"
+        module_method.undo()
+        assert module_method.current_method["nativeXml"] == "new"
+        module_method.undo()
+        assert module_method.current_method["nativeXml"] == "old"
         with self.assertRaises(IndexError):
-            instrument_method.undo()
+            module_method.undo()
 
-    def test_instrument_method_replace_no_xml_no_changes(self):
+    def test_module_method_replace_no_xml_no_changes(self):
         minimal_definition = {"name": "test"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        assert instrument_method.original_method == minimal_definition
+        module_method = module_method_factory(minimal_definition)
+        assert module_method.original_method == minimal_definition
 
-    def test_instrument_method_replace_no_xml_changes(self):
+    def test_module_method_replace_no_xml_changes(self):
         minimal_definition = {"name": "test"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        instrument_method.replace("old", "new")
+        module_method = module_method_factory(minimal_definition)
+        module_method.replace("old", "new")
         with self.assertRaises(ValueError):
-            instrument_method.current_method
+            module_method.current_method
 
-    def test_instrument_method_getitem(self):
+    def test_module_method_getitem(self):
         minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        assert instrument_method["a"] == "value"
-        instrument_method = instrument_method_factory(self.example_definition)
-        assert instrument_method["StartWavelength"] == "210"
+        module_method = module_method_factory(minimal_definition)
+        assert module_method["a"] == "value"
+        module_method = module_method_factory(self.example_definition)
+        assert module_method["StartWavelength"] == "210"
 
-    def test_instrument_method_getitem_no_xml(self):
+    def test_module_method_getitem_no_xml(self):
         minimal_definition = {"name": "test"}
-        instrument_method = instrument_method_factory(minimal_definition)
+        module_method = module_method_factory(minimal_definition)
         with self.assertRaises(KeyError):
-            instrument_method["a"]
+            module_method["a"]
 
-    def test_instrument_method_getitem_no_key(self):
+    def test_module_method_getitem_no_key(self):
         minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
-        instrument_method = instrument_method_factory(minimal_definition)
+        module_method = module_method_factory(minimal_definition)
         with self.assertRaises(KeyError):
-            instrument_method["b"]
-        instrument_method = instrument_method_factory(self.example_definition)
+            module_method["b"]
+        module_method = module_method_factory(self.example_definition)
         with self.assertRaises(KeyError):
-            instrument_method["not_exisiting_key"]
+            module_method["not_exisiting_key"]
 
-    def test_instrument_method_getitem_more_occurences(self):
+    def test_module_method_getitem_more_occurences(self):
         minimal_definition = {"name": "test", "nativeXml": "<a>value</a><a>value2</a>"}
-        instrument_method = instrument_method_factory(minimal_definition)
+        module_method = module_method_factory(minimal_definition)
         with self.assertRaises(ValueError):
-            instrument_method["a"]
+            module_method["a"]
 
-    def test_instrument_method_setitem(self):
+    def test_module_method_setitem(self):
         minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
-        instrument_method = instrument_method_factory(minimal_definition)
-        instrument_method["a"] = "new_value"
-        assert instrument_method.current_method["nativeXml"] == "<a>new_value</a>"
-        assert instrument_method.original_method["nativeXml"] == "<a>value</a>"
-        assert instrument_method["a"] == "new_value"
-        instrument_method = instrument_method_factory(self.example_definition)
-        instrument_method["StartWavelength"] = "211"
+        module_method = module_method_factory(minimal_definition)
+        module_method["a"] = "new_value"
+        assert module_method.current_method["nativeXml"] == "<a>new_value</a>"
+        assert module_method.original_method["nativeXml"] == "<a>value</a>"
+        assert module_method["a"] == "new_value"
+        module_method = module_method_factory(self.example_definition)
+        module_method["StartWavelength"] = "211"
         assert (
             "<StartWavelength>210</StartWavelength>"
-            in instrument_method.original_method["nativeXml"]
+            in module_method.original_method["nativeXml"]
         )
         assert (
             "<StartWavelength>211</StartWavelength>"
-            in instrument_method.current_method["nativeXml"]
+            in module_method.current_method["nativeXml"]
         )
-        assert instrument_method["StartWavelength"] == "211"
+        assert module_method["StartWavelength"] == "211"
 
 
 class TestSampleManager(unittest.TestCase):
@@ -171,42 +171,38 @@ class TestSampleManager(unittest.TestCase):
             "name": "rAcquityFTN",
             "nativeXml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
-        instrument_method: ColumnOvenMethod = instrument_method_factory(
-            minimal_definition
-        )
-        assert instrument_method.column_temperature == "43.0"
-        instrument_method = instrument_method_factory(self.example_definition)
-        assert instrument_method.column_temperature == "43.0"
+        module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        assert module_method.column_temperature == "43.0"
+        module_method = module_method_factory(self.example_definition)
+        assert module_method.column_temperature == "43.0"
 
     def test_sample_manager_set_temperature(self):
         minimal_definition = {
             "name": "rAcquityFTN",
             "nativeXml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
-        instrument_method: ColumnOvenMethod = instrument_method_factory(
-            minimal_definition
-        )
-        instrument_method.column_temperature = "44.0"
+        module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        module_method.column_temperature = "44.0"
         assert (
-            instrument_method.original_method["nativeXml"]
+            module_method.original_method["nativeXml"]
             == "<ColumnTemperature>43.0</ColumnTemperature>"
         )
         assert (
-            instrument_method.current_method["nativeXml"]
+            module_method.current_method["nativeXml"]
             == "<ColumnTemperature>44.0</ColumnTemperature>"
         )
-        assert instrument_method.column_temperature == "44.0"
-        instrument_method = instrument_method_factory(self.example_definition)
-        instrument_method.column_temperature = "44.0"
+        assert module_method.column_temperature == "44.0"
+        module_method = module_method_factory(self.example_definition)
+        module_method.column_temperature = "44.0"
         assert (
             "<ColumnTemperature>43.0</ColumnTemperature>"
-            in instrument_method.original_method["nativeXml"]
+            in module_method.original_method["nativeXml"]
         )
         assert (
             "<ColumnTemperature>44.0</ColumnTemperature>"
-            in instrument_method.current_method["nativeXml"]
+            in module_method.current_method["nativeXml"]
         )
-        assert instrument_method.column_temperature == "44.0"
+        assert module_method.column_temperature == "44.0"
 
 
 class testBSMMethod(unittest.TestCase):
@@ -220,7 +216,7 @@ class testBSMMethod(unittest.TestCase):
             bsm_method_list[i] = [
                 module for module in bsm_method if module["name"] == "AcquityBSM"
             ][0]
-        # Finding the BSM instrument method in the methodset method definition
+        # Finding the BSM module method in the methodset method definition
         self.bsm_method_list = bsm_method_list
         self.minimal_definition = {
             "name": "AcquityBSM",
@@ -254,80 +250,76 @@ class testBSMMethod(unittest.TestCase):
         }
 
     def test_factory(self):
-        instrument_method = instrument_method_factory(self.minimal_definition)
-        assert isinstance(instrument_method, BSMMethod)
+        module_method = module_method_factory(self.minimal_definition)
+        assert isinstance(module_method, BSMMethod)
 
-        instrument_method = instrument_method_factory(self.medium_definition)
-        assert isinstance(instrument_method, BSMMethod)
+        module_method = module_method_factory(self.medium_definition)
+        assert isinstance(module_method, BSMMethod)
 
         for bsm_method in self.bsm_method_list:
-            bsm = instrument_method_factory(bsm_method)
+            bsm = module_method_factory(bsm_method)
             assert isinstance(bsm, BSMMethod)
 
     def test_valve_position(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        assert instrument_method.valve_position == ["A1", "B1"]
-        assert "A1" in str(instrument_method)
-        assert "B1" in str(instrument_method)
-        instrument_method = BSMMethod(self.medium_definition)
-        assert instrument_method.valve_position == ["A2", "B1"]
-        assert "A2" in str(instrument_method)
-        assert "B1" in str(instrument_method)
+        module_method = BSMMethod(self.minimal_definition)
+        assert module_method.valve_position == ["A1", "B1"]
+        assert "A1" in str(module_method)
+        assert "B1" in str(module_method)
+        module_method = BSMMethod(self.medium_definition)
+        assert module_method.valve_position == ["A2", "B1"]
+        assert "A2" in str(module_method)
+        assert "B1" in str(module_method)
         for bsm_method in self.bsm_method_list:
             bsm = BSMMethod(bsm_method)
             assert bsm.valve_position == ["A1", "B1"]  # All examples us A1 and B1
 
     def test_valve_position_setter(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        instrument_method.valve_position = ["A2", "B2"]
-        assert instrument_method.valve_position == ["A2", "B2"]
-        assert "A2" in str(instrument_method)
-        assert "B2" in str(instrument_method)
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.valve_position = ["A2", "B2"]
+        assert module_method.valve_position == ["A2", "B2"]
+        assert "A2" in str(module_method)
+        assert "B2" in str(module_method)
         assert (
-            "<FlowSourceA>2</FlowSourceA>"
-            in instrument_method.current_method["nativeXml"]
+            "<FlowSourceA>2</FlowSourceA>" in module_method.current_method["nativeXml"]
         )
         assert (
-            "<FlowSourceB>2</FlowSourceB>"
-            in instrument_method.current_method["nativeXml"]
+            "<FlowSourceB>2</FlowSourceB>" in module_method.current_method["nativeXml"]
         )
-        instrument_method.valve_position = "A1"
-        assert instrument_method.valve_position == ["A1", "B2"]
-        assert "A1" in str(instrument_method)
-        assert "B2" in str(instrument_method)
+        module_method.valve_position = "A1"
+        assert module_method.valve_position == ["A1", "B2"]
+        assert "A1" in str(module_method)
+        assert "B2" in str(module_method)
         assert (
-            "<FlowSourceA>1</FlowSourceA>"
-            in instrument_method.current_method["nativeXml"]
+            "<FlowSourceA>1</FlowSourceA>" in module_method.current_method["nativeXml"]
         )
         assert (
-            "<FlowSourceB>2</FlowSourceB>"
-            in instrument_method.current_method["nativeXml"]
+            "<FlowSourceB>2</FlowSourceB>" in module_method.current_method["nativeXml"]
         )
 
     def test_gradient_table(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        assert len(instrument_method.gradient_table) == 1
-        assert instrument_method.gradient_table[0]["Time"] == "Initial"
-        assert instrument_method.gradient_table[0]["Flow"] == "0.600"
-        assert instrument_method.gradient_table[0]["CompositionA"] == "100.0"
-        assert instrument_method.gradient_table[0]["CompositionB"] == "0.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
-        instrument_method = BSMMethod(self.medium_definition)
-        assert len(instrument_method.gradient_table) == 2
-        assert instrument_method.gradient_table[0]["Time"] == "Initial"
-        assert instrument_method.gradient_table[0]["Flow"] == "0.300"
-        assert instrument_method.gradient_table[0]["CompositionA"] == "90.0"
-        assert instrument_method.gradient_table[0]["CompositionB"] == "10.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
-        assert instrument_method.gradient_table[1]["Time"] == "10.00"
-        assert instrument_method.gradient_table[1]["Flow"] == "0.500"
-        assert instrument_method.gradient_table[1]["CompositionA"] == "10.0"
-        assert instrument_method.gradient_table[1]["CompositionB"] == "90.0"
-        assert str(instrument_method.gradient_table[1]["Curve"]) == "6"
+        module_method = BSMMethod(self.minimal_definition)
+        assert len(module_method.gradient_table) == 1
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "0.600"
+        assert module_method.gradient_table[0]["CompositionA"] == "100.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "0.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        module_method = BSMMethod(self.medium_definition)
+        assert len(module_method.gradient_table) == 2
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "0.300"
+        assert module_method.gradient_table[0]["CompositionA"] == "90.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "10.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        assert module_method.gradient_table[1]["Time"] == "10.00"
+        assert module_method.gradient_table[1]["Flow"] == "0.500"
+        assert module_method.gradient_table[1]["CompositionA"] == "10.0"
+        assert module_method.gradient_table[1]["CompositionB"] == "90.0"
+        assert str(module_method.gradient_table[1]["Curve"]) == "6"
 
     def test_gradient_table_setter(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        instrument_method.gradient_table = [
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
             {
                 "Time": "Initial",
                 "Flow": "0.500",
@@ -336,16 +328,16 @@ class testBSMMethod(unittest.TestCase):
                 "Curve": "Initial",
             }
         ]
-        assert len(instrument_method.gradient_table) == 1
-        assert instrument_method.gradient_table[0]["Time"] == "Initial"
-        assert instrument_method.gradient_table[0]["Flow"] == "0.500"
-        assert instrument_method.gradient_table[0]["CompositionA"] == "50.0"
-        assert instrument_method.gradient_table[0]["CompositionB"] == "50.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
+        assert len(module_method.gradient_table) == 1
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "0.500"
+        assert module_method.gradient_table[0]["CompositionA"] == "50.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "50.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
 
     def test_gradient_table_setter_default(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        instrument_method.gradient_table = [
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
             {
                 "Time": "0.00",
                 "Flow": "1",
@@ -353,11 +345,11 @@ class testBSMMethod(unittest.TestCase):
                 "CompositionB": "50.0",
             }
         ]
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "6"
+        assert str(module_method.gradient_table[0]["Curve"]) == "6"
 
     def test_gradient_table_setter_multiple(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        instrument_method.gradient_table = [
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
             {
                 "Time": "Initial",
                 "Flow": "0.500",
@@ -373,21 +365,21 @@ class testBSMMethod(unittest.TestCase):
                 "Curve": "10",
             },
         ]
-        assert len(instrument_method.gradient_table) == 2
-        assert instrument_method.gradient_table[0]["Time"] == "Initial"
-        assert instrument_method.gradient_table[0]["Flow"] == "0.500"
-        assert instrument_method.gradient_table[0]["CompositionA"] == "70.0"
-        assert instrument_method.gradient_table[0]["CompositionB"] == "30.0"
-        assert str(instrument_method.gradient_table[0]["Curve"]) == "Initial"
-        assert instrument_method.gradient_table[1]["Time"] == "10.00"
-        assert instrument_method.gradient_table[1]["Flow"] == "0.600"
-        assert instrument_method.gradient_table[1]["CompositionA"] == "20.0"
-        assert instrument_method.gradient_table[1]["CompositionB"] == "80.0"
-        assert str(instrument_method.gradient_table[1]["Curve"]) == "10"
+        assert len(module_method.gradient_table) == 2
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "0.500"
+        assert module_method.gradient_table[0]["CompositionA"] == "70.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "30.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        assert module_method.gradient_table[1]["Time"] == "10.00"
+        assert module_method.gradient_table[1]["Flow"] == "0.600"
+        assert module_method.gradient_table[1]["CompositionA"] == "20.0"
+        assert module_method.gradient_table[1]["CompositionB"] == "80.0"
+        assert str(module_method.gradient_table[1]["Curve"]) == "10"
 
     def test_gradient_xml_setter(self):
-        instrument_method = BSMMethod(self.minimal_definition)
-        instrument_method.gradient_table = [
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
             {
                 "Time": "Initial",
                 "Flow": "0.500",
@@ -403,14 +395,14 @@ class testBSMMethod(unittest.TestCase):
                 "Curve": "10",
             },
         ]
-        new_method = BSMMethod(instrument_method.current_method)
-        assert new_method.gradient_table == instrument_method.gradient_table
+        new_method = BSMMethod(module_method.current_method)
+        assert new_method.gradient_table == module_method.gradient_table
 
     def test_manually_than_gradient_table_changed(self):
         # Checks that manual changes in the gradient table does not proclude the use
         # of the gradient_table setter.
-        instrument_method = BSMMethod(self.minimal_definition)
-        instrument_method.replace("<Flow>0.600</Flow>", "<Flow>0.010</Flow>")
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.replace("<Flow>0.600</Flow>", "<Flow>0.010</Flow>")
         new_gradient_table = [
             {
                 "Time": "Initial",
@@ -420,11 +412,11 @@ class testBSMMethod(unittest.TestCase):
                 "Curve": "Initial",
             },
         ]
-        instrument_method.gradient_table = new_gradient_table
-        assert instrument_method.gradient_table == new_gradient_table
+        module_method.gradient_table = new_gradient_table
+        assert module_method.gradient_table == new_gradient_table
 
     def test_gradient_table_then_manual(self):
-        instrument_method = BSMMethod(self.minimal_definition)
+        module_method = BSMMethod(self.minimal_definition)
         new_gradient_table = [
             {
                 "Time": "Initial",
@@ -434,12 +426,12 @@ class testBSMMethod(unittest.TestCase):
                 "Curve": "Initial",
             },
         ]
-        instrument_method.gradient_table = new_gradient_table
-        instrument_method.replace("<Flow>0.500</Flow>", "<Flow>0.010</Flow>")
-        assert instrument_method.gradient_table[0]["Flow"] == "0.010"
+        module_method.gradient_table = new_gradient_table
+        module_method.replace("<Flow>0.500</Flow>", "<Flow>0.010</Flow>")
+        assert module_method.gradient_table[0]["Flow"] == "0.010"
 
     def test_gradient_table_float(self):
-        instrument_method = BSMMethod(self.minimal_definition)
+        module_method = BSMMethod(self.minimal_definition)
         new_gradient_table = [
             {
                 "Time": "Initial",
@@ -456,5 +448,5 @@ class testBSMMethod(unittest.TestCase):
                 "Curve": 6,
             },
         ]
-        instrument_method.gradient_table = new_gradient_table
-        assert instrument_method.gradient_table[0]["Flow"] == "0.5"
+        module_method.gradient_table = new_gradient_table
+        assert module_method.gradient_table[0]["Flow"] == "0.5"
