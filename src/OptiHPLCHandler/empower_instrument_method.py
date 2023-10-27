@@ -1,7 +1,7 @@
 import logging
 from typing import List, Union
 
-from OptiHPLCHandler.data_types import EmpowerMethodSetMethodModel as DataModel
+from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
 from OptiHPLCHandler.empower_module_method import (
     ColumnOvenMethod,
     EmpowerModuleMethod,

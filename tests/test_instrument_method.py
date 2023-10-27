@@ -211,12 +211,12 @@ class testBSMMethod(unittest.TestCase):
             definition["results"][0]["modules"]
             for name, definition in load_example_files().items()
             if "BSM" in name
-        ]  # Finding all BSM methodset method definitions
+        ]  # Finding all instrument method definitions that controls a BSM
         for i, bsm_method in enumerate(bsm_method_list):
             bsm_method_list[i] = [
                 module for module in bsm_method if module["name"] == "AcquityBSM"
             ][0]
-        # Finding the BSM module method in the methodset method definition
+        # Finding the BSM module method in the instrument method definition
         self.bsm_method_list = bsm_method_list
         self.minimal_definition = {
             "name": "AcquityBSM",

@@ -400,7 +400,7 @@ class TestEmpowerHandler(unittest.TestCase):
             "result": {"methodName": "test_method", "modules": [minimal_module]},
         }
         self.handler.connection.get.return_value = mock_response
-        method = self.handler.GetMethodsetMethod("test_method_name")
+        method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
             "project/methods/instrument-method?name=test_method_name"
         )
@@ -422,10 +422,10 @@ class TestEmpowerHandler(unittest.TestCase):
             "result": {"methodName": "test_method", "modules": [minimal_module]},
         }
         self.handler.connection.get.return_value = mock_response
-        method = self.handler.GetMethodsetMethod("test_method_name")
+        method = self.handler.GetInstrumentMethod("test_method_name")
         method.module_method_list[0].replace("test_value1", "new_value")
         method.module_method_list[0]["test_tag2"] = "newer_value"
-        self.handler.PostMethodsetMethod(method)
+        self.handler.PostInstrumentMethod(method)
         assert self.handler.connection.post.call_args[1]["endpoint"] == (
             "project/methods/instrument-method?overWriteExisting=false"
         )
