@@ -109,3 +109,6 @@ push = true
     'version = "{version}"',
 ]
 "src/OptiHPLCHandler/__init__.py*" = ['__version__ = "{version}"']
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["invalid-name"]
