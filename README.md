@@ -75,9 +75,9 @@ The authorisation key must be given in the HTTP header with the name `Authorizat
 If you are using `requests`, you can simply provide
 `handler.connection.authorization_header` as `headers` in the request.
 
-## Methodset methods
+## Instrument methods
 
-You can now get a list of the methodset methods in the project:
+You can now get a list of the instruement methods in the project:
 
 ```python
 method_list = handler.GetMethodList()
@@ -89,7 +89,7 @@ You can get one such method and inspect its contents:
 import pprin
 
 pp = pprint.PrettyPrinter(indent=2)
-full_method = handler.GetMethodsetMethod(method_name)
+full_method = handler.GetInstrumentMethod(method_name)
 print(f"Valve positions: {full_method.instrument_method_list[-1].valve_position}")
 print(f"Column temperature: {full_method.column_temperature}")
 print("\n\nStart of gradient table:\n")
@@ -107,7 +107,7 @@ full_method.valve_position = ["A2", "B1"]
 full_method.column_temperature = 40
 full_method.method_name ="New method name"
 with handler:
-    handler.PostMethodsetMethod(full_method) # Post the updated method to Empower
+    handler.PostInstrumentMethod(full_method) # Post the updated method to Empower
 ```
 
 ## Sampleset method

@@ -102,5 +102,5 @@ class EmpowerModuleMethodModel(OptiDict):
     pass
 
 
-class EmpowerMethodSetMethodModel(OptiDict):
+class EmpowerInstrumentMethodModel(OptiDict):
     pass
