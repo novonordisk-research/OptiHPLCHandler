@@ -80,11 +80,11 @@ class DataField(NamedTuple):
 
 
 class OptiDict(dict):
-    """Class for Empower instrument method"""
+    """Data class for OptiHPLC data types"""
 
     def __init__(self, *args, mutable: bool = True, **kwargs):
         """
-        Initialize the EmpowerInstrumentMethod.
+        Initialize a data clas object.
 
         :param mutable: Whether the object is mutable. If False, an error will be raised
             when trying to modify the object.
@@ -98,9 +98,9 @@ class OptiDict(dict):
         raise TypeError("Object is immutable")
 
 
-class EmpowerInstrumentMethodModel(OptiDict):
+class EmpowerModuleMethodModel(OptiDict):
     pass
 
 
-class EmpowerMethodSetMethodModel(OptiDict):
+class EmpowerInstrumentMethodModel(OptiDict):
     pass

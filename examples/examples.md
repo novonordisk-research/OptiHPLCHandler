@@ -33,11 +33,11 @@ Here outlines a basic sample set method where the sample position is incremented
 - Plate sample position logic defined (for ANSI-48Vial2mLHolder).
 - Samples in sample set defined in for loop, varying the sample position.
 
-## Example: [Get, inspect, change, and put back a methodset method](example_methodset_method.ipynb)
+## Example: [Get, inspect, change, and put back a instrument method](example_instument_method.ipynb)
 
-Here outlines how to interact with methodset methods and instrument methods.
+Here outlines how to interact with instrument methods and instrument methods.
 
-- Finding and getting a methodset method.
-- Inspecting what types of instrument methods are in the methodset method.
+- Finding and getting a instrument method.
+- Inspecting what types of instrument methods are in the instrument method.
 - Inspecting the instrument parameters in the method, including column temperature and gradient table.
 - Changing instrument parameters and posting the new method.
