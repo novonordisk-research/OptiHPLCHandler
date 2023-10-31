@@ -1,4 +1,5 @@
 import getpass
+import inspect
 import logging
 import warnings
 from typing import Optional
@@ -133,7 +134,7 @@ class EmpowerConnection:
         logger.debug("Logout successful")
 
     def _requests_wrapper(
-        self, method: str, endpoint: str, body: dict = None, timeout=10
+        self, method: str, endpoint: str, body: Optional[dict], timeout
     ) -> requests.Response:
         """
         Wrapper for requests.
@@ -181,8 +182,17 @@ class EmpowerConnection:
 
         :param endpoint: The endpoint to get data from.
         """
-        # Add slash between address and endpoint
-        return self._requests_wrapper(method="get", endpoint=endpoint, timeout=timeout)
+        signature = inspect.signature(self.get)
+        logger.debug("Getting data from %s", endpoint)
+        if signature.parameters["timeout"].default != timeout:
+            logger.debug("Timeout changed from default value to %s", timeout)
+            print(
+                f"Get call to endpoint {endpoint} could be slow, "
+                f"timeout is set to {timeout} seconds"
+            )
+        return self._requests_wrapper(
+            method="get", endpoint=endpoint, body=None, timeout=timeout
+        )
 
     def post(self, endpoint: str, body: dict, timeout=10) -> requests.Response:
         """
@@ -191,6 +201,14 @@ class EmpowerConnection:
         :param endpoint: The endpoint to post data to.
         :param body: The data to post.
         """
+        signature = inspect.signature(self.post)
+        logger.debug("Posting data %s to %s", body, endpoint)
+        if signature.parameters["timeout"].default != timeout:
+            logger.debug("Timeout changed from default value to %s", timeout)
+            print(
+                f"Post call to endpoint {endpoint} could be slow, "
+                f"timeout is set to {timeout} seconds"
+            )
         response = self._requests_wrapper(
             method="post", endpoint=endpoint, body=body, timeout=timeout
         )
