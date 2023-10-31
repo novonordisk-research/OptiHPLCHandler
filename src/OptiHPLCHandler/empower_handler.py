@@ -5,7 +5,7 @@ from typing import Any, Dict, Generic, Iterable, List, Mapping, Optional, TypeVa
 
 from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
-from .empower_methodset_method import EmpowerMethodSetMethod
+from .empower_instrument_method import EmpowerInstrumentMethod
 
 Result = TypeVar("Result")
 
@@ -327,7 +327,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         logger.debug("Found methods %s", method_name_list)
         return method_name_list
 
-    def GetMethodsetMethod(self, method_name: str) -> EmpowerMethodSetMethod:
+    def GetInstrumentMethod(self, method_name: str) -> EmpowerInstrumentMethod:
         """
         Get a method set method.
 
@@ -335,9 +335,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         response = self.connection.get(
             endpoint=f"project/methods/instrument-method?name={method_name}"
         )
-        return EmpowerMethodSetMethod(response.json()["result"])
+        return EmpowerInstrumentMethod(response.json()["result"])
 
-    def PostMethodsetMethod(self, method: EmpowerMethodSetMethod) -> None:
+    def PostInstrumentMethod(self, method: EmpowerInstrumentMethod) -> None:
         """
         Post a method set method to Empower.
 

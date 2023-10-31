@@ -2,8 +2,8 @@ import json
 import os
 import unittest
 
-from OptiHPLCHandler.empower_instrument_method import SolventManagerMethod
-from OptiHPLCHandler.empower_methodset_method import EmpowerMethodSetMethod
+from OptiHPLCHandler.empower_instrument_method import EmpowerInstrumentMethod
+from OptiHPLCHandler.empower_module_method import SolventManagerMethod
 
 
 def get_example_file_dict() -> dict:
@@ -22,7 +22,7 @@ def get_example_file_dict() -> dict:
     return example
 
 
-class TestMethodSetMethod(unittest.TestCase):
+class TestInstrumentSetMethod(unittest.TestCase):
     def setUp(self) -> None:
         self.example = get_example_file_dict()
         self.minimal_definition = {
@@ -32,17 +32,17 @@ class TestMethodSetMethod(unittest.TestCase):
 
     def test_initialisation_full_response(self):
         for method_definition in self.example.values():
-            method = EmpowerMethodSetMethod(method_definition)
-            assert isinstance(method, EmpowerMethodSetMethod)
-            assert len(method.instrument_method_list) == len(
+            method = EmpowerInstrumentMethod(method_definition)
+            assert isinstance(method, EmpowerInstrumentMethod)
+            assert len(method.module_method_list) == len(
                 method_definition["results"][0]["modules"]
             )
 
     def test_initialisation_method_definition(self):
         for method_definition in self.example.values():
-            method = EmpowerMethodSetMethod(method_definition["results"][0])
-            assert isinstance(method, EmpowerMethodSetMethod)
-            assert len(method.instrument_method_list) == len(
+            method = EmpowerInstrumentMethod(method_definition["results"][0])
+            assert isinstance(method, EmpowerInstrumentMethod)
+            assert len(method.module_method_list) == len(
                 method_definition["results"][0]["modules"]
             )
 
@@ -50,16 +50,16 @@ class TestMethodSetMethod(unittest.TestCase):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
         method_definition["results"].append(method_definition["results"][0])
         with self.assertRaises(ValueError):
-            EmpowerMethodSetMethod(method_definition)
+            EmpowerInstrumentMethod(method_definition)
 
     def test_original_method(self):
         for method_definition in self.example.values():
-            method = EmpowerMethodSetMethod(method_definition)
+            method = EmpowerInstrumentMethod(method_definition)
             assert isinstance(method.original_method, dict)
             assert method.original_method == method_definition["results"][0]
 
     def test_original_method_immutable(self):
-        method = EmpowerMethodSetMethod(self.minimal_definition)
+        method = EmpowerInstrumentMethod(self.minimal_definition)
         with self.assertRaises(TypeError):
             method.original_method["modules"] = "new"
         with self.assertRaises(TypeError):
@@ -67,7 +67,7 @@ class TestMethodSetMethod(unittest.TestCase):
 
     def test_current_method(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         original_column_temperature = method.column_oven_method_list[
             0
         ].column_temperature
@@ -90,33 +90,33 @@ class TestColumnTemperature(unittest.TestCase):
 
     def test_get(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         assert method.column_temperature == "43.0"
 
     def test_get_none(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"] = method_definition["modules"][1:]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.column_temperature
 
     def test_get_multiple(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"].append(method_definition["modules"][0])
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         assert method.column_temperature == "43.0"
 
     def test_get_multiple_mismatching(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"].append(method_definition["modules"][0])
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         method.column_oven_method_list[0].column_temperature = "50.03"
         with self.assertRaises(ValueError):
             method.column_temperature
 
     def test_set(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         new_temperature = method.column_temperature + "1"
         method.column_temperature = new_temperature
         assert method.column_temperature == new_temperature
@@ -125,7 +125,7 @@ class TestColumnTemperature(unittest.TestCase):
     def test_set_multiple(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"].append(method_definition["modules"][0])
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         method.column_oven_method_list[0].column_temperature = "5"
         method.column_temperature = "50.03"
         assert method.column_temperature == "50.03"
@@ -133,7 +133,7 @@ class TestColumnTemperature(unittest.TestCase):
     def test_set_none(self):
         method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
         method_definition["modules"] = method_definition["modules"][1:]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.column_temperature = "50.03"
 
@@ -144,24 +144,24 @@ class TestSolventManager(unittest.TestCase):
         self.bsm_example = self.example["response-BSM-PDA-Acq.json"]
 
     def test_init(self):
-        method = EmpowerMethodSetMethod(self.bsm_example)
+        method = EmpowerInstrumentMethod(self.bsm_example)
         assert method.solvent_handler_method is not None
         assert isinstance(method.solvent_handler_method, SolventManagerMethod)
 
     def test_init_none(self):
         method_definition = self.bsm_example["results"][0]
         method_definition["modules"] = [method_definition["modules"][0]]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         assert method.solvent_handler_method is None
 
     def test_init_multiple(self):
         method_definition = self.bsm_example["results"][0]
         method_definition["modules"].append(method_definition["modules"][1])
         with self.assertRaises(ValueError):
-            EmpowerMethodSetMethod(method_definition)
+            EmpowerInstrumentMethod(method_definition)
 
     def test_get_gradient_table(self):
-        method = EmpowerMethodSetMethod(self.bsm_example)
+        method = EmpowerInstrumentMethod(self.bsm_example)
         gradient_table = method.gradient_table
         assert isinstance(gradient_table, list)
         assert isinstance(gradient_table[0], dict)
@@ -169,12 +169,12 @@ class TestSolventManager(unittest.TestCase):
     def test_get_gradient_table_none(self):
         method_definition = self.bsm_example["results"][0]
         method_definition["modules"] = [method_definition["modules"][0]]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.gradient_table
 
     def test_set_gradient_table(self):
-        method = EmpowerMethodSetMethod(self.bsm_example)
+        method = EmpowerInstrumentMethod(self.bsm_example)
         gradient_table = method.gradient_table
         assert gradient_table[0]["Flow"] != "0.1"
         assert (
@@ -188,7 +188,7 @@ class TestSolventManager(unittest.TestCase):
     def test_set_gradient_table_none(self):
         method_definition = self.bsm_example["results"][0]
         method_definition["modules"] = [method_definition["modules"][0]]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.gradient_table = [{"Flow": "0.1"}]
 
@@ -199,18 +199,18 @@ class TestValvePosition(unittest.TestCase):
         self.bsm_example = self.example["response-BSM-PDA-Acq.json"]
 
     def test_get(self):
-        method = EmpowerMethodSetMethod(self.bsm_example)
+        method = EmpowerInstrumentMethod(self.bsm_example)
         assert method.valve_position == ["A1", "B1"]
 
     def test_get_none(self):
         method_definition = self.bsm_example["results"][0]
         method_definition["modules"] = [method_definition["modules"][0]]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.valve_position
 
     def test_set(self):
-        method = EmpowerMethodSetMethod(self.bsm_example)
+        method = EmpowerInstrumentMethod(self.bsm_example)
         method.valve_position = "A2"
         assert method.valve_position == ["A2", "B1"]
         assert (
@@ -235,14 +235,14 @@ class TestValvePosition(unittest.TestCase):
     def test_set_none(self):
         method_definition = self.bsm_example["results"][0]
         method_definition["modules"] = [method_definition["modules"][0]]
-        method = EmpowerMethodSetMethod(method_definition)
+        method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.valve_position = "A2"
         with self.assertRaises(ValueError):
             method.valve_position = ["A2", "B1"]
 
     def test_method_name(self):
-        method = EmpowerMethodSetMethod(self.bsm_example)
+        method = EmpowerInstrumentMethod(self.bsm_example)
         assert method.method_name == "AcquityBSMPDA"
         method.method_name = "new_name"
         assert method.method_name == "new_name"

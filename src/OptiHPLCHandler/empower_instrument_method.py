@@ -1,316 +1,152 @@
 import logging
-import re
-from typing import Dict, List, Mapping, Tuple, Union
-from xml.etree import ElementTree as ET
+from typing import List, Union
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
+from OptiHPLCHandler.empower_module_method import (
+    ColumnOvenMethod,
+    EmpowerModuleMethod,
+    SolventManagerMethod,
+    module_method_factory,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class EmpowerInstrumentMethod:
     """
-    Generic instrument method class that can be used for any Empower instrument method.
-    For specific instrument methods, a subclass should be created that inherits from
-    this class.
+    A class to handle Empower instrument methods.
 
-    Specific parameters for the method can be set and retrieved using the [] operator,
-    e.g `method["ColumnTemperature"] = "50.03"`. This will replace the current value of
-    ColumnTemperature with the new value in the underlying xml. The current value can be
-    retrieved in the same way. This only works if there is exactly one instance of the
-    key in the xml. If there are multiple instances, a ValueError will be raised. If the
-    key is not present, a KeyError will be raised. If more than one key is present, use
-    the xml key to retrieve the xml and make changes to it through the `replace` method.
-    This will replace all instances of the original string with the new string in the
-    xml.
-
-    If no xml key is present in the method definition, no changes can be made to the
-    method, but the original method definition can still be retrieved.
-
-    :attribute original_method: The original method definition.
-    :attribute current_method: The current method definition, including the changes that
-        have been made.
+    : attribute original_method: The original method definition.
+    : attribute current_method: The current method definition.
+    : attribute column_oven_list: A list of column ovens in the method set method.
+    : attribute module_method_list: A list of module methods in the method set
+        method.
+    : attribute column_temperature: The column temperature. If multiple column ovens are
+        found, the temperature is only returned if all column ovens have the same
+        temperature. Otherwise, a ValueError is raised. If no column ovens are found, a
+        ValueError is raised. When setting the column temperature, all column ovens
+        will be set to the same temperature, regardless of the original temperatures. If
+        no column ovens are found, a ValueError is raised.
     """
 
-    def __init__(self, method_definition: Mapping[str, str]):
+    def __init__(self, method_definition: Union[dict, list]):
         """
-        Initialize the InstrumentMethod.
+        Initialize the EmpowerInstrumentMethod.
 
-        :param method_definition: The method definition from Empower. Should contain at
-            least an xml key. If it is not present, the InstrumentMethod can still be
-            created, but no changes can be made to the method, and no values can be
-            extracted.
+        :param method_definition: A method definition from Empower. If the entire result
+            is passed, the instrument method definition will be extracted.
         """
-        self.original_method = DataModel(method_definition, mutable=False)
-        self._change_list: List[Tuple[str, str]] = []
+        self.column_oven_method_list: list[ColumnOvenMethod] = []
+        self.module_method_list: list[EmpowerModuleMethod] = []
+        self.solvent_handler_method = None
 
-    def replace(self, original: str, new: str) -> None:
-        """
-        Replace all instances of a string in the xml of the current method.
-
-        :param original: The string to replace.
-        :param new: The string to replace it with.
-        """
-        self._change_list.append((original, new))
-
-    def undo(self) -> None:
-        """Undo the last change made to the method."""
-        self._change_list.pop()
-
-    # If this property method is called often, there could be performance issues. In
-    # that case, consider cahcing the result with `@functools.lru_cahce(maxsize=1)`. You
-    # also need to implement a `__hash__` method and an `__eq__` method for this to
-    # work.
-    @property
-    def current_method(self) -> DataModel:
-        """The current method definition, including the changes that have been made."""
-        logger.debug("Applying changes to create current method")
-        return self.alter_method(self.original_method, self._change_list)
-
-    def keys(self) -> List[str]:
-        """
-        Return a list of keys in the method definition where the value is accessible.
-        """
-        key_list = []
-        for key in self._all_keys():
-            try:
-                self[key]
-                key_list.append(key)
-            except (ValueError, KeyError):
-                pass
-        return key_list
-
-    def _all_keys(self) -> List[str]:
-        """
-        Return a list of all tags in the method definition, regardless of whether the
-        value can be retrieved or not.
-        """
-        key_list = []
-        raw_tag_list = re.findall("<(.*?)>", self.current_method["nativeXml"])
-        for tag in raw_tag_list:
-            if tag not in key_list and tag[0] != "/":
-                key_list.append(tag)
-        return key_list
-
-    def __getitem__(self, key: str) -> str:
-        try:
-            xml = self.current_method["nativeXml"]
-        except KeyError as ex:
-            raise KeyError("No xml found in method definition") from ex
-        return self.find_value(xml, key)
-
-    def __setitem__(self, key: str, value: str) -> None:
-        current_value = self[key]
-        self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
-
-    @staticmethod
-    def find_value(xml: str, key: str) -> str:
-        """Find the value of a key in an xml from Empower."""
-        search_result = re.search(f"<{key}>(.*)</{key}>", xml, re.DOTALL)
-        # The re.DOTALL flag ensures that newline charaters are also matched by the dot.
-        if not search_result:
-            # Consider trying to replace `<` with `&lt` and `>` with `&gt;` and then
-            # trying again.
-            raise KeyError(f"Could not find key {key}")
-        if f"<{key}>" in search_result.groups(1)[0]:
-            # Python regex returns the maximum match, so if the key is found multiple
-            # times, it will return everything between the first opening tag and the
-            # last closing tag. This is not what we want, so we raise an error if this
-            # happens.
-            raise ValueError(f"Found more than one match for key {key}")
-        return search_result.groups(1)[0]
-
-    @staticmethod
-    def alter_method(
-        original_method: Mapping[str, str], change_list: List[Tuple[str, str]]
-    ) -> DataModel:
-        """
-        Alter the a method definition by applying the changes in the change list.
-        """
-        method = DataModel(original_method)
-        try:
-            xml: str = method["nativeXml"]
-        except KeyError as ex:
-            if len(change_list) > 0:
+        if isinstance(method_definition, dict) and "results" in method_definition:
+            # If the entire response from Empower is passed, extract the results
+            if len(method_definition["results"]) > 1:
                 raise ValueError(
-                    "Cannot apply changes to method, no xml key in method definition."
-                ) from ex
-            # If there is no xml key, we can't do anything with the method. But if
-            # there are no changes to apply, we can just return the original method.
-            return method
-        for original, new in change_list:
-            logger.debug("Replacing %s with %s", original, new)
-            num_replaced = xml.count(original)
-            if num_replaced == 0:
-                logger.warning(
-                    f"Could not find {original} in {method}, no changes made to method."
-                )  # Consider trying to replace `<` with `&lt` aand `>` with `&gt;` and
-                # then trying again.
-            else:
-                xml = xml.replace(original, new)
-                logger.debug(
-                    "Replaced %s instances of %s with %s", num_replaced, original, new
+                    f"Multiple method set methods found: {method_definition['results']}"
                 )
-        method["nativeXml"] = xml
-        return method
+            method_definition = method_definition["results"][0]
+        self.method_name = method_definition["methodName"]
+        self.original_method = DataModel(method_definition, mutable=False)
+        for module_method_definition in method_definition["modules"]:
+            module_method = module_method_factory(module_method_definition)
+            self.module_method_list.append(module_method)
+            if isinstance(module_method, ColumnOvenMethod):
+                self.column_oven_method_list.append(module_method)
+            if isinstance(module_method, SolventManagerMethod):
+                if self.solvent_handler_method is not None:
+                    raise ValueError(
+                        "Multiple solvent managers found in method set method."
+                    )
+                self.solvent_handler_method = module_method
 
+    @property
+    def current_method(self):
+        """
+        Return the current method definition.
 
-class ColumnOvenMethod(EmpowerInstrumentMethod):
-    """
-    Class for instrument methods that have a column temperature.
-
-    :attribute column_temperature: The column temperature.
-    """
-
-    TEMPERATURE_KEY: str
+        :return: The current method definition.
+        """
+        method = dict(self.original_method)
+        method["methodName"] = self.method_name
+        method["modules"] = [
+            method.current_method for method in self.module_method_list
+        ]
+        return DataModel(method)
 
     @property
     def column_temperature(self):
-        """The column temperature."""
-        return self[self.TEMPERATURE_KEY]
+        """
+        Return the column temperature.
+
+        :return: The column temperature.
+        """
+        if len(self.column_oven_method_list) == 0:
+            raise ValueError("No column oven found in method set method.")
+        temperature_set = {
+            module.column_temperature for module in self.column_oven_method_list
+        }  # A set, so that duplicated values are collpased into one.
+        if len(temperature_set) > 1:
+            raise ValueError(f"Multiple column temperatures found: {temperature_set}")
+        return temperature_set.pop()
 
     @column_temperature.setter
-    def column_temperature(self, value: str) -> None:
-        self[self.TEMPERATURE_KEY] = value
-
-
-class SampleManagerMethod(ColumnOvenMethod):
-    """Class for instrument methods that control a sample manager."""
-
-    TEMPERATURE_KEY = "ColumnTemperature"
-
-
-class SolventManagerMethod(EmpowerInstrumentMethod):
-    """
-    Parent class for instrument methods that control a solvent manager.
-
-    Attributes in addition to the ones from InstrumentMethod:
-    :attribute valve_position: The current valve position for each solvent line.
-    :attribute gradient_table: The gradient table for the method.
-    """
-
-    valve_tag_prefix: str
-    valve_tag_suffix: str
-    solvent_lines: List[str]
+    def column_temperature(self, temperature: float):
+        if len(self.column_oven_method_list) == 0:
+            raise ValueError("No column oven found in method set method.")
+        for module in self.column_oven_method_list:
+            module.column_temperature = temperature
 
     @property
-    def valve_position(self) -> List[str]:
-        """The current valve position for each solvent line."""
-        valve_position_tags = [
-            self.valve_tag_prefix + solvent + self.valve_tag_suffix
-            for solvent in self.solvent_lines
-        ]
-        valve_positions = [
-            solvent + self[tag]
-            for solvent, tag in zip(self.solvent_lines, valve_position_tags)
-        ]
-        # Consider removing the ones that have position 0,
-        # to make QSM methods easier to read.
-        return valve_positions
-
-    def __str__(self):
-        return f"{type(self).__name__} with valve positions {self.valve_position}"
-
-    @valve_position.setter
-    def valve_position(self, value: Union[str, List[str]]) -> None:
-        if isinstance(value, str):
-            value = [value]
-        for position in value:
-            if position[0] not in self.solvent_lines:
-                raise ValueError(
-                    f"Invalid valve position {position}, "
-                    f"must start with one of {self.solvent_lines}"
-                )
-            self[
-                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
-            ] = position[1:]
-
-    @property
-    def gradient_table(self) -> List[Dict[str, str]]:
+    def gradient_table(self) -> List[dict]:
         """
-        The gradient table for the method. It is a list of dicts, one for each row.
+        Return the gradient table.
 
-        The dicts have the following keys:
-        - Time: The time in minutes (or Initial).
-        - Flow: The flow in mL/min.
-        - CompositionX: The composition of solvent line X (A, B, C, D) in %.
-        - Curve: The curve type (Initial, or 1-11, 6 is linear and default).
+        :return: The gradient table.
         """
-        gradient_table = []
-        e_tree = ET.fromstring(f"<root>{self['GradientTable']}</root>")
-        for gradient_row in e_tree:
-            if gradient_row.tag != "GradientRow":
-                raise ValueError(
-                    f"Expected GradientRow, got {gradient_row.tag} instead."
-                )
-            row_dict = {}
-            for field in gradient_row:
-                row_dict[field.tag] = field.text
-            gradient_table.append(row_dict)
-        return gradient_table
+        if self.solvent_handler_method is None:
+            raise ValueError(
+                "Can't get gradient table, "
+                "no solvent manager found in method set method."
+            )
+        return self.solvent_handler_method.gradient_table
 
     @gradient_table.setter
-    def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
-        xml = ET.Element("GradientTable")
-        for row in new_gradient_table:
-            row_xml = ET.SubElement(xml, "GradientRow")
-            curve = row.get("Curve", "6")
-            ET.SubElement(row_xml, "Time").text = str(row["Time"])
-            ET.SubElement(row_xml, "Flow").text = str(row["Flow"])
-            # "6" is linear, which covers 90% of the use cases
-            for line in self.solvent_lines:
-                line_name = f"Composition{line}"
-                ET.SubElement(row_xml, line_name).text = str(row[line_name])
-            ET.SubElement(row_xml, "Curve").text = str(curve)
-            # Consider validating curve (1-11)
-        gradient_xml = ET.tostring(xml, encoding="unicode")
-        gradient_xml = gradient_xml.replace("<GradientTable>", "").replace(
-            "</GradientTable>", ""
-        )  # Stripping root tag, as it is set by __setitem__()
-        self["GradientTable"] = gradient_xml
+    def gradient_table(self, gradient_table: List[dict]):
+        if self.solvent_handler_method is None:
+            raise ValueError(
+                "Can't set gradient table, "
+                "no solvent manager found in method set method."
+            )
+        self.solvent_handler_method.gradient_table = gradient_table
 
+    @property
+    def valve_position(self):
+        """
+        Return the valve position.
 
-class BSMMethod(SolventManagerMethod):
-    """Class for instrument methods that control a binary solvent manager (BSM)."""
+        :return: The valve position.
+        """
+        if self.solvent_handler_method is None:
+            raise ValueError(
+                "Can't get valve position, "
+                "no solvent manager found in method set method."
+            )
+        return self.solvent_handler_method.valve_position
 
-    valve_tag_prefix = "FlowSource"
-    valve_tag_suffix = ""
-    solvent_lines = ["A", "B"]
+    @valve_position.setter
+    def valve_position(self, valve_position: str):
+        if self.solvent_handler_method is None:
+            raise ValueError(
+                "Can't set valve position, "
+                "no solvent manager found in method set method."
+            )
+        self.solvent_handler_method.valve_position = valve_position
 
-
-class QSMMethod(SolventManagerMethod):
-    """Class for instrument methods that control a quaternary solvent manager (QSM)."""
-
-    valve_tag_prefix = "SolventSelectionValve"
-    valve_tag_suffix = "Position"
-    solvent_lines = ["A", "B", "C", "D"]
-
-
-def instrument_method_factory(
-    method_definition: Mapping[str, str]
-) -> EmpowerInstrumentMethod:
-    """
-    Factory function for creating an InstrumentMethod from a method definition. The
-    method definition should contain at least a name key, which is used to determine
-    which subclass of InstrumentMethod should be created. If the name key is not present
-    or the name is not recognized, a generic InstrumentMethod will be created.
-    """
-    try:
-        if method_definition["name"] in ["rAcquityFTN"]:
-            logger.debug("Creating SampleManager")
-            return SampleManagerMethod(method_definition)
-        if method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
-            logger.debug("Creating BSM")
-            return BSMMethod(method_definition)
-        # Add more cases as they are coded
-        logger.debug(
-            "Unknown instrument method: %s, creating a generic InstrumentMethod",
-            method_definition["name"],
-        )  # The error is always caught, so we use the debug level here.
-        raise ValueError(f"Unknown instrument method: {method_definition['name']}")
-    except (KeyError, ValueError) as e:
-        if isinstance(e, KeyError):
-            # If the name key is not present, we don't know what to do with it, but we
-            # can still create a generic InstrumentMethod and just return that.
-            logger.debug("KeyError: %s, creating a generic InstrumentMethod", e)
-        return EmpowerInstrumentMethod(method_definition)
+    def __str__(self):
+        return (
+            f"{type(self).__name__} with "
+            f"{len(self.module_method_list)} module methods of types "
+            ", ".join([type(method).__name__ for method in self.module_method_list])
+        )
