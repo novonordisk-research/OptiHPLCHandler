@@ -51,6 +51,12 @@ class TestEmpowerConnection(unittest.TestCase):
         assert self.connection.token == "test_token"
         assert self.connection.session_id == "test_id"
 
+    def test_login_timeout(self):
+        # test that the call to login times out if the server is not available
+        with patch("OptiHPLCHandler.empower_api_core.requests.post") as mock_post:
+            self.connection.login(username="test_username", password="test_password")
+            assert "timeout" in mock_post.call_args[1]
+
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_automatic_service_name(self, mock_requests):
         mock_response_service = MagicMock()
@@ -73,11 +79,12 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_requests.get.return_value = mock_response
         self.connection.get("test_url")
         # Testing that the get method is called with the correct url
-        assert mock_requests.get.call_args[0][0] == "https://test_address/test_url"
+        assert mock_requests.request.call_args[0][0] == "get"
+        assert mock_requests.request.call_args[0][1] == "https://test_address/test_url"
         self.connection.get("/test_url")
         # Testing that the get method is called with the correct url when endpoint
         # starts with a slash
-        assert mock_requests.get.call_args[0][0] == "https://test_address/test_url"
+        assert mock_requests.request.call_args[0][1] == "https://test_address/test_url"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get_http_error(self, mock_requests):
@@ -85,7 +92,7 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.status_code = 400
         mock_requests.get.return_value = mock_response
         self.connection.get("test_url")
-        assert mock_requests.get.return_value.raise_for_status.called
+        assert mock_requests.request.return_value.raise_for_status.called
 
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
@@ -94,7 +101,7 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {"result": {"token": "test_token"}}
         mock_response.status_code = 401
-        mock_requests.get.return_value = mock_response
+        mock_requests.request.return_value = mock_response
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_requests.post.return_value = mock_response
@@ -109,15 +116,16 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_post(self, mock_requests):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_requests.post.return_value = mock_response
+        mock_requests.request.return_value = mock_response
         # The last call should be to log in, since this should casue an exception.
         self.connection.post("test_url", body={})
-        # Testing that the get method is called with the correct url
-        assert mock_requests.post.call_args[0][0] == "https://test_address/test_url"
+        # Testing that the post method is called with the correct url
+        assert mock_requests.request.call_args[0][0] == "post"
+        assert mock_requests.request.call_args[0][1] == "https://test_address/test_url"
         self.connection.post("/test_url", body={})
         # Testing that the get method is called with the correct url when endpoint
         # starts with a slash
-        assert mock_requests.post.call_args[0][0] == "https://test_address/test_url"
+        assert mock_requests.request.call_args[0][1] == "https://test_address/test_url"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_post_http_error(self, mock_requests):
@@ -125,7 +133,7 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.status_code = 400
         mock_requests.post.return_value = mock_response
         self.connection.post("test_url", body="test_body")
-        assert mock_requests.post.return_value.raise_for_status.called
+        assert mock_requests.request.return_value.raise_for_status.called
 
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
@@ -136,7 +144,7 @@ class TestEmpowerConnection(unittest.TestCase):
             "result": {"token": "test_token", "id": "test_id"}
         }
         mock_response.status_code = 401
-        mock_requests.post.return_value = mock_response
+        mock_requests.request.return_value = mock_response
         mock_getpass.return_value = self.mock_password
         self.connection.post("test_url", body="test_body")
         assert mock_requests.method_calls[1].args == (
