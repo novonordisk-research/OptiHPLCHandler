@@ -56,9 +56,10 @@ class EmpowerConnection:
                     self.address + "/authentication/db-service-list", timeout=10
                 )
             except requests.exceptions.Timeout as e:
-                print(f"Getting service from {self.address} timed out")
-                logger.error("Getting service from %s timed out", self.address)
-                raise Exception(f"Getting service from {self.address} timed out") from e
+                timeout_string = f"Getting service from {self.address} timed out"
+                print(timeout_string)
+                logger.error(timeout_string)
+                raise TimeoutError(timeout_string) from e
             self.service = response.json()["results"][0]["netServiceName"]
             # If no service is specified, use the first one in the list
         else:
@@ -102,13 +103,12 @@ class EmpowerConnection:
                 timeout=60,
             )
         except requests.exceptions.Timeout as e:
-            print(f"Login to {self.address} with username = {self.username} timed out")
-            logger.error(
-                "Login to %s with username = %s timed out", self.address, self.username
-            )
-            raise Exception(
+            timeout_string = (
                 f"Login to {self.address} with username = {self.username} timed out"
-            ) from e
+            )
+            print(timeout_string)
+            logger.error(timeout_string)
+            raise TimeoutError(timeout_string) from e
         reply.raise_for_status()
         self.token = reply.json()["result"]["token"]
         self.session_id = reply.json()["result"]["id"]
@@ -142,11 +142,12 @@ class EmpowerConnection:
         :param method: The method to use.
         :param endpoint: The endpoint to use.
         :param body: The body to use.
+        :param timeout: The timeout to use.
         """
 
         def _request_with_timeout(method, endpoint, header, body, timeout):
             try:
-                response = requests.request(
+                return requests.request(
                     method,
                     endpoint,
                     json=body,
@@ -154,10 +155,10 @@ class EmpowerConnection:
                     timeout=timeout,
                 )
             except requests.exceptions.Timeout as e:
-                print(f"{method}ing {body} to {endpoint} timed out")
-                logger.error("%sing %s to %s timed out", method, body, endpoint)
-                raise Exception(f"{method}ing {body} to {endpoint} timed out") from e
-            return response
+                timeout_string = f"{method}ing {body} to {endpoint} timed out"
+                print(timeout_string)
+                logger.error(timeout_string)
+                raise TimeoutError(timeout_string) from e
 
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
