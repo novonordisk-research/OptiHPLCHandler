@@ -1,4 +1,5 @@
 import getpass
+import inspect
 import logging
 import warnings
 from typing import Optional
@@ -50,7 +51,15 @@ class EmpowerConnection:
         self.username = getpass.getuser()
         if service is None:
             logger.debug("No service specified, getting service from Empower")
-            response = requests.get(self.address + "/authentication/db-service-list")
+            try:
+                response = requests.get(
+                    self.address + "/authentication/db-service-list", timeout=10
+                )
+            except requests.exceptions.Timeout as e:
+                timeout_string = f"Getting service from {self.address} timed out"
+                print(timeout_string)
+                logger.error(timeout_string)
+                raise requests.exceptions.Timeout(timeout_string) from e
             self.service = response.json()["results"][0]["netServiceName"]
             # If no service is specified, use the first one in the list
         else:
@@ -87,10 +96,19 @@ class EmpowerConnection:
             # If no project is given, log into the default project, e.g. "Mobile"
             body["project"] = self.project
         logger.debug("Logging into Empower")
-        reply = requests.post(
-            self.address + "/authentication/login",
-            json=body,
-        )
+        try:
+            reply = requests.post(
+                self.address + "/authentication/login",
+                json=body,
+                timeout=60,
+            )
+        except requests.exceptions.Timeout as e:
+            timeout_string = (
+                f"Login to {self.address} with username = {self.username} timed out"
+            )
+            print(timeout_string)
+            logger.error(timeout_string)
+            raise requests.exceptions.Timeout(timeout_string) from e
         reply.raise_for_status()
         self.token = reply.json()["result"]["token"]
         self.session_id = reply.json()["result"]["id"]
@@ -115,47 +133,86 @@ class EmpowerConnection:
         self.session_id = None
         logger.debug("Logout successful")
 
-    def get(self, endpoint: str) -> requests.Response:
+    def _requests_wrapper(
+        self, method: str, endpoint: str, body: Optional[dict], timeout
+    ) -> requests.Response:
+        """
+        Wrapper for requests.
+
+        :param method: The method to use.
+        :param endpoint: The endpoint to use.
+        :param body: The body to use.
+        :param timeout: The timeout to use.
+        """
+
+        def _request_with_timeout(method, endpoint, header, body, timeout):
+            try:
+                return requests.request(
+                    method,
+                    endpoint,
+                    json=body,
+                    headers=header,
+                    timeout=timeout,
+                )
+            except requests.exceptions.Timeout as e:
+                timeout_string = f"{method}ing {body} to {endpoint} timed out"
+                print(timeout_string)
+                logger.error(timeout_string)
+                raise requests.exceptions.Timeout(timeout_string) from e
+
+        endpoint = endpoint.lstrip("/")  # Remove leading slash if present
+        address = self.address + "/" + endpoint
+        # Add slash between address and endpoint
+        logger.debug("%sing %s to %s", method, body, address)
+        response = _request_with_timeout(
+            method, address, self.authorization_header, body, timeout
+        )
+        if response.status_code == 401:
+            logger.debug("Token expired, logging in again")
+            self.login()
+            response = _request_with_timeout(
+                method, address, self.authorization_header, body, timeout
+            )
+        logger.debug("Got response %s from %s", response.text, address)
+        response.raise_for_status()
+        return response
+
+    def get(self, endpoint: str, timeout=10) -> requests.Response:
         """
         Get data from Empower.
 
         :param endpoint: The endpoint to get data from.
         """
-        endpoint = endpoint.lstrip("/")  # Remove leading slash if present
-        address = self.address + "/" + endpoint
-        # Add slash between address and endpoint
-        logger.debug("Getting %s", address)
-        response = requests.get(address, headers=self.authorization_header)
-        if response.status_code == 401:
-            logger.debug("Token expired, logging in again")
-            self.login()
-            response = requests.get(address, headers=self.authorization_header)
-        logger.debug("Got response %s from %s", response.text, address)
-        response.raise_for_status()
-        return response
+        signature = inspect.signature(self.get)
+        logger.debug("Getting data from %s", endpoint)
+        if signature.parameters["timeout"].default != timeout:
+            logger.debug("Timeout changed from default value to %s", timeout)
+            print(
+                f"Get call to endpoint {endpoint} could be slow, "
+                f"timeout is set to {timeout} seconds"
+            )
+        return self._requests_wrapper(
+            method="get", endpoint=endpoint, body=None, timeout=timeout
+        )
 
-    def post(self, endpoint: str, body: dict) -> requests.Response:
+    def post(self, endpoint: str, body: dict, timeout=10) -> requests.Response:
         """
         Post data to Empower.
 
         :param endpoint: The endpoint to post data to.
         :param body: The data to post.
         """
-        endpoint = endpoint.lstrip("/")  # Remove leading slash if present
-        address = self.address + "/" + endpoint
-        # Add slash between address and endpoint
-        logger.debug("Posting %s to %s", body, address)
-        response = requests.post(address, json=body, headers=self.authorization_header)
-        if response.status_code == 401:
-            logger.debug("Token expired, logging in again")
-            self.login()
-            response = requests.post(
-                address,
-                json=body,
-                headers=self.authorization_header,
+        signature = inspect.signature(self.post)
+        logger.debug("Posting data %s to %s", body, endpoint)
+        if signature.parameters["timeout"].default != timeout:
+            logger.debug("Timeout changed from default value to %s", timeout)
+            print(
+                f"Post call to endpoint {endpoint} could be slow, "
+                f"timeout is set to {timeout} seconds"
             )
-        logger.debug("Got respones %s from %s", response.text, address)
-        response.raise_for_status()
+        response = self._requests_wrapper(
+            method="post", endpoint=endpoint, body=body, timeout=timeout
+        )
         return response
 
     @property
