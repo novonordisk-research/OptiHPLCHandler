@@ -134,6 +134,7 @@ class ColumnOvenMethod(EmpowerModuleMethod):
     """
     Class for module methods that have a column temperature.
 
+    Attributes in addition to the ones from EmpowerModuleMethod:
     :attribute column_temperature: The column temperature.
     """
 
