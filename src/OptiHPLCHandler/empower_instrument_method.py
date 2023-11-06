@@ -3,8 +3,10 @@ from typing import List, Union
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
 from OptiHPLCHandler.empower_module_method import (
+    ColumnManagerMethod,
     ColumnOvenMethod,
     EmpowerModuleMethod,
+    SampleManagerMethod,
     SolventManagerMethod,
     module_method_factory,
 )
@@ -29,16 +31,27 @@ class EmpowerInstrumentMethod:
         no column ovens are found, a ValueError is raised.
     """
 
-    def __init__(self, method_definition: Union[dict, list]):
+    def __init__(
+        self,
+        method_definition: Union[dict, list],
+        use_sample_manager_oven: bool = False,
+    ):
         """
         Initialize the EmpowerInstrumentMethod.
 
         :param method_definition: A method definition from Empower. If the entire result
             is passed, the instrument method definition will be extracted.
+        :param use_sample_manager_oven: If True, both sample manager oven and column
+            manager oven will be used. If False, only column manager oven will be used.
         """
         self.column_oven_method_list: list[ColumnOvenMethod] = []
         self.module_method_list: list[EmpowerModuleMethod] = []
         self.solvent_handler_method = None
+
+        if use_sample_manager_oven:
+            oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
+        else:
+            oven_type_tuple = (ColumnManagerMethod,)
 
         if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
@@ -52,7 +65,7 @@ class EmpowerInstrumentMethod:
         for module_method_definition in method_definition["modules"]:
             module_method = module_method_factory(module_method_definition)
             self.module_method_list.append(module_method)
-            if isinstance(module_method, ColumnOvenMethod):
+            if isinstance(module_method, oven_type_tuple):
                 self.column_oven_method_list.append(module_method)
             if isinstance(module_method, SolventManagerMethod):
                 if self.solvent_handler_method is not None:

@@ -52,6 +52,28 @@ class TestInstrumentSetMethod(unittest.TestCase):
         with self.assertRaises(ValueError):
             EmpowerInstrumentMethod(method_definition)
 
+    def test_initialisation_types(self):
+        # Test that the correct types are created
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(method_definition)
+        description = str(method)
+        assert "ColumnManagerMethod" in description
+        assert "SampleManagerMethod" in description
+        assert "BSMMethod" in description
+
+    def test_column_oven_method_list(self):
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(method_definition)
+        assert len(method.module_method_list) == 4
+        assert len(method.column_oven_method_list) == 1
+
+    def test_initialisation_multiple_oven_types(self):
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(
+            method_definition, use_sample_manager_oven=True
+        )
+        assert len(method.column_oven_method_list) == 2
+
     def test_original_method(self):
         for method_definition in self.example.values():
             method = EmpowerInstrumentMethod(method_definition)
