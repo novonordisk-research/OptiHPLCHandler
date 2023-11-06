@@ -9,6 +9,6 @@ OptiHPLCHandler can be used from DataLab
 
 For advanced use cases, consider the following haiku:
 
-Advanced use cases
-Not covered, you figure out:
+Advanced use cases  
+not covered, you figure out:  
 Embrace API
