@@ -155,6 +155,12 @@ class SampleManagerMethod(ColumnOvenMethod):
     TEMPERATURE_KEY = "ColumnTemperature"
 
 
+class ColumnManagerMethod(ColumnOvenMethod):
+    """Class for module methods that control a column manager."""
+
+    TEMPERATURE_KEY = "SetColumnTemperature"
+
+
 class SolventManagerMethod(EmpowerModuleMethod):
     """
     Parent class for module methods that control a solvent manager. Specific instrument
@@ -272,10 +278,13 @@ def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModule
     """
     try:
         if method_definition["name"] in ["rAcquityFTN"]:
-            logger.debug("Creating SampleManager")
+            logger.debug("Creating SampleManagerMethod")
             return SampleManagerMethod(method_definition)
-        elif method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
-            logger.debug("Creating BSM")
+        if method_definition["name"] in ["AcquityCM", "ACQ-CM"]:
+            logger.debug("Creating ColumnManagerMethod")
+            return ColumnManagerMethod(method_definition)
+        if method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
+            logger.debug("Creating BSMMethod")
             return BSMMethod(method_definition)
         # Add more cases as they are coded
         else:
