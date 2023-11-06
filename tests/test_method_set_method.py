@@ -109,55 +109,100 @@ class TestInstrumentSetMethod(unittest.TestCase):
 class TestColumnTemperature(unittest.TestCase):
     def setUp(self) -> None:
         self.example = get_example_file_dict()
+        self.column_manager_example = self.example["response-BSM-TUV-CM-Acq.json"]
 
     def test_get(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]
-        method = EmpowerInstrumentMethod(method_definition)
-        assert method.column_temperature == "43.0"
+        method = EmpowerInstrumentMethod(self.column_manager_example)
+        assert method.column_temperature == "HeaterOff_-1"
 
     def test_get_none(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
-        method_definition["modules"] = method_definition["modules"][1:]
+        method_definition = self.column_manager_example["results"][0]
+        method_definition["modules"] = method_definition["modules"][0:-1]
         method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.column_temperature
 
     def test_get_multiple(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
-        method_definition["modules"].append(method_definition["modules"][0])
+        method_definition = self.column_manager_example["results"][0]
+        method_definition["modules"].append(method_definition["modules"][-1])
         method = EmpowerInstrumentMethod(method_definition)
-        assert method.column_temperature == "43.0"
+        assert method.column_temperature == "HeaterOff_-1"
 
     def test_get_multiple_mismatching(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
-        method_definition["modules"].append(method_definition["modules"][0])
+        method_definition = self.column_manager_example["results"][0]
+        method_definition["modules"].append(method_definition["modules"][-1])
         method = EmpowerInstrumentMethod(method_definition)
         method.column_oven_method_list[0].column_temperature = "50.03"
         with self.assertRaises(ValueError):
             method.column_temperature
 
     def test_set(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]
+        method_definition = self.column_manager_example
         method = EmpowerInstrumentMethod(method_definition)
-        new_temperature = method.column_temperature + "1"
+        new_temperature = "50.03"
         method.column_temperature = new_temperature
         assert method.column_temperature == new_temperature
         assert method.column_oven_method_list[0].column_temperature == new_temperature
 
     def test_set_multiple(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
-        method_definition["modules"].append(method_definition["modules"][0])
+        method_definition = self.column_manager_example["results"][0]
+        method_definition["modules"].append(method_definition["modules"][-1])
         method = EmpowerInstrumentMethod(method_definition)
         method.column_oven_method_list[0].column_temperature = "5"
         method.column_temperature = "50.03"
         assert method.column_temperature == "50.03"
 
     def test_set_none(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0]
-        method_definition["modules"] = method_definition["modules"][1:]
+        method_definition = self.column_manager_example["results"][0]
+        method_definition["modules"] = method_definition["modules"][0:-1]
         method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.column_temperature = "50.03"
+
+    def test_only_setting_one_temperature(self):
+        minimal_definition = {
+            "methodName": "test_method",
+            "modules": [
+                {
+                    "name": "rAcquityFTN",
+                    "nativeXml": "<ColumnTemperature>43.0</ColumnTemperature>",
+                },
+                {
+                    "name": "ACQ-CM",
+                    "nativeXml": "<SetColumnTemperature>45.0</SetColumnTemperature>",
+                },
+            ],
+        }
+        method = EmpowerInstrumentMethod(minimal_definition)
+        assert method.column_temperature == "45.0"
+        method.column_temperature = "50.03"
+        assert method.column_temperature == "50.03"
+        assert method.module_method_list[0].column_temperature == "43.0"
+        assert method.module_method_list[1].column_temperature == "50.03"
+
+    def test_setting_multiple(self):
+        minimal_definition = {
+            "methodName": "test_method",
+            "modules": [
+                {
+                    "name": "rAcquityFTN",
+                    "nativeXml": "<ColumnTemperature>43.0</ColumnTemperature>",
+                },
+                {
+                    "name": "ACQ-CM",
+                    "nativeXml": "<SetColumnTemperature>45.0</SetColumnTemperature>",
+                },
+            ],
+        }
+        method = EmpowerInstrumentMethod(
+            minimal_definition, use_sample_manager_oven=True
+        )
+        with self.assertRaises(ValueError):
+            method.column_temperature
+        method.column_temperature = "50.03"
+        assert method.column_temperature == "50.03"
+        assert method.module_method_list[0].column_temperature == "50.03"
+        assert method.module_method_list[1].column_temperature == "50.03"
 
 
 class TestSolventManager(unittest.TestCase):
