@@ -88,7 +88,7 @@ class TestInstrumentSetMethod(unittest.TestCase):
             method.original_method["new_key"] = "new_value"
 
     def test_current_method(self):
-        method_definition = self.example["response-BSM-PDA-Acq.json"]
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
         method = EmpowerInstrumentMethod(method_definition)
         original_column_temperature = method.column_oven_method_list[
             0
@@ -96,12 +96,12 @@ class TestInstrumentSetMethod(unittest.TestCase):
         method.column_oven_method_list[0].column_temperature = "50.03"
         assert isinstance(method.current_method, dict)
         assert method.current_method != method_definition["results"][0]
-        assert method.current_method["modules"][0]["nativeXml"].count("50.03") == 1
+        assert method.current_method["modules"][-1]["nativeXml"].count("50.03") == 1
         assert (
-            method.current_method["modules"][0]["nativeXml"].replace(
+            method.current_method["modules"][-1]["nativeXml"].replace(
                 "50.03", original_column_temperature
             )
-            == method_definition["results"][0]["modules"][0]["nativeXml"]
+            == method_definition["results"][0]["modules"][-1]["nativeXml"]
         )
         assert method.original_method == method_definition["results"][0]
 
