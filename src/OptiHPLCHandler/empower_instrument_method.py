@@ -23,12 +23,21 @@ class EmpowerInstrumentMethod:
     : attribute column_oven_list: A list of column ovens in the method set method.
     : attribute module_method_list: A list of module methods in the method set
         method.
+    : attribute solvent_handler_method: The solvent manager module method.
     : attribute column_temperature: The column temperature. If multiple column ovens are
         found, the temperature is only returned if all column ovens have the same
         temperature. Otherwise, a ValueError is raised. If no column ovens are found, a
         ValueError is raised. When setting the column temperature, all column ovens
         will be set to the same temperature, regardless of the original temperatures. If
         no column ovens are found, a ValueError is raised.
+    : attribute gradient_table: The gradient table. If no solvent manager is found, a
+        ValueError is raised. When setting the gradient table, the gradient table of the
+        solvent manager will be set to the provided gradient table. If no solvent
+        manager is found, a ValueError is raised.
+    : attribute valve_position: The valve position. If no solvent manager is found, a
+        ValueError is raised. When setting the valve position, the valve position of the
+        solvent manager will be set to the provided valve position. If no solvent
+        manager is found, a ValueError is raised.
     """
 
     def __init__(
@@ -76,11 +85,7 @@ class EmpowerInstrumentMethod:
 
     @property
     def current_method(self):
-        """
-        Return the current method definition.
-
-        :return: The current method definition.
-        """
+        """The current method definition."""
         method = dict(self.original_method)
         method["methodName"] = self.method_name
         method["modules"] = [
@@ -90,11 +95,7 @@ class EmpowerInstrumentMethod:
 
     @property
     def column_temperature(self):
-        """
-        Return the column temperature.
-
-        :return: The column temperature.
-        """
+        """The column temperature for the relevant column oven(s) if any are present."""
         if len(self.column_oven_method_list) == 0:
             raise ValueError("No column oven found in method set method.")
         temperature_set = {
@@ -113,11 +114,7 @@ class EmpowerInstrumentMethod:
 
     @property
     def gradient_table(self) -> List[dict]:
-        """
-        Return the gradient table.
-
-        :return: The gradient table.
-        """
+        """The gradient table, if a solvent manager module method is present."""
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't get gradient table, "
@@ -137,9 +134,8 @@ class EmpowerInstrumentMethod:
     @property
     def valve_position(self):
         """
-        Return the valve position.
-
-        :return: The valve position.
+        The valve position for the solvent manager, if a solvent manager module method
+        is present.
         """
         if self.solvent_handler_method is None:
             raise ValueError(
@@ -161,5 +157,5 @@ class EmpowerInstrumentMethod:
         return (
             f"{type(self).__name__} with "
             f"{len(self.module_method_list)} module methods of types "
-            ", ".join([type(method).__name__ for method in self.module_method_list])
+            + (", ".join([type(method).__name__ for method in self.module_method_list]))
         )
