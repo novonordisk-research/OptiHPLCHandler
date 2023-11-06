@@ -166,3 +166,6 @@ cython_debug/
 #.idea/
 
 testnotebook.ipynb
+
+# Automatically created class diagrams
+docs/class_diagrams/*.html
