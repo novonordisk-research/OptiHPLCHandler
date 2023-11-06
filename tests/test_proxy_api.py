@@ -30,6 +30,99 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.handler.Status()
 
+    def test_add_method(self):
+        with self.assertRaises(NotImplementedError):
+            self.handler.AddMethod(
+                template_method="test_template_method",
+                new_method="test_new_method",
+                changes={},
+                audit_trail_message="test_audit_trail_message",
+            )
+
+    def test_get_setup(self):
+        with self.assertRaises(NotImplementedError):
+            self.handler.GetSetup()
+
+    def test_run_experiment(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        self.handler.connection.post.return_value = mock_response
+        self.handler.RunExperiment(
+            sample_set_method="test_sample_set_method",
+            node="test_node",
+            system="test_hplc",
+        )
+        assert (
+            self.handler.connection.post.call_args[1]["endpoint"]
+            == "acquisition/run-sample-set-method"
+        )  # Check that the correct URl is used.
+        assert (
+            self.handler.connection.post.call_args[1]["body"]["sampleSetMethodName"]
+        ) == "test_sample_set_method"
+        # Check that the correct sample set method is used.
+        assert (
+            self.handler.connection.post.call_args[1]["body"]["nodeName"]
+        ) == "test_node"  # Check that the correct node is used.
+        assert (
+            self.handler.connection.post.call_args[1]["body"]["systemName"]
+        ) == "test_hplc"  # Check that the correct HPLC is used.
+        assert (
+            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
+        ) is None  # Check that no sample set name is given
+        self.handler.RunExperiment(
+            sample_set_method="test_sample_set_method",
+            node="test_node",
+            system="test_hplc",
+            sample_set_name="test_sample_set_name",
+        )
+        assert (
+            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
+        ) == "test_sample_set_name"  # Check that the correct sample set name is given
+
+    def test_get_node_name_list(self):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": ["test_node_name_1"]}
+        self.handler.connection.get.return_value = mock_response
+        node_name_list = self.handler.GetNodeNames()
+        assert node_name_list == ["test_node_name_1"]
+        assert (
+            "acquisition/nodes" in self.handler.connection.get.call_args[1]["endpoint"]
+        )
+
+    def test_get_system_name_list(self):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": ["test_system_name_1"]}
+        self.handler.connection.get.return_value = mock_response
+        system_name_list = self.handler.GetSystemNames("test_node_name")
+        assert system_name_list == ["test_system_name_1"]
+        assert (
+            "acquisition/chromatographic-systems?nodeName=test_node_name"
+            == self.handler.connection.get.call_args[1]["endpoint"]
+        )
+
+    def test_project_setter(self):
+        self.handler.project = "test_project"
+        assert self.handler.connection.project == "test_project"
+
+    def test_address_setter(self):
+        # Changing the address would require a new lookup for the service, so it is not
+        # allowed.
+        with self.assertRaises(AttributeError):
+            self.handler.address = "test_address"
+
+
+class TestSampleList(unittest.TestCase):
+    # We need to patch the EmpowerConnection class, because it is used in the
+    # EmpowerHandler class. But we don't really need it to do anything, so we just
+    # let mock handle it. We still need to give it as an argument to the setUp method,
+    # so we call it _ to indicate that we don't use it.
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+
     def test_post_sample_list(self):
         sample_list = [
             {
@@ -159,14 +252,18 @@ class TestEmpowerHandler(unittest.TestCase):
                 in self.handler.connection.post.call_args[1]["body"]["plates"]
             )
 
-    def test_add_method(self):
-        with self.assertRaises(NotImplementedError):
-            self.handler.AddMethod(
-                template_method="test_template_method",
-                new_method="test_new_method",
-                changes={},
-                audit_trail_message="test_audit_trail_message",
-            )
+
+class TestGetMethods(unittest.TestCase):
+    # We need to patch the EmpowerConnection class, because it is used in the
+    # EmpowerHandler class. But we don't really need it to do anything, so we just
+    # let mock handle it. We still need to give it as an argument to the setUp method,
+    # so we call it _ to indicate that we don't use it.
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
 
     def test_get_method_list(self):
         mock_response = MagicMock()
@@ -240,45 +337,43 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
-    def test_get_setup(self):
-        with self.assertRaises(NotImplementedError):
-            self.handler.GetSetup()
-
-    def test_run_experiment(self):
+    def test_get_sample_set_method_list(self):
         mock_response = MagicMock()
-        mock_response.status_code = 200
-        self.handler.connection.post.return_value = mock_response
-        self.handler.RunExperiment(
-            sample_set_method="test_sample_set_method",
-            node="test_node",
-            system="test_hplc",
+        mock_response.json.return_value = {"results": ["test_samplesetmethod_1"]}
+        self.handler.connection.get.return_value = mock_response
+        samplesetmethod_list = self.handler.GetSampleSetMethods()
+        assert samplesetmethod_list == ["test_samplesetmethod_1"]
+        assert (
+            "project/methods/sample-set-method-list"
+            == self.handler.connection.get.call_args[1]["endpoint"]
         )
+
+    def test_get_other_method(self):
+        self.handler.GetMethodList(method_type="OtherMethod")
         assert (
-            self.handler.connection.post.call_args[1]["endpoint"]
-            == "acquisition/run-sample-set-method"
-        )  # Check that the correct URl is used.
-        assert (
-            self.handler.connection.post.call_args[1]["body"]["sampleSetMethodName"]
-        ) == "test_sample_set_method"
-        # Check that the correct sample set method is used.
-        assert (
-            self.handler.connection.post.call_args[1]["body"]["nodeName"]
-        ) == "test_node"  # Check that the correct node is used.
-        assert (
-            self.handler.connection.post.call_args[1]["body"]["systemName"]
-        ) == "test_hplc"  # Check that the correct HPLC is used.
-        assert (
-            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
-        ) is None  # Check that no sample set name is given
-        self.handler.RunExperiment(
-            sample_set_method="test_sample_set_method",
-            node="test_node",
-            system="test_hplc",
-            sample_set_name="test_sample_set_name",
+            "methodTypes=OtherMethod"
+            in self.handler.connection.get.call_args[1]["endpoint"]
         )
+
+    def test_implicit_method_name(self):
+        self.handler.GetMethodList(method_type="Other")
         assert (
-            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
-        ) == "test_sample_set_name"  # Check that the correct sample set name is given
+            "methodTypes=OtherMethod"
+            in self.handler.connection.get.call_args[1]["endpoint"]
+        )
+
+
+class TestGetPlateTypes(unittest.TestCase):
+    # We need to patch the EmpowerConnection class, because it is used in the
+    # EmpowerHandler class. But we don't really need it to do anything, so we just
+    # let mock handle it. We still need to give it as an argument to the setUp method,
+    # so we call it _ to indicate that we don't use it.
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
 
     def test_get_plate_type_names(self):
         mock_response = MagicMock()
@@ -302,36 +397,17 @@ class TestEmpowerHandler(unittest.TestCase):
             in self.handler.connection.get.call_args[1]["endpoint"]
         )
 
-    def test_get_node_name_list(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": ["test_node_name_1"]}
-        self.handler.connection.get.return_value = mock_response
-        node_name_list = self.handler.GetNodeNames()
-        assert node_name_list == ["test_node_name_1"]
-        assert (
-            "acquisition/nodes" in self.handler.connection.get.call_args[1]["endpoint"]
-        )
 
-    def test_get_system_name_list(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": ["test_system_name_1"]}
-        self.handler.connection.get.return_value = mock_response
-        system_name_list = self.handler.GetSystemNames("test_node_name")
-        assert system_name_list == ["test_system_name_1"]
-        assert (
-            "acquisition/chromatographic-systems?nodeName=test_node_name"
-            == self.handler.connection.get.call_args[1]["endpoint"]
-        )
-
-    def test_get_sample_set_method_list(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": ["test_samplesetmethod_1"]}
-        self.handler.connection.get.return_value = mock_response
-        samplesetmethod_list = self.handler.GetSampleSetMethods()
-        assert samplesetmethod_list == ["test_samplesetmethod_1"]
-        assert (
-            "project/methods/sample-set-method-list"
-            == self.handler.connection.get.call_args[1]["endpoint"]
+class TestLogin(unittest.TestCase):
+    # We need to patch the EmpowerConnection class, because it is used in the
+    # EmpowerHandler class. But we don't really need it to do anything, so we just
+    # let mock handle it. We still need to give it as an argument to the setUp method,
+    # so we call it _ to indicate that we don't use it.
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
         )
 
     def test_login_error_without_context_management(self):
@@ -365,15 +441,18 @@ class TestEmpowerHandler(unittest.TestCase):
             pass
         assert self.handler.connection.login.call_count == 0
 
-    def test_project_setter(self):
-        self.handler.project = "test_project"
-        assert self.handler.connection.project == "test_project"
 
-    def test_address_setter(self):
-        # Changing the address would require a new lookup for the service, so it is not
-        # allowed.
-        with self.assertRaises(AttributeError):
-            self.handler.address = "test_address"
+class TestUsername(unittest.TestCase):
+    # We need to patch the EmpowerConnection class, because it is used in the
+    # EmpowerHandler class. But we don't really need it to do anything, so we just
+    # let mock handle it. We still need to give it as an argument to the setUp method,
+    # so we call it _ to indicate that we don't use it.
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
 
     def test_username_setter(self):
         self.handler.username = "test_username"
@@ -411,6 +490,19 @@ class TestEmpowerHandler(unittest.TestCase):
         ]
         assert function_dict_list[0]["value"] == {"member": "Inject Samples"}
         assert function_dict_list[1]["value"] == {"member": "test"}
+
+
+class TestInstrumentMethodInteraction(unittest.TestCase):
+    # We need to patch the EmpowerConnection class, because it is used in the
+    # EmpowerHandler class. But we don't really need it to do anything, so we just
+    # let mock handle it. We still need to give it as an argument to the setUp method,
+    # so we call it _ to indicate that we don't use it.
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
 
     def test_get_method(self):
         mock_response = MagicMock()
