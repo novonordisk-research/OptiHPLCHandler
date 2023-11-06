@@ -200,11 +200,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             - InjectionVolume: Volume of the sample to inject in micro liters.
             Any other keys will be added as fields to the sample, including custom
                 fields.
+            If the key Function does not exist, the Function is set to "Inject Sample"
             For all fields, the datatype will be autodetermined according the the type
                 of the value.
 
         :param plate_list: Dict of plates to use. The keys should be the position of the
             plate, the value should be the plate type.
+
 
         :param audit_trail_message: Message to add to the audit trail of the sample set
             method.
@@ -221,20 +223,22 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
+            if "Function" not in sample:
+                sample["Function"] = {"member": "Inject Samples"}
+                field_list = [
+                    {"name": "Processing", "value": {"member": "Normal"}},
+                ]
+            else:
+                field_list = []
             logger.debug(
-                "Adding sample number %s with name %s to sample list",
+                "Adding sampleset line number %s to sample list",
                 num,
-                sample["SampleName"],
             )
             alias_dict = {
                 "Method": "MethodSetOrReportMethod",
                 "SamplePos": "Vial",
                 "InjectionVolume": "InjVol",
             }  # Key are "human readable" names, values are the names used in Empower.
-            field_list = [
-                {"name": "Function", "value": {"member": "Inject Samples"}},
-                {"name": "Processing", "value": {"member": "Normal"}},
-            ]
             for key, value in sample.items():
                 key = alias_dict.get(key, key)
                 logger.debug("Adding field %s with value %s to sample.", key, value)

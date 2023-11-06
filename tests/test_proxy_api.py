@@ -390,6 +390,28 @@ class TestEmpowerHandler(unittest.TestCase):
         )
         assert mock_response.username == "test_username"
 
+    def test_function(self):
+        self.handler.PostExperiment(
+            sample_set_method_name="",
+            sample_list=[
+                {"SampleName": ""},
+                {"SampleName": "", "Function": {"member": "test"}},
+            ],
+            plates={},
+        )
+        field_list_list = [
+            sample_set_line["fields"]
+            for sample_set_line in self.handler.connection.post.call_args[1]["body"][
+                "sampleSetLines"
+            ]
+        ]
+        function_dict_list = [
+            [field for field in field_list if field["name"] == "Function"][0]
+            for field_list in field_list_list
+        ]
+        assert function_dict_list[0]["value"] == {"member": "Inject Samples"}
+        assert function_dict_list[1]["value"] == {"member": "test"}
+
     def test_get_method(self):
         mock_response = MagicMock()
         minimal_module = {
