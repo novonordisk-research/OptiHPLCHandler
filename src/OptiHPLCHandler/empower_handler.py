@@ -331,15 +331,22 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         logger.debug("Found methods %s", method_name_list)
         return method_name_list
 
-    def GetInstrumentMethod(self, method_name: str) -> EmpowerInstrumentMethod:
+    def GetInstrumentMethod(
+        self, method_name: str, use_sample_manager_oven: bool = False
+    ) -> EmpowerInstrumentMethod:
         """
         Get a method set method.
 
-        :param method_name: Name of the method set method to get."""
+        :param method_name: Name of the method set method to get.
+        : param use_sample_manager_oven: If True, both sample manager oven and column
+            manager oven will be used. If False, only column manager oven will be used.
+        """
         response = self.connection.get(
             endpoint=f"project/methods/instrument-method?name={method_name}"
         )
-        return EmpowerInstrumentMethod(response.json()["result"])
+        return EmpowerInstrumentMethod(
+            response.json()["result"], use_sample_manager_oven
+        )
 
     def PostInstrumentMethod(self, method: EmpowerInstrumentMethod) -> None:
         """
