@@ -20,8 +20,8 @@ class EmpowerInstrumentMethod:
 
     : attribute original_method: The original method definition.
     : attribute current_method: The current method definition.
-    : attribute column_oven_list: A list of column ovens in the method set method.
-    : attribute module_method_list: A list of module methods in the method set
+    : attribute column_oven_list: A list of column ovens in the instrument method.
+    : attribute module_method_list: A list of module methods in the instrument
         method.
     : attribute solvent_handler_method: The solvent manager module method.
     : attribute column_temperature: The column temperature. If multiple column ovens are
@@ -66,7 +66,7 @@ class EmpowerInstrumentMethod:
             # If the entire response from Empower is passed, extract the results
             if len(method_definition["results"]) > 1:
                 raise ValueError(
-                    f"Multiple method set methods found: {method_definition['results']}"
+                    f"Multiple instrument methods found: {method_definition['results']}"
                 )
             method_definition = method_definition["results"][0]
         self.method_name = method_definition["methodName"]
@@ -79,7 +79,7 @@ class EmpowerInstrumentMethod:
             if isinstance(module_method, SolventManagerMethod):
                 if self.solvent_handler_method is not None:
                     raise ValueError(
-                        "Multiple solvent managers found in method set method."
+                        "Multiple solvent managers found in instrument method."
                     )
                 self.solvent_handler_method = module_method
 
@@ -97,7 +97,7 @@ class EmpowerInstrumentMethod:
     def column_temperature(self):
         """The column temperature for the relevant column oven(s) if any are present."""
         if len(self.column_oven_method_list) == 0:
-            raise ValueError("No column oven found in method set method.")
+            raise ValueError("No column oven found in instrument method.")
         temperature_set = {
             module.column_temperature for module in self.column_oven_method_list
         }  # A set, so that duplicated values are collpased into one.
@@ -108,7 +108,7 @@ class EmpowerInstrumentMethod:
     @column_temperature.setter
     def column_temperature(self, temperature: float):
         if len(self.column_oven_method_list) == 0:
-            raise ValueError("No column oven found in method set method.")
+            raise ValueError("No column oven found in instrument method.")
         for module in self.column_oven_method_list:
             module.column_temperature = temperature
 
@@ -118,7 +118,7 @@ class EmpowerInstrumentMethod:
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't get gradient table, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         return self.solvent_handler_method.gradient_table
 
@@ -127,7 +127,7 @@ class EmpowerInstrumentMethod:
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set gradient table, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         self.solvent_handler_method.gradient_table = gradient_table
 
@@ -140,7 +140,7 @@ class EmpowerInstrumentMethod:
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't get valve position, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         return self.solvent_handler_method.valve_position
 
@@ -149,7 +149,7 @@ class EmpowerInstrumentMethod:
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set valve position, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         self.solvent_handler_method.valve_position = valve_position
 
