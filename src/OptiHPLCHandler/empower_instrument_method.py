@@ -3,8 +3,10 @@ from typing import List, Union
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
 from OptiHPLCHandler.empower_module_method import (
+    ColumnManagerMethod,
     ColumnOvenMethod,
     EmpowerModuleMethod,
+    SampleManagerMethod,
     SolventManagerMethod,
     module_method_factory,
 )
@@ -18,33 +20,53 @@ class EmpowerInstrumentMethod:
 
     : attribute original_method: The original method definition.
     : attribute current_method: The current method definition.
-    : attribute column_oven_list: A list of column ovens in the method set method.
-    : attribute module_method_list: A list of module methods in the method set
+    : attribute column_oven_list: A list of column ovens in the instrument method.
+    : attribute module_method_list: A list of module methods in the instrument
         method.
+    : attribute solvent_handler_method: The solvent manager module method.
     : attribute column_temperature: The column temperature. If multiple column ovens are
         found, the temperature is only returned if all column ovens have the same
         temperature. Otherwise, a ValueError is raised. If no column ovens are found, a
         ValueError is raised. When setting the column temperature, all column ovens
         will be set to the same temperature, regardless of the original temperatures. If
         no column ovens are found, a ValueError is raised.
+    : attribute gradient_table: The gradient table. If no solvent manager is found, a
+        ValueError is raised. When setting the gradient table, the gradient table of the
+        solvent manager will be set to the provided gradient table. If no solvent
+        manager is found, a ValueError is raised.
+    : attribute valve_position: The valve position. If no solvent manager is found, a
+        ValueError is raised. When setting the valve position, the valve position of the
+        solvent manager will be set to the provided valve position. If no solvent
+        manager is found, a ValueError is raised.
     """
 
-    def __init__(self, method_definition: Union[dict, list]):
+    def __init__(
+        self,
+        method_definition: Union[dict, list],
+        use_sample_manager_oven: bool = False,
+    ):
         """
         Initialize the EmpowerInstrumentMethod.
 
         :param method_definition: A method definition from Empower. If the entire result
             is passed, the instrument method definition will be extracted.
+        :param use_sample_manager_oven: If True, both sample manager oven and column
+            manager oven will be used. If False, only column manager oven will be used.
         """
         self.column_oven_method_list: list[ColumnOvenMethod] = []
         self.module_method_list: list[EmpowerModuleMethod] = []
         self.solvent_handler_method = None
 
+        if use_sample_manager_oven:
+            oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
+        else:
+            oven_type_tuple = (ColumnManagerMethod,)
+
         if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
             if len(method_definition["results"]) > 1:
                 raise ValueError(
-                    f"Multiple method set methods found: {method_definition['results']}"
+                    f"Multiple instrument methods found: {method_definition['results']}"
                 )
             method_definition = method_definition["results"][0]
         self.method_name = method_definition["methodName"]
@@ -52,22 +74,18 @@ class EmpowerInstrumentMethod:
         for module_method_definition in method_definition["modules"]:
             module_method = module_method_factory(module_method_definition)
             self.module_method_list.append(module_method)
-            if isinstance(module_method, ColumnOvenMethod):
+            if isinstance(module_method, oven_type_tuple):
                 self.column_oven_method_list.append(module_method)
             if isinstance(module_method, SolventManagerMethod):
                 if self.solvent_handler_method is not None:
                     raise ValueError(
-                        "Multiple solvent managers found in method set method."
+                        "Multiple solvent managers found in instrument method."
                     )
                 self.solvent_handler_method = module_method
 
     @property
     def current_method(self):
-        """
-        Return the current method definition.
-
-        :return: The current method definition.
-        """
+        """The current method definition."""
         method = dict(self.original_method)
         method["methodName"] = self.method_name
         method["modules"] = [
@@ -77,13 +95,9 @@ class EmpowerInstrumentMethod:
 
     @property
     def column_temperature(self):
-        """
-        Return the column temperature.
-
-        :return: The column temperature.
-        """
+        """The column temperature for the relevant column oven(s) if any are present."""
         if len(self.column_oven_method_list) == 0:
-            raise ValueError("No column oven found in method set method.")
+            raise ValueError("No column oven found in instrument method.")
         temperature_set = {
             module.column_temperature for module in self.column_oven_method_list
         }  # A set, so that duplicated values are collpased into one.
@@ -94,21 +108,17 @@ class EmpowerInstrumentMethod:
     @column_temperature.setter
     def column_temperature(self, temperature: float):
         if len(self.column_oven_method_list) == 0:
-            raise ValueError("No column oven found in method set method.")
+            raise ValueError("No column oven found in instrument method.")
         for module in self.column_oven_method_list:
             module.column_temperature = temperature
 
     @property
     def gradient_table(self) -> List[dict]:
-        """
-        Return the gradient table.
-
-        :return: The gradient table.
-        """
+        """The gradient table, if a solvent manager module method is present."""
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't get gradient table, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         return self.solvent_handler_method.gradient_table
 
@@ -117,21 +127,20 @@ class EmpowerInstrumentMethod:
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set gradient table, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         self.solvent_handler_method.gradient_table = gradient_table
 
     @property
     def valve_position(self):
         """
-        Return the valve position.
-
-        :return: The valve position.
+        The valve position for the solvent manager, if a solvent manager module method
+        is present.
         """
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't get valve position, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         return self.solvent_handler_method.valve_position
 
@@ -140,7 +149,7 @@ class EmpowerInstrumentMethod:
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set valve position, "
-                "no solvent manager found in method set method."
+                "no solvent manager found in instrument method."
             )
         self.solvent_handler_method.valve_position = valve_position
 
@@ -148,5 +157,5 @@ class EmpowerInstrumentMethod:
         return (
             f"{type(self).__name__} with "
             f"{len(self.module_method_list)} module methods of types "
-            ", ".join([type(method).__name__ for method in self.module_method_list])
+            + (", ".join([type(method).__name__ for method in self.module_method_list]))
         )
