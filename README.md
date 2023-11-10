@@ -86,7 +86,7 @@ method_list = handler.GetMethodList(method_type="Instrument")
 You can get one such method and inspect its contents:
 
 ```python
-import pprin
+import pprint
 
 pp = pprint.PrettyPrinter(indent=2)
 full_method = handler.GetInstrumentMethod(method_name)
@@ -139,7 +139,7 @@ with handler:
 You can also get a list of the sample set methods in the project:
 
 ```python
-sampleset_list = handler.GetSampleSetMethods()
+sampleset_list = handler.GetMethodList(method_type="SampleSet")
 ```
 
 You can also get the plate types that can be used in the project, the method

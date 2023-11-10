@@ -310,10 +310,17 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """
         raise NotImplementedError
 
-    def GetMethodList(self) -> List[str]:
-        """Get the list of methods."""
+    def GetMethodList(self, method_type: str = "MethodSetMethod") -> List[str]:
+        """
+        Get the list of methods.
+
+        :param method_type: Type of methods to get. If it doesn't end with "Method", it
+            will be added. Default: "MethodSetMethod".
+        """
+        if not method_type.endswith("Method"):
+            method_type += "Method"
         response = self.connection.get(
-            endpoint="project/methods?methodTypes=MethodSetMethod", timeout=20
+            endpoint="project/methods?methodTypes=" + method_type, timeout=20
         )
         method_name_dict_list = [
             [name_dict for name_dict in method["fields"] if name_dict["name"] == "Name"]
