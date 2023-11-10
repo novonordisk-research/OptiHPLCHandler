@@ -4,8 +4,10 @@ import unittest
 
 from OptiHPLCHandler.empower_module_method import (
     BSMMethod,
+    ColumnManagerMethod,
     ColumnOvenMethod,
     EmpowerModuleMethod,
+    SampleManagerMethod,
     module_method_factory,
 )
 
@@ -28,15 +30,25 @@ class TestModuleMethodFactory(unittest.TestCase):
             0
         ]["modules"][2]
 
-    def test_column_handler(self):
+    def test_sample_manager(self):
         minimal_definition = {"name": "rAcquityFTN"}
         module_method = module_method_factory(minimal_definition)
-        assert isinstance(module_method, ColumnOvenMethod)
+        assert isinstance(module_method, SampleManagerMethod)
         example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][0][
             "modules"
         ][0]
         module_method = module_method_factory(example_definition)
-        assert isinstance(module_method, ColumnOvenMethod)
+        assert isinstance(module_method, SampleManagerMethod)
+
+    def test_column_manager(self):
+        minimal_definition = {"name": "ACQ-CM"}
+        module_method = module_method_factory(minimal_definition)
+        assert isinstance(module_method, ColumnManagerMethod)
+        example_definition = self.example["response-BSM-TUV-CM-Acq.json"]["results"][0][
+            "modules"
+        ][3]
+        module_method = module_method_factory(example_definition)
+        assert isinstance(module_method, ColumnManagerMethod)
 
     def test_module_method(self):
         minimal_definition = {"name": "none_of_the_above"}
@@ -159,7 +171,7 @@ class TestModuleMethod(unittest.TestCase):
         assert module_method["StartWavelength"] == "211"
 
 
-class TestSampleManager(unittest.TestCase):
+class TestColumnOvens(unittest.TestCase):
     def setUp(self) -> None:
         self.example = load_example_files()
         self.example_definition = self.example["response-BSM-PDA-Acq.json"]["results"][
@@ -172,6 +184,7 @@ class TestSampleManager(unittest.TestCase):
             "nativeXml": "<ColumnTemperature>43.0</ColumnTemperature>",
         }
         module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        assert isinstance(module_method, ColumnOvenMethod)
         assert module_method.column_temperature == "43.0"
         module_method = module_method_factory(self.example_definition)
         assert module_method.column_temperature == "43.0"
@@ -201,6 +214,32 @@ class TestSampleManager(unittest.TestCase):
         assert (
             "<ColumnTemperature>44.0</ColumnTemperature>"
             in module_method.current_method["nativeXml"]
+        )
+        assert module_method.column_temperature == "44.0"
+
+    def test_column_manager_get_temperature(self):
+        minimal_definition = {
+            "name": "ACQ-CM",
+            "nativeXml": "<SetColumnTemperature>43.0</SetColumnTemperature>",
+        }
+        module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        assert isinstance(module_method, ColumnOvenMethod)
+        assert module_method.column_temperature == "43.0"
+
+    def test_column_manager_set_temperature(self):
+        minimal_definition = {
+            "name": "ACQ-CM",
+            "nativeXml": "<SetColumnTemperature>43.0</SetColumnTemperature>",
+        }
+        module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        module_method.column_temperature = "44.0"
+        assert (
+            module_method.original_method["nativeXml"]
+            == "<SetColumnTemperature>43.0</SetColumnTemperature>"
+        )
+        assert (
+            module_method.current_method["nativeXml"]
+            == "<SetColumnTemperature>44.0</SetColumnTemperature>"
         )
         assert module_method.column_temperature == "44.0"
 

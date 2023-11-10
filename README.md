@@ -80,7 +80,7 @@ If you are using `requests`, you can simply provide
 You can now get a list of the instruement methods in the project:
 
 ```python
-method_list = handler.GetMethodList()
+method_list = handler.GetMethodList(method_type="Instrument")
 ```
 
 You can get one such method and inspect its contents:
@@ -95,6 +95,30 @@ print(f"Column temperature: {full_method.column_temperature}")
 print("\n\nStart of gradient table:\n")
 pp.pprint(full_method.gradient_table[0:2])
 ```
+
+The created `EmpowerInstrumentMethod` object allows for changes, and remembers both the
+original method as it was in Empower, and the current mehtod with all changes made. It
+has the following properties:
+
+- `original_method`
+- `current_method`: The current method definition, with any changes applied.
+- `column_oven_list`: A list of column ovens in the method set method. By default, only
+  column managers are included, but you can include sample manager column ovens by
+  creating it with
+  `handler.GetInstrumentMethod(method_name, use_sample_manager_oven=True)`.
+- `module_method_list`
+- `solvent_handler_method`: Will be `None` if no solvent handler is included in the
+  method.
+- `column_temperature`: If multiple column ovens are used, the temperature is only
+  returned if all column ovens have the same temperature. Otherwise, a `ValueError` is
+  raised. If no column ovens are found, a `ValueError` is raised. When setting the
+  column temperature, all column ovens will be set to the same temperature, regardless
+  of the original temperatures. If no column ovens are found, a `ValueError` is raised.
+- `gradient_table`
+- `valve_position`
+
+Accessing or setting `gradient_table` or `valve_position` will result in a `ValueError`
+if no solvent handler is included in the method.
 
 You can modify the method, give it a new name, and post it to Empower:
 
