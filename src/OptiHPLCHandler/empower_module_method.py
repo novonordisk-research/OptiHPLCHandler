@@ -239,7 +239,7 @@ class SolventManagerMethod(EmpowerModuleMethod):
         for row in new_gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
             curve = row.get("Curve", "6")
-            ET.SubElement(row_xml, "Time").text = str(row["Time"])
+            ET.SubElement(row_xml, "Time").text = str(row["Time"])  # f"{numvar:.9f}"
             ET.SubElement(row_xml, "Flow").text = str(row["Flow"])
             # "6" is linear, which covers 90% of the use cases
             for line in self.solvent_lines:
