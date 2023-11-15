@@ -591,3 +591,40 @@ class testBSMMethod(unittest.TestCase):
         ]
         module_method.gradient_table = new_gradient_table
         assert module_method.gradient_table[0]["Flow"] == "0.5"
+
+    def test_initial(self):
+        module_method = BSMMethod(self.minimal_definition)
+        new_gradient_table = [
+            {
+                "Time": 0,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 50.0,
+                "Curve": 6,
+            },
+            {
+                "Time": 10,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 50.0,
+                "Curve": 6,
+            },
+        ]
+        module_method.gradient_table = new_gradient_table
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Curve"] == "Initial"
+        assert module_method.gradient_table[1]["Time"] != "Initial"
+        assert module_method.gradient_table[1]["Curve"] != "Initial"
+
+    def test_initial_error(self):
+        module_method = BSMMethod(self.minimal_definition)
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": 10,
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                }
+            ]
