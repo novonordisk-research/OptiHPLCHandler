@@ -511,6 +511,34 @@ class testBSMMethod(unittest.TestCase):
         assert module_method.gradient_table[1]["CompositionB"] == "0.667"
         assert "0.3333" not in module_method.current_method["nativeXml"]
 
+    def test_not_rounding_strings(self):
+        # If values are given as strings, EmpowerHandler should not round them
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.33333",
+                "CompositionA": "0.66667",
+                "CompositionB": "0.33333",
+                "Curve": "Initial",
+            },
+            {
+                "Time": "0.33333",
+                "Flow": "0.33333",
+                "CompositionA": "0.33333",
+                "CompositionB": "0.66667",
+                "Curve": 6,
+            },
+        ]
+        assert module_method.gradient_table[0]["Flow"] == "0.33333"
+        assert module_method.gradient_table[0]["CompositionA"] == "0.66667"
+        assert module_method.gradient_table[0]["CompositionB"] == "0.33333"
+        assert module_method.gradient_table[1]["Time"] == "0.33333"
+        assert module_method.gradient_table[1]["Flow"] == "0.33333"
+        assert module_method.gradient_table[1]["CompositionA"] == "0.33333"
+        assert module_method.gradient_table[1]["CompositionB"] == "0.66667"
+        assert "0.3333" in module_method.current_method["nativeXml"]
+
     def test_manually_than_gradient_table_changed(self):
         # Checks that manual changes in the gradient table does not proclude the use
         # of the gradient_table setter.
