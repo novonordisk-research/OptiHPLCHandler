@@ -243,16 +243,21 @@ class SolventManagerMethod(EmpowerModuleMethod):
 
     @gradient_table.setter
     def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
+        def _round(value: Union[str, float]) -> str:
+            if isinstance(value, float):
+                return f"{value:.3f}"
+            return str(value)
+
         xml = ET.Element("GradientTable")
         for row in new_gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
             curve = row.get("Curve", "6")
-            ET.SubElement(row_xml, "Time").text = str(row["Time"])  # f"{numvar:.3f}"
-            ET.SubElement(row_xml, "Flow").text = str(row["Flow"])
+            ET.SubElement(row_xml, "Time").text = _round(row["Time"])
+            ET.SubElement(row_xml, "Flow").text = _round(row["Flow"])
             # "6" is linear, which covers 90% of the use cases
             for line in self.solvent_lines:
                 line_name = f"Composition{line}"
-                ET.SubElement(row_xml, line_name).text = str(row[line_name])
+                ET.SubElement(row_xml, line_name).text = _round(row[line_name])
             ET.SubElement(row_xml, "Curve").text = str(curve)
             # Consider validating curve (1-11)
         gradient_xml = ET.tostring(xml, encoding="unicode")
