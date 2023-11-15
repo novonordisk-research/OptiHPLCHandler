@@ -138,9 +138,9 @@ class EmpowerModuleMethod:
         return method
 
     @staticmethod
-    def _round(value: Union[str, float]) -> str:
+    def _round(value: Union[str, float], significant_digits: int = 3) -> str:
         if isinstance(value, float):
-            return f"{value:.3f}"
+            return f"{value:.{significant_digits}f}"
         return str(value)
 
 
@@ -161,7 +161,7 @@ class ColumnOvenMethod(EmpowerModuleMethod):
 
     @column_temperature.setter
     def column_temperature(self, value: str) -> None:
-        self[self.TEMPERATURE_KEY] = value
+        self[self.TEMPERATURE_KEY] = self._round(value, significant_digits=1)
 
 
 class SampleManagerMethod(ColumnOvenMethod):
