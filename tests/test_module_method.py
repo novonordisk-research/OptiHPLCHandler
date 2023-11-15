@@ -170,6 +170,15 @@ class TestModuleMethod(unittest.TestCase):
         )
         assert module_method["StartWavelength"] == "211"
 
+    def test_warning_too_many_decimals(self):
+        # Empower sometimes gives the wrong values is more than 10 decimals are given.
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
+        module_method = module_method_factory(minimal_definition)
+        with self.assertWarns(UserWarning):
+            module_method["a"] = "0.123456789101112"
+        with self.assertWarns(UserWarning):
+            module_method["a"] = 0.123456789101112
+
 
 class TestColumnOvens(unittest.TestCase):
     def setUp(self) -> None:
@@ -436,6 +445,63 @@ class testBSMMethod(unittest.TestCase):
         ]
         new_method = BSMMethod(module_method.current_method)
         assert new_method.gradient_table == module_method.gradient_table
+
+    def test_floats_and_strings(self):
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 1,
+                "CompositionA": 50,
+                "CompositionB": 50,
+                "Curve": "Initial",
+            },
+        ]
+        assert float(module_method.gradient_table[0]["Flow"]) == 1.0
+        assert float(module_method.gradient_table[0]["CompositionA"]) == 50.0
+        assert float(module_method.gradient_table[0]["CompositionB"]) == 50.0
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.5",
+                "CompositionA": "50.0",
+                "CompositionB": "50.0",
+                "Curve": "Initial",
+            },
+        ]
+        assert module_method.gradient_table[0]["Flow"] == "0.5"
+        assert module_method.gradient_table[0]["CompositionA"] == "50.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "50.0"
+
+    def test_rounding_floats(self):
+        # Empower gives the wrong numbers if more than 10 decimals are given for
+        # parameters in the gradient table. This test checks that the numbers are
+        # rounded to 3 decimals before being sent to Empower.
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 1 / 3,
+                "CompositionA": 2 / 3,
+                "CompositionB": 1 / 3,
+                "Curve": "Initial",
+            },
+            {
+                "Time": 1 / 3,
+                "Flow": 1 / 3,
+                "CompositionA": 1 / 3,
+                "CompositionB": 2 / 3,
+                "Curve": 6,
+            },
+        ]
+        assert module_method.gradient_table[0]["Flow"] == "0.333"
+        assert module_method.gradient_table[0]["CompositionA"] == "0.667"
+        assert module_method.gradient_table[0]["CompositionB"] == "0.333"
+        assert module_method.gradient_table[1]["Time"] == "0.333"
+        assert module_method.gradient_table[1]["Flow"] == "0.333"
+        assert module_method.gradient_table[1]["CompositionA"] == "0.333"
+        assert module_method.gradient_table[1]["CompositionB"] == "0.667"
+        assert "0.3333" not in module_method.current_method["nativeXml"]
 
     def test_manually_than_gradient_table_changed(self):
         # Checks that manual changes in the gradient table does not proclude the use
