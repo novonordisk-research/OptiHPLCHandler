@@ -248,6 +248,19 @@ class SolventManagerMethod(EmpowerModuleMethod):
                 return f"{value:.3f}"
             return str(value)
 
+        if new_gradient_table[0]["Time"] != "Initial":
+            if float(new_gradient_table[0]["Time"]) == 0.0:
+                logger.debug(
+                    "Initial time for gradient table given os %s, changed to 'Initial'",
+                    new_gradient_table[0]["Time"],
+                )
+                new_gradient_table[0]["Time"] = "Initial"
+            else:
+                raise ValueError(
+                    "Initial time should be 'Initial' or 0, "
+                    f"got {new_gradient_table[0]['Time']}."
+                )
+        new_gradient_table[0]["Curve"] = "Initial"
         xml = ET.Element("GradientTable")
         for row in new_gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
