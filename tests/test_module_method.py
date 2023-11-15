@@ -651,3 +651,40 @@ class testBSMMethod(unittest.TestCase):
                     "Curve": "Initial",
                 }
             ]
+
+    def test_error_if_late_initial(self):
+        module_method = BSMMethod(self.minimal_definition)
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": 10,
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                },
+            ]
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "6",
+                },
+            ]
