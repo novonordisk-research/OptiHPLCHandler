@@ -249,6 +249,8 @@ class SolventManagerMethod(EmpowerModuleMethod):
 
     @gradient_table.setter
     def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
+        for i, gradient_row in enumerate(new_gradient_table[1:]):
+            pass
         if new_gradient_table[0]["Time"] != "Initial":
             if float(new_gradient_table[0]["Time"]) == 0.0:
                 logger.debug(
