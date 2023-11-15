@@ -1,6 +1,7 @@
 import json
 import os
 import unittest
+import warnings
 
 from OptiHPLCHandler.empower_module_method import (
     BSMMethod,
@@ -178,6 +179,13 @@ class TestModuleMethod(unittest.TestCase):
             module_method["a"] = "0.123456789101112"
         with self.assertWarns(UserWarning):
             module_method["a"] = 0.123456789101112
+        # Assert that mno warning is raised with 6 decimals
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            module_method["a"] = 0.123456
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            module_method["a"] = "0.123456"
 
 
 class TestColumnOvens(unittest.TestCase):
