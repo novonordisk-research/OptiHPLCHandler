@@ -260,6 +260,19 @@ class TestColumnOvens(unittest.TestCase):
         )
         assert module_method.column_temperature == "44.0"
 
+    def test_rounding(self):
+        minimal_definition = {
+            "name": "ACQ-CM",
+            "nativeXml": "<SetColumnTemperature>43.0</SetColumnTemperature>",
+        }
+        module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        module_method.column_temperature = 100 / 3
+        assert (
+            module_method.current_method["nativeXml"]
+            == "<SetColumnTemperature>33.3</SetColumnTemperature>"
+        )
+        assert module_method.column_temperature == "33.3"
+
 
 class testBSMMethod(unittest.TestCase):
     def setUp(self) -> None:
@@ -399,9 +412,16 @@ class testBSMMethod(unittest.TestCase):
                 "Flow": "1",
                 "CompositionA": "50.0",
                 "CompositionB": "50.0",
-            }
+            },
+            {
+                "Time": "0.00",
+                "Flow": "1",
+                "CompositionA": "50.0",
+                "CompositionB": "50.0",
+            },
         ]
-        assert str(module_method.gradient_table[0]["Curve"]) == "6"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        assert str(module_method.gradient_table[1]["Curve"]) == "6"
 
     def test_gradient_table_setter_multiple(self):
         module_method = BSMMethod(self.minimal_definition)
@@ -590,7 +610,7 @@ class testBSMMethod(unittest.TestCase):
             },
         ]
         module_method.gradient_table = new_gradient_table
-        assert module_method.gradient_table[0]["Flow"] == "0.5"
+        assert float(module_method.gradient_table[0]["Flow"]) == 0.5
 
     def test_initial(self):
         module_method = BSMMethod(self.minimal_definition)
