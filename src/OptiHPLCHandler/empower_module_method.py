@@ -1,5 +1,6 @@
 import logging
 import re
+import warnings
 from typing import Dict, List, Mapping, Tuple, Union
 from xml.etree import ElementTree as ET
 
@@ -50,6 +51,13 @@ class EmpowerModuleMethod:
         :param original: The string to replace.
         :param new: The string to replace it with.
         """
+        if re.search(r"\.\d{8}", new):
+            warning_text = (
+                f"The value {new} seems to contain a numerical value with more than 7 "
+                "digits after the decimal point. Empower might interpret that wrong."
+            )
+            logger.warning(warning_text)
+            warnings.warn(warning_text)
         self._change_list.append((original, new))
 
     def undo(self) -> None:
