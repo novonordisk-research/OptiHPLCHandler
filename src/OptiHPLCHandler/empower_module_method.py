@@ -250,7 +250,16 @@ class SolventManagerMethod(EmpowerModuleMethod):
     @gradient_table.setter
     def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
         for i, gradient_row in enumerate(new_gradient_table[1:]):
-            pass
+            if gradient_row["Time"] == "Initial":
+                raise ValueError(
+                    f"Time cannot be 'Initial' for row {i+2} of gradient table, "
+                    "only for the first row."
+                )
+            if "Curve" in gradient_row and gradient_row["Curve"] == "Initial":
+                raise ValueError(
+                    f"Curve cannot be 'Initial' for row {i+2} of gradient table, "
+                    "only for the first row."
+                )
         if new_gradient_table[0]["Time"] != "Initial":
             if float(new_gradient_table[0]["Time"]) == 0.0:
                 logger.debug(
