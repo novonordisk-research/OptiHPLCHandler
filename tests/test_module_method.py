@@ -272,6 +272,9 @@ class TestColumnOvens(unittest.TestCase):
             == "<SetColumnTemperature>33.3</SetColumnTemperature>"
         )
         assert module_method.column_temperature == "33.3"
+        module_method.column_temperature = 40.06
+        assert module_method.column_temperature == "40.1"
+        # Rounding, not concatenating
 
 
 class testBSMMethod(unittest.TestCase):
