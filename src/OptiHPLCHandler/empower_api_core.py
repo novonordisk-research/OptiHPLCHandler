@@ -97,7 +97,7 @@ class EmpowerConnection:
             body["project"] = self.project
         logger.debug("Logging into Empower")
         try:
-            reply = requests.post(
+            response = requests.post(
                 self.address + "/authentication/login",
                 json=body,
                 timeout=60,
@@ -109,9 +109,9 @@ class EmpowerConnection:
             print(timeout_string)
             logger.error(timeout_string)
             raise requests.exceptions.Timeout(timeout_string) from e
-        reply.raise_for_status()
-        self.token = reply.json()["result"]["token"]
-        self.session_id = reply.json()["result"]["id"]
+        self.raise_for_status(response)
+        self.token = response.json()["result"]["token"]
+        self.session_id = response.json()["result"]["id"]
         logger.debug("Login successful, keeping token")
 
     def logout(self) -> None:
@@ -120,16 +120,16 @@ class EmpowerConnection:
             logger.debug("No session ID, no need to log out")
             return
         logger.debug("Logging out of Empower")
-        reply = requests.delete(
+        response = requests.delete(
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
             headers=self.authorization_header,
         )
-        if reply.status_code == 404:
+        if response.status_code == 404:
             logger.debug(
                 "Logout no necessary, session already expired or were logged out."
             )
         else:
-            reply.raise_for_status()
+            self.raise_for_status(response)
         self.session_id = None
         logger.debug("Logout successful")
 
@@ -174,7 +174,7 @@ class EmpowerConnection:
                 method, address, self.authorization_header, body, timeout
             )
         logger.debug("Got response %s from %s", response.text, address)
-        response.raise_for_status()
+        self.raise_for_status(response)
         return response
 
     def get(self, endpoint: str, timeout=10) -> requests.Response:
@@ -242,3 +242,18 @@ class EmpowerConnection:
     def __del__(self):
         if self.session_id is not None:
             self.logout()
+
+    @staticmethod
+    def raise_for_status(response: requests.Response):
+        """
+        Raise an error if the response is not ok. This error includes the message from
+        Empower, as opposed to the raise_for_status() method of requests.
+        """
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            raise Exception(
+                f"HTTP error {exc.response.status_code} "
+                f"with message '{exc.response.json()['Message']}' "
+                f"and ID {exc.response.json()['Id']}"
+            ) from None
