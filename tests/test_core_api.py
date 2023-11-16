@@ -2,6 +2,7 @@ import unittest
 import warnings
 from unittest.mock import MagicMock, patch
 
+import requests
 from OptiHPLCHandler import EmpowerConnection
 
 
@@ -229,3 +230,23 @@ class TestEmpowerConnection(unittest.TestCase):
         assert mock_requests.delete.call_args[0][0] == (
             "https://test_address/authentication/logout?sessionInfoID=test_id"
         )
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_http_error(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.ok = False
+        mock_response.status_code = 400
+        mock_response.json.return_value = {
+            "Message": "test_message",
+            "Id": "test_id",
+        }
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            response=mock_response
+        )
+        mock_requests.request.return_value = mock_response
+        mock_requests.exceptions.HTTPError = requests.exceptions.HTTPError
+        with self.assertRaises(Exception) as context:
+            self.connection.get("test_url")
+        assert "HTTP error 400" in str(context.exception)
+        assert "message 'test_message'" in str(context.exception)
+        assert "ID test_id" in str(context.exception)
