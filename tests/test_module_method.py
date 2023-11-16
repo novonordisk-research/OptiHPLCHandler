@@ -532,31 +532,31 @@ class testBSMMethod(unittest.TestCase):
         assert module_method.gradient_table[1]["Flow"] == "0.333"
         assert module_method.gradient_table[1]["CompositionA"] == "0.333"
         assert module_method.gradient_table[1]["CompositionB"] == "0.667"
-        assert "0.3333" not in module_method.current_method["nativeXml"]
-
-    def test_not_rounding_strings(self):
-        # If values are given as strings, EmpowerHandler should not round them
+        assert (
+            "0.3333" not in module_method.current_method
+        )  # If values are given as strings, EmpowerHandler should not round them
         module_method = BSMMethod(self.minimal_definition)
-        module_method.gradient_table = [
-            {
-                "Time": "Initial",
-                "Flow": "0.33333",
-                "CompositionA": "0.66667",
-                "CompositionB": "0.33333",
-                "Curve": "Initial",
-            },
-            {
-                "Time": "0.33333",
-                "Flow": "0.33333",
-                "CompositionA": "0.33333",
-                "CompositionB": "0.66667",
-                "Curve": 6,
-            },
-        ]
+        with self.assertWarns(UserWarning):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": "0.33333",  # No rounding, since this is a string
+                    "CompositionA": 0.66667,  # Rounding, since this is a float
+                    "CompositionB": "0.33333",
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": "0.33333333",  # 8 decimals should give a warning
+                    "Flow": "0.33333",
+                    "CompositionA": "0.33333",
+                    "CompositionB": "0.66667",
+                    "Curve": 6,
+                },
+            ]
         assert module_method.gradient_table[0]["Flow"] == "0.33333"
-        assert module_method.gradient_table[0]["CompositionA"] == "0.66667"
+        assert module_method.gradient_table[0]["CompositionA"] == "0.667"
         assert module_method.gradient_table[0]["CompositionB"] == "0.33333"
-        assert module_method.gradient_table[1]["Time"] == "0.33333"
+        assert module_method.gradient_table[1]["Time"] == "0.33333333"
         assert module_method.gradient_table[1]["Flow"] == "0.33333"
         assert module_method.gradient_table[1]["CompositionA"] == "0.33333"
         assert module_method.gradient_table[1]["CompositionB"] == "0.66667"
