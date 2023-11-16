@@ -140,7 +140,15 @@ class EmpowerModuleMethod:
     @staticmethod
     def _round(value: Union[str, float], decimal_digits: int = 3) -> str:
         if isinstance(value, float):
-            return f"{value:.{decimal_digits}f}"
+            rounded_value = f"{value:.{decimal_digits}f}"
+            if float(rounded_value) != value:
+                logger.warning(
+                    "Rounding %s to %s, as Empower only accepts 3 decimals.",
+                    value,
+                    rounded_value,
+                )  # No user warning, since it should only be accessed through the
+                # property methods, and it is described in the docstring.
+                return rounded_value
         return str(value)
 
 
@@ -155,12 +163,14 @@ class ColumnOvenMethod(EmpowerModuleMethod):
     TEMPERATURE_KEY: str
 
     @property
-    def column_temperature(self):
-        """The column temperature."""
+    def column_temperature(self) -> str:
+        """
+        The column temperature. If a float is given, it will be rounded to 1 decimal.
+        """
         return self[self.TEMPERATURE_KEY]
 
     @column_temperature.setter
-    def column_temperature(self, value: str) -> None:
+    def column_temperature(self, value: Union[str, float]) -> None:
         self[self.TEMPERATURE_KEY] = self._round(value, decimal_digits=1)
 
 
@@ -233,6 +243,10 @@ class SolventManagerMethod(EmpowerModuleMethod):
         - Flow: The flow in mL/min.
         - CompositionX: The composition of solvent line X (A, B, C, D) in %.
         - Curve: The curve type (Initial, or 1-11, 6 is linear and default).
+
+        When setting, values can be strings or numbers. Floats will be rounded to 3
+        decimals, as Empower has problems with too many decimals. The exception is
+        value(s) for 'Curve', which is assumed to be integers and will not be rounded.
         """
         gradient_table = []
         e_tree = ET.fromstring(f"<root>{self['GradientTable']}</root>")
@@ -248,7 +262,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
         return gradient_table
 
     @gradient_table.setter
-    def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
+    def gradient_table(
+        self, new_gradient_table: List[Dict[str, Union[str, float, int]]]
+    ) -> None:
         for i, gradient_row in enumerate(new_gradient_table[1:]):
             if gradient_row["Time"] == "Initial":
                 raise ValueError(
