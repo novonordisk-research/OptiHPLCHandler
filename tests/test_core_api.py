@@ -3,6 +3,7 @@ import warnings
 from unittest.mock import MagicMock, patch
 
 import requests
+
 from OptiHPLCHandler import EmpowerConnection
 
 
