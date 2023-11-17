@@ -254,7 +254,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             logger.debug("Adding audit trail message to endpoint")
             endpoint += f"?auditTrailComment={audit_trail_message}"
 
-        self.connection.post(endpoint=endpoint, body=sampleset_object, timeout=60)
+        self.connection.post(endpoint=endpoint, body=sampleset_object)
 
     def RunExperiment(
         self,
@@ -288,7 +288,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         }
         logger.debug("Running experiment with parameters %s", parameters)
         self.connection.post(
-            endpoint="acquisition/run-sample-set-method", body=parameters
+            endpoint="acquisition/run-sample-set-method", body=parameters, timeout=60
         )
 
     def AddMethod(
@@ -320,7 +320,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         if not method_type.endswith("Method"):
             method_type += "Method"
         response = self.connection.get(
-            endpoint="project/methods?methodTypes=" + method_type, timeout=20
+            endpoint="project/methods?methodTypes=" + method_type
         )
         method_name_dict_list = [
             [name_dict for name_dict in method["fields"] if name_dict["name"] == "Name"]
