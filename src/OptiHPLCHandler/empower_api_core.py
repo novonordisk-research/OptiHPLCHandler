@@ -1,5 +1,4 @@
 import getpass
-import inspect
 import logging
 import warnings
 from typing import Optional
@@ -30,6 +29,9 @@ class EmpowerConnection:
     :attribute project: The project to log into.
     :attribute service: The service to use for logging in.
     :attribute token: The bearer token used for authentication.
+    :attribute session_id: The session ID. None if not logged in.
+    :attribute default_get_timeout: The default timeout to use for get requests.
+    :attribute default_post_timeout: The default timeout to use for post requests.
     """
 
     def __init__(
@@ -67,6 +69,8 @@ class EmpowerConnection:
         self.project = project
         self.session_id = None
         self.token = None
+        self.default_get_timeout = 10
+        self.default_post_timeout = 20
 
     def login(
         self, username: Optional[str] = None, password: Optional[str] = None
@@ -177,39 +181,45 @@ class EmpowerConnection:
         response.raise_for_status()
         return response
 
-    def get(self, endpoint: str, timeout=10) -> requests.Response:
+    def get(self, endpoint: str, timeout: Optional[int] = None) -> requests.Response:
         """
         Get data from Empower.
 
         :param endpoint: The endpoint to get data from.
+        :param timeout: The timeout to use. If None, the default timeout is used.
         """
-        signature = inspect.signature(self.get)
-        logger.debug("Getting data from %s", endpoint)
-        if signature.parameters["timeout"].default != timeout:
+        if not timeout:
+            timeout = self.default_get_timeout
+        else:
             logger.debug("Timeout changed from default value to %s", timeout)
             print(
                 f"Get call to endpoint {endpoint} could be slow, "
                 f"timeout is set to {timeout} seconds"
             )
+        logger.debug("Getting data from %s", endpoint)
         return self._requests_wrapper(
             method="get", endpoint=endpoint, body=None, timeout=timeout
         )
 
-    def post(self, endpoint: str, body: dict, timeout=10) -> requests.Response:
+    def post(
+        self, endpoint: str, body: dict, timeout: Optional[int] = None
+    ) -> requests.Response:
         """
         Post data to Empower.
 
         :param endpoint: The endpoint to post data to.
         :param body: The data to post.
+        :param timeout: The timeout to use. If None, the default timeout is used.
         """
-        signature = inspect.signature(self.post)
-        logger.debug("Posting data %s to %s", body, endpoint)
-        if signature.parameters["timeout"].default != timeout:
+        if not timeout:
+            timeout = self.default_get_timeout
+        else:
             logger.debug("Timeout changed from default value to %s", timeout)
             print(
                 f"Post call to endpoint {endpoint} could be slow, "
                 f"timeout is set to {timeout} seconds"
             )
+        logger.debug("Posting data %s to %s", body, endpoint)
         response = self._requests_wrapper(
             method="post", endpoint=endpoint, body=body, timeout=timeout
         )
