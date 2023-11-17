@@ -246,7 +246,7 @@ class TestEmpowerConnection(unittest.TestCase):
         )
         mock_requests.request.return_value = mock_response
         mock_requests.exceptions.HTTPError = requests.exceptions.HTTPError
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(requests.exceptions.HTTPError) as context:
             self.connection.get("test_url")
         assert "HTTP error 400" in str(context.exception)
         assert "message 'test_message'" in str(context.exception)
