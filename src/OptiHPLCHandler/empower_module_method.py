@@ -1,5 +1,6 @@
 import logging
 import re
+import warnings
 from typing import Dict, List, Mapping, Tuple, Union
 from xml.etree import ElementTree as ET
 
@@ -50,6 +51,13 @@ class EmpowerModuleMethod:
         :param original: The string to replace.
         :param new: The string to replace it with.
         """
+        if re.search(r"\.\d{8}", new):
+            warning_text = (
+                f"The value {new} seems to contain a numerical value with more than 7 "
+                "digits after the decimal point. Empower might interpret that wrong."
+            )
+            logger.warning(warning_text)
+            warnings.warn(warning_text)
         self._change_list.append((original, new))
 
     def undo(self) -> None:
@@ -129,6 +137,20 @@ class EmpowerModuleMethod:
         method["nativeXml"] = xml
         return method
 
+    @staticmethod
+    def _round(value: Union[str, float], decimal_digits: int = 3) -> str:
+        if isinstance(value, float):
+            rounded_value = f"{value:.{decimal_digits}f}"
+            if float(rounded_value) != value:
+                logger.warning(
+                    "Rounding %s to %s, as Empower only accepts 3 decimals.",
+                    value,
+                    rounded_value,
+                )  # No user warning, since it should only be accessed through the
+                # property methods, and it is described in the docstring.
+                return rounded_value
+        return str(value)
+
 
 class ColumnOvenMethod(EmpowerModuleMethod):
     """
@@ -141,13 +163,15 @@ class ColumnOvenMethod(EmpowerModuleMethod):
     TEMPERATURE_KEY: str
 
     @property
-    def column_temperature(self):
-        """The column temperature."""
+    def column_temperature(self) -> str:
+        """
+        The column temperature. If a float is given, it will be rounded to 1 decimal.
+        """
         return self[self.TEMPERATURE_KEY]
 
     @column_temperature.setter
-    def column_temperature(self, value: str) -> None:
-        self[self.TEMPERATURE_KEY] = value
+    def column_temperature(self, value: Union[str, float]) -> None:
+        self[self.TEMPERATURE_KEY] = self._round(value, decimal_digits=1)
 
 
 class SampleManagerMethod(ColumnOvenMethod):
@@ -219,6 +243,10 @@ class SolventManagerMethod(EmpowerModuleMethod):
         - Flow: The flow in mL/min.
         - CompositionX: The composition of solvent line X (A, B, C, D) in %.
         - Curve: The curve type (Initial, or 1-11, 6 is linear and default).
+
+        When setting, values can be strings or numbers. Floats will be rounded to 3
+        decimals, as Empower has problems with too many decimals. The exception is
+        value(s) for 'Curve', which is assumed to be integers and will not be rounded.
         """
         gradient_table = []
         e_tree = ET.fromstring(f"<root>{self['GradientTable']}</root>")
@@ -234,17 +262,43 @@ class SolventManagerMethod(EmpowerModuleMethod):
         return gradient_table
 
     @gradient_table.setter
-    def gradient_table(self, new_gradient_table: List[Dict[str, str]]) -> None:
+    def gradient_table(
+        self, new_gradient_table: List[Dict[str, Union[str, float, int]]]
+    ) -> None:
+        for i, gradient_row in enumerate(new_gradient_table[1:]):
+            if gradient_row["Time"] == "Initial":
+                raise ValueError(
+                    f"Time cannot be 'Initial' for row {i+2} of gradient table, "
+                    "only for the first row."
+                )
+            if "Curve" in gradient_row and gradient_row["Curve"] == "Initial":
+                raise ValueError(
+                    f"Curve cannot be 'Initial' for row {i+2} of gradient table, "
+                    "only for the first row."
+                )
+        if new_gradient_table[0]["Time"] != "Initial":
+            if float(new_gradient_table[0]["Time"]) == 0.0:
+                logger.debug(
+                    "Initial time for gradient table given os %s, changed to 'Initial'",
+                    new_gradient_table[0]["Time"],
+                )
+                new_gradient_table[0]["Time"] = "Initial"
+            else:
+                raise ValueError(
+                    "Initial time should be 'Initial' or 0, "
+                    f"got {new_gradient_table[0]['Time']}."
+                )
+        new_gradient_table[0]["Curve"] = "Initial"
         xml = ET.Element("GradientTable")
         for row in new_gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
             curve = row.get("Curve", "6")
-            ET.SubElement(row_xml, "Time").text = str(row["Time"])
-            ET.SubElement(row_xml, "Flow").text = str(row["Flow"])
+            ET.SubElement(row_xml, "Time").text = self._round(row["Time"])
+            ET.SubElement(row_xml, "Flow").text = self._round(row["Flow"])
             # "6" is linear, which covers 90% of the use cases
             for line in self.solvent_lines:
                 line_name = f"Composition{line}"
-                ET.SubElement(row_xml, line_name).text = str(row[line_name])
+                ET.SubElement(row_xml, line_name).text = self._round(row[line_name])
             ET.SubElement(row_xml, "Curve").text = str(curve)
             # Consider validating curve (1-11)
         gradient_xml = ET.tostring(xml, encoding="unicode")
