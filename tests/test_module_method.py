@@ -1,6 +1,7 @@
 import json
 import os
 import unittest
+import warnings
 
 from OptiHPLCHandler.empower_module_method import (
     BSMMethod,
@@ -170,6 +171,22 @@ class TestModuleMethod(unittest.TestCase):
         )
         assert module_method["StartWavelength"] == "211"
 
+    def test_warning_too_many_decimals(self):
+        # Empower sometimes gives the wrong values is more than 10 decimals are given.
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
+        module_method = module_method_factory(minimal_definition)
+        with self.assertWarns(UserWarning):
+            module_method["a"] = "0.123456789101112"
+        with self.assertWarns(UserWarning):
+            module_method["a"] = 0.123456789101112
+        # Assert that mno warning is raised with 6 decimals
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            module_method["a"] = 0.123456
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            module_method["a"] = "0.123456"
+
 
 class TestColumnOvens(unittest.TestCase):
     def setUp(self) -> None:
@@ -242,6 +259,22 @@ class TestColumnOvens(unittest.TestCase):
             == "<SetColumnTemperature>44.0</SetColumnTemperature>"
         )
         assert module_method.column_temperature == "44.0"
+
+    def test_rounding(self):
+        minimal_definition = {
+            "name": "ACQ-CM",
+            "nativeXml": "<SetColumnTemperature>43.0</SetColumnTemperature>",
+        }
+        module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        module_method.column_temperature = 100 / 3
+        assert (
+            module_method.current_method["nativeXml"]
+            == "<SetColumnTemperature>33.3</SetColumnTemperature>"
+        )
+        assert module_method.column_temperature == "33.3"
+        module_method.column_temperature = 40.06
+        assert module_method.column_temperature == "40.1"
+        # Rounding, not concatenating
 
 
 class testBSMMethod(unittest.TestCase):
@@ -382,9 +415,16 @@ class testBSMMethod(unittest.TestCase):
                 "Flow": "1",
                 "CompositionA": "50.0",
                 "CompositionB": "50.0",
-            }
+            },
+            {
+                "Time": "0.00",
+                "Flow": "1",
+                "CompositionA": "50.0",
+                "CompositionB": "50.0",
+            },
         ]
-        assert str(module_method.gradient_table[0]["Curve"]) == "6"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        assert str(module_method.gradient_table[1]["Curve"]) == "6"
 
     def test_gradient_table_setter_multiple(self):
         module_method = BSMMethod(self.minimal_definition)
@@ -437,6 +477,91 @@ class testBSMMethod(unittest.TestCase):
         new_method = BSMMethod(module_method.current_method)
         assert new_method.gradient_table == module_method.gradient_table
 
+    def test_floats_and_strings(self):
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 1,
+                "CompositionA": 50,
+                "CompositionB": 50,
+                "Curve": "Initial",
+            },
+        ]
+        assert float(module_method.gradient_table[0]["Flow"]) == 1.0
+        assert float(module_method.gradient_table[0]["CompositionA"]) == 50.0
+        assert float(module_method.gradient_table[0]["CompositionB"]) == 50.0
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.5",
+                "CompositionA": "50.0",
+                "CompositionB": "50.0",
+                "Curve": "Initial",
+            },
+        ]
+        assert module_method.gradient_table[0]["Flow"] == "0.5"
+        assert module_method.gradient_table[0]["CompositionA"] == "50.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "50.0"
+
+    def test_rounding_floats(self):
+        # Empower gives the wrong numbers if more than 10 decimals are given for
+        # parameters in the gradient table. This test checks that the numbers are
+        # rounded to 3 decimals before being sent to Empower.
+        module_method = BSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 1 / 3,
+                "CompositionA": 2 / 3,
+                "CompositionB": 1 / 3,
+                "Curve": "Initial",
+            },
+            {
+                "Time": 1 / 3,
+                "Flow": 1 / 3,
+                "CompositionA": 1 / 3,
+                "CompositionB": 2 / 3,
+                "Curve": 6,
+            },
+        ]
+        assert module_method.gradient_table[0]["Flow"] == "0.333"
+        assert module_method.gradient_table[0]["CompositionA"] == "0.667"
+        assert module_method.gradient_table[0]["CompositionB"] == "0.333"
+        assert module_method.gradient_table[1]["Time"] == "0.333"
+        assert module_method.gradient_table[1]["Flow"] == "0.333"
+        assert module_method.gradient_table[1]["CompositionA"] == "0.333"
+        assert module_method.gradient_table[1]["CompositionB"] == "0.667"
+        assert (
+            "0.3333" not in module_method.current_method
+        )  # If values are given as strings, EmpowerHandler should not round them
+        module_method = BSMMethod(self.minimal_definition)
+        with self.assertWarns(UserWarning):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": "0.33333",  # No rounding, since this is a string
+                    "CompositionA": 0.66667,  # Rounding, since this is a float
+                    "CompositionB": "0.33333",
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": "0.33333333",  # 8 decimals should give a warning
+                    "Flow": "0.33333",
+                    "CompositionA": "0.33333",
+                    "CompositionB": "0.66667",
+                    "Curve": 6,
+                },
+            ]
+        assert module_method.gradient_table[0]["Flow"] == "0.33333"
+        assert module_method.gradient_table[0]["CompositionA"] == "0.667"
+        assert module_method.gradient_table[0]["CompositionB"] == "0.33333"
+        assert module_method.gradient_table[1]["Time"] == "0.33333333"
+        assert module_method.gradient_table[1]["Flow"] == "0.33333"
+        assert module_method.gradient_table[1]["CompositionA"] == "0.33333"
+        assert module_method.gradient_table[1]["CompositionB"] == "0.66667"
+        assert "0.3333" in module_method.current_method["nativeXml"]
+
     def test_manually_than_gradient_table_changed(self):
         # Checks that manual changes in the gradient table does not proclude the use
         # of the gradient_table setter.
@@ -488,4 +613,78 @@ class testBSMMethod(unittest.TestCase):
             },
         ]
         module_method.gradient_table = new_gradient_table
-        assert module_method.gradient_table[0]["Flow"] == "0.5"
+        assert float(module_method.gradient_table[0]["Flow"]) == 0.5
+
+    def test_initial(self):
+        module_method = BSMMethod(self.minimal_definition)
+        new_gradient_table = [
+            {
+                "Time": 0,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 50.0,
+                "Curve": 6,
+            },
+            {
+                "Time": 10,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 50.0,
+                "Curve": 6,
+            },
+        ]
+        module_method.gradient_table = new_gradient_table
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Curve"] == "Initial"
+        assert module_method.gradient_table[1]["Time"] != "Initial"
+        assert module_method.gradient_table[1]["Curve"] != "Initial"
+
+    def test_initial_error(self):
+        module_method = BSMMethod(self.minimal_definition)
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": 10,
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                }
+            ]
+
+    def test_error_if_late_initial(self):
+        module_method = BSMMethod(self.minimal_definition)
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": 10,
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                },
+            ]
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 50.0,
+                    "CompositionB": 50.0,
+                    "Curve": "6",
+                },
+            ]
