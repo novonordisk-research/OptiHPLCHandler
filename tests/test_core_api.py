@@ -12,7 +12,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def setUp(self, mock_requests) -> None:
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "result": {"token": "test_token", "id": "test_id"}
+            "results": [{"token": "test_token", "id": "test_id"}]
         }
         mock_response.status_code = 200
         mock_requests.post.return_value = mock_response

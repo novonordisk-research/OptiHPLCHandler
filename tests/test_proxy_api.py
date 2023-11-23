@@ -511,7 +511,7 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             "nativeXml": "test_name",
         }
         mock_response.json.return_value = {
-            "result": {"methodName": "test_method", "modules": [minimal_module]},
+            "results": [{"methodName": "test_method", "modules": [minimal_module]}],
         }
         self.handler.connection.get.return_value = mock_response
         method = self.handler.GetInstrumentMethod("test_method_name")
@@ -533,7 +533,7 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             ),
         }
         mock_response.json.return_value = {
-            "result": {"methodName": "test_method", "modules": [minimal_module]},
+            "results": [{"methodName": "test_method", "modules": [minimal_module]}],
         }
         self.handler.connection.get.return_value = mock_response
         method = self.handler.GetInstrumentMethod("test_method_name")
