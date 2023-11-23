@@ -261,9 +261,9 @@ class EmpowerConnection:
         """
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError as exc:
+        except requests.exceptions.HTTPError:
             raise requests.exceptions.HTTPError(
-                f"HTTP error {exc.response.status_code} "
-                f"with message '{exc.response.json()['Message']}' "
-                f"and ID {exc.response.json()['Id']}"
+                f"HTTP error {response.status_code} "
+                f"with message '{response.json()['message']}' "
+                f"and ID {response.json()['id']}"
             ) from None
