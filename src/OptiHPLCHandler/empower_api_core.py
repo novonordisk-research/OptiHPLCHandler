@@ -179,7 +179,7 @@ class EmpowerConnection:
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
-        return response
+        return response.json()["results"]
 
     def get(self, endpoint: str, timeout: Optional[int] = None) -> requests.Response:
         """
