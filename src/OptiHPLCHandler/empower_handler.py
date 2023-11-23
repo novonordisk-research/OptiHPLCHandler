@@ -352,7 +352,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             endpoint=f"project/methods/instrument-method?name={method_name}"
         )
         return EmpowerInstrumentMethod(
-            response.json()["result"], use_sample_manager_oven
+            response.json()["results"][0], use_sample_manager_oven
         )
 
     def PostInstrumentMethod(self, method: EmpowerInstrumentMethod) -> None:
