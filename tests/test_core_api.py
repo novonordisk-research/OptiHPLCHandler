@@ -238,8 +238,8 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.ok = False
         mock_response.status_code = 400
         mock_response.json.return_value = {
-            "Message": "test_message",
-            "Id": "test_id",
+            "message": "test_message",
+            "id": "test_id",
         }
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
             response=mock_response
