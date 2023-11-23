@@ -4,10 +4,6 @@ Simplified proxy API for interacting with the Waters Empower Web API. It aims to
 putting data into and getting data out of Empower easy, with the aim of automating
 running samples. It will not feature changing data already in Empower.
 
-Version 2.0.0 of OptiHPLCHandler and up is compatible with version 2.1.0.1 and up of the
-Empower web API. For use with older version of the Empower Web API, please use
-OptiHPLCHandler version 1.X.X.
-
 ## Using the package
 
 The package can be installed into a Python environment with the command
