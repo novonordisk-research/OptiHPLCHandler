@@ -114,8 +114,8 @@ class EmpowerConnection:
             logger.error(timeout_string)
             raise requests.exceptions.Timeout(timeout_string) from e
         self.raise_for_status(response)
-        self.token = response.json()["result"]["token"]
-        self.session_id = response.json()["result"]["id"]
+        self.token = response.json()["results"][0]["token"]
+        self.session_id = response.json()["results"][0]["id"]
         logger.debug("Login successful, keeping token")
 
     def logout(self) -> None:
