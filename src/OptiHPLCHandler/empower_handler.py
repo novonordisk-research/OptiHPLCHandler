@@ -361,6 +361,25 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         endpoint = "project/methods/instrument-method?overWriteExisting=false"
         self.connection.post(endpoint=endpoint, body=method.current_method)
 
+    def GetMethodSetMethod(self, method_name: str):
+        """
+        Get a method set method.
+
+        :param method_name: Name of the method set method to get.
+        """
+        response = self.connection.get(
+            endpoint=f"project/methods/method-set?name={method_name}"
+        )
+        return response[0][0]
+
+    def PostMethodSetMethod(self, method: Mapping[str, Any]) -> None:
+        """
+        Post a method set method.
+
+        :param method: The method set method to post."""
+        endpoint = "project/methods/method-set"
+        self.connection.post(endpoint=endpoint, body=method)
+
     def GetSetup(self) -> List[HPLCSetup]:
         """Get the list of HPLC setups."""
         raise NotImplementedError

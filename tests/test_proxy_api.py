@@ -535,3 +535,34 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             self.handler.connection.post.call_args[1]["body"]["modules"][0]["nativeXml"]
             == "<test_tag1>new_value</test_tag1><test_tag2>newer_value</test_tag2>"
         )
+
+
+class TestMethodSetMethodInteraction(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+
+    def test_get(self):
+        self.handler.connection.get.return_value = (
+            [{"name": "test_method_return_name"}],
+            None,
+        )
+        method = self.handler.GetMethodSetMethod("test_method_name")
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/methods/method-set?name=test_method_name"
+        )
+        assert method["name"] == "test_method_return_name"
+
+    def test_post(self):
+        self.handler.PostMethodSetMethod(
+            {"name": "test_method_name", "test_field": "test_value"}
+        )
+        assert self.handler.connection.post.call_args[1]["endpoint"] == (
+            "project/methods/method-set"
+        )
+        assert self.handler.connection.post.call_args[1]["body"]["name"] == (
+            "test_method_name"
+        )
