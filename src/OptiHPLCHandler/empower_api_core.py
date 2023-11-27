@@ -1,7 +1,7 @@
 import getpass
 import logging
 import warnings
-from typing import Optional
+from typing import Optional, Tuple
 
 import keyring
 import requests
@@ -114,8 +114,8 @@ class EmpowerConnection:
             logger.error(timeout_string)
             raise requests.exceptions.Timeout(timeout_string) from e
         self.raise_for_status(response)
-        self.token = response.json()["result"]["token"]
-        self.session_id = response.json()["result"]["id"]
+        self.token = response.json()["results"][0]["token"]
+        self.session_id = response.json()["results"][0]["id"]
         logger.debug("Login successful, keeping token")
 
     def logout(self) -> None:
@@ -139,7 +139,7 @@ class EmpowerConnection:
 
     def _requests_wrapper(
         self, method: str, endpoint: str, body: Optional[dict], timeout
-    ) -> requests.Response:
+    ) -> Tuple[Optional[dict], Optional[str]]:
         """
         Wrapper for requests.
 
@@ -147,6 +147,8 @@ class EmpowerConnection:
         :param endpoint: The endpoint to use.
         :param body: The body to use.
         :param timeout: The timeout to use.
+
+        :return: The results and message from the response.
         """
 
         def _request_with_timeout(method, endpoint, header, body, timeout):
@@ -179,14 +181,22 @@ class EmpowerConnection:
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
-        return response
+        return (
+            response.json().get("results", None),
+            response.json().get("message", None),
+        )  # Safely getting the results and message from the response, if they don't
+        # exist, return None
 
-    def get(self, endpoint: str, timeout: Optional[int] = None) -> requests.Response:
+    def get(
+        self, endpoint: str, timeout: Optional[int] = None
+    ) -> Tuple[Optional[dict], Optional[str]]:
         """
         Get data from Empower.
 
         :param endpoint: The endpoint to get data from.
         :param timeout: The timeout to use. If None, the default timeout is used.
+
+        :return: The results and message from the response.
         """
         if not timeout:
             timeout = self.default_get_timeout
@@ -196,20 +206,25 @@ class EmpowerConnection:
                 f"Get call to endpoint {endpoint} could be slow, "
                 f"timeout is set to {timeout} seconds"
             )
-        logger.debug("Getting data from %s", endpoint)
-        return self._requests_wrapper(
+        logger.debug("Getting data from %s with timeout", endpoint, timeout)
+        response = self._requests_wrapper(
             method="get", endpoint=endpoint, body=None, timeout=timeout
         )
+        if response[1]:
+            logger.debug("Got message from Empower %s", response[1])
+        return response
 
     def post(
         self, endpoint: str, body: dict, timeout: Optional[int] = None
-    ) -> requests.Response:
+    ) -> Tuple[Optional[dict], Optional[str]]:
         """
         Post data to Empower.
 
         :param endpoint: The endpoint to post data to.
         :param body: The data to post.
         :param timeout: The timeout to use. If None, the default timeout is used.
+
+        :return: The results and message from the response.
         """
         if not timeout:
             timeout = self.default_get_timeout
@@ -219,10 +234,12 @@ class EmpowerConnection:
                 f"Post call to endpoint {endpoint} could be slow, "
                 f"timeout is set to {timeout} seconds"
             )
-        logger.debug("Posting data %s to %s", body, endpoint)
+        logger.debug("Posting data %s to %s with timeout %s", body, endpoint, timeout)
         response = self._requests_wrapper(
             method="post", endpoint=endpoint, body=body, timeout=timeout
         )
+        if response[1]:
+            logger.debug("Got message from Empower %s", response[1])
         return response
 
     @property
@@ -261,9 +278,9 @@ class EmpowerConnection:
         """
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError as exc:
+        except requests.exceptions.HTTPError:
             raise requests.exceptions.HTTPError(
-                f"HTTP error {exc.response.status_code} "
-                f"with message '{exc.response.json()['Message']}' "
-                f"and ID {exc.response.json()['Id']}"
+                f"HTTP error {response.status_code} "
+                f"with message '{response.json()['message']}' "
+                f"and ID {response.json()['id']}"
             ) from None

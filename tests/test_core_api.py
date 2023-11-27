@@ -12,7 +12,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def setUp(self, mock_requests) -> None:
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "result": {"token": "test_token", "id": "test_id"}
+            "results": [{"token": "test_token", "id": "test_id"}]
         }
         mock_response.status_code = 200
         mock_requests.post.return_value = mock_response
@@ -78,11 +78,19 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_get(self, mock_requests):
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_requests.get.return_value = mock_response
-        self.connection.get("test_url")
+        mock_response.json.return_value = {
+            "results": [{"test_key": "test_value"}],
+            "message": "test_message",
+        }
+        mock_requests.request.return_value = mock_response
+        result_list = self.connection.get("test_url")[0]
+        message = self.connection.get("test_url")[1]
         # Testing that the get method is called with the correct url
         assert mock_requests.request.call_args[0][0] == "get"
         assert mock_requests.request.call_args[0][1] == "https://test_address/test_url"
+        assert "test_key" in result_list[0]
+        assert result_list[0]["test_key"] == "test_value"
+        assert message == "test_message"
         self.connection.get("/test_url")
         # Testing that the get method is called with the correct url when endpoint
         # starts with a slash
@@ -101,7 +109,7 @@ class TestEmpowerConnection(unittest.TestCase):
     def test_relogin_get(self, mock_requests, mock_getpass):
         # Verify that the handler logs in again if the token is invalid on get.
         mock_response = MagicMock()
-        mock_response.json.return_value = {"result": {"token": "test_token"}}
+        mock_response.json.return_value = {"results": [{"token": "test_token"}]}
         mock_response.status_code = 401
         mock_requests.request.return_value = mock_response
         mock_response = MagicMock()
@@ -143,7 +151,7 @@ class TestEmpowerConnection(unittest.TestCase):
         # Verify that the handler logs in again if the token is invalid on put.
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "result": {"token": "test_token", "id": "test_id"}
+            "results": [{"token": "test_token", "id": "test_id"}]
         }
         mock_response.status_code = 401
         mock_requests.request.return_value = mock_response
@@ -238,8 +246,8 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.ok = False
         mock_response.status_code = 400
         mock_response.json.return_value = {
-            "Message": "test_message",
-            "Id": "test_id",
+            "message": "test_message",
+            "id": "test_id",
         }
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
             response=mock_response
@@ -251,3 +259,17 @@ class TestEmpowerConnection(unittest.TestCase):
         assert "HTTP error 400" in str(context.exception)
         assert "message 'test_message'" in str(context.exception)
         assert "ID test_id" in str(context.exception)
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_incomplete_json(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {}
+        mock_requests.request.return_value = mock_response
+        response = self.connection.get("test_url")
+        assert response == (None, None)
+        mock_response.json.return_value = {"results": []}
+        response = self.connection.get("test_url")
+        assert response == ([], None)
+        mock_response.json.return_value = {"message": "test_message"}
+        response = self.connection.get("test_url")
+        assert response == (None, "test_message")

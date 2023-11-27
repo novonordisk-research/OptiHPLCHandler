@@ -80,9 +80,7 @@ class TestEmpowerHandler(unittest.TestCase):
         ) == "test_sample_set_name"  # Check that the correct sample set name is given
 
     def test_get_node_name_list(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": ["test_node_name_1"]}
-        self.handler.connection.get.return_value = mock_response
+        self.handler.connection.get.return_value = (["test_node_name_1"], None)
         node_name_list = self.handler.GetNodeNames()
         assert node_name_list == ["test_node_name_1"]
         assert (
@@ -90,9 +88,7 @@ class TestEmpowerHandler(unittest.TestCase):
         )
 
     def test_get_system_name_list(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": ["test_system_name_1"]}
-        self.handler.connection.get.return_value = mock_response
+        self.handler.connection.get.return_value = (["test_system_name_1"], None)
         system_name_list = self.handler.GetSystemNames("test_node_name")
         assert system_name_list == ["test_system_name_1"]
         assert (
@@ -266,9 +262,8 @@ class TestGetMethods(unittest.TestCase):
         )
 
     def test_get_method_list(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "results": [
+        self.handler.connection.get.return_value = (
+            [
                 {
                     "fields": [
                         {"name": "Name", "value": "test_method_name_1"},
@@ -281,9 +276,9 @@ class TestGetMethods(unittest.TestCase):
                         {"name": "irrelevant_field", "value": "irrelevant_value"},
                     ]
                 },
-            ]
-        }
-        self.handler.connection.get.return_value = mock_response
+            ],
+            None,
+        )
 
         method_list = self.handler.GetMethodList()
         assert method_list == ["test_method_name_1", "test_method_name_2"]
@@ -293,9 +288,8 @@ class TestGetMethods(unittest.TestCase):
         )  # Check that the correct parameters are passed to the request
 
     def test_method_with_no_name(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "results": [
+        self.handler.connection.get.return_value = (
+            [
                 {
                     "fields": [
                         {"name": "Name", "value": "test_method_name_1"},
@@ -308,17 +302,15 @@ class TestGetMethods(unittest.TestCase):
                         {"name": "irrelevant_field", "value": "irrelevant_value"},
                     ]  # No fields with name "Name" should give an error
                 },
-            ]
-        }
-
-        self.handler.connection.get.return_value = mock_response
+            ],
+            None,
+        )
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
     def test_method_with_two_names(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "results": [
+        self.handler.connection.get.return_value = (
+            [
                 {
                     "fields": [
                         {"name": "Name", "value": "test_method_name_1"},
@@ -331,16 +323,14 @@ class TestGetMethods(unittest.TestCase):
                         {"name": "irrelevant_field", "value": "irrelevant_value"},
                     ]
                 },
-            ]
-        }
-        self.handler.connection.get.return_value = mock_response
+            ],
+            None,
+        )
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
     def test_get_sample_set_method_list(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"results": ["test_samplesetmethod_1"]}
-        self.handler.connection.get.return_value = mock_response
+        self.handler.connection.get.return_value = (["test_samplesetmethod_1"], None)
         samplesetmethod_list = self.handler.GetSampleSetMethods()
         assert samplesetmethod_list == ["test_samplesetmethod_1"]
         assert (
@@ -376,14 +366,13 @@ class TestGetPlateTypes(unittest.TestCase):
         )
 
     def test_get_plate_type_names(self):
-        mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "results": [
+        self.handler.connection.get.return_value = (
+            [
                 "test_plate_type_name_1",
                 "test_plate_type_name_2",
-            ]
-        }
-        self.handler.connection.get.return_value = mock_response
+            ],
+            None,
+        )
         plate_type_names = self.handler.GetPlateTypeNames()
         assert plate_type_names == [
             "test_plate_type_name_1",
@@ -505,15 +494,14 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
         )
 
     def test_get_method(self):
-        mock_response = MagicMock()
         minimal_module = {
             "name": "test",
             "nativeXml": "test_name",
         }
-        mock_response.json.return_value = {
-            "result": {"methodName": "test_method", "modules": [minimal_module]},
-        }
-        self.handler.connection.get.return_value = mock_response
+        self.handler.connection.get.return_value = (
+            [{"methodName": "test_method", "modules": [minimal_module]}],
+            None,
+        )
         method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
             "project/methods/instrument-method?name=test_method_name"
@@ -524,7 +512,6 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
         assert method.module_method_list[0].original_method == minimal_module
 
     def test_post_method(self):
-        mock_response = MagicMock()
         minimal_module = {
             "name": "test",
             "nativeXml": (
@@ -532,10 +519,11 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
                 "<test_tag2>test_value2</test_tag2>"
             ),
         }
-        mock_response.json.return_value = {
-            "result": {"methodName": "test_method", "modules": [minimal_module]},
-        }
-        self.handler.connection.get.return_value = mock_response
+
+        self.handler.connection.get.return_value = (
+            [{"methodName": "test_method", "modules": [minimal_module]}],
+            None,
+        )
         method = self.handler.GetInstrumentMethod("test_method_name")
         method.module_method_list[0].replace("test_value1", "new_value")
         method.module_method_list[0]["test_tag2"] = "newer_value"
