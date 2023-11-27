@@ -279,8 +279,16 @@ class EmpowerConnection:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError:
-            raise requests.exceptions.HTTPError(
-                f"HTTP error {response.status_code} "
-                f"with message '{response.json()['message']}' "
-                f"and ID {response.json()['id']}"
-            ) from None
+            body = response.json()
+            if "message" in body and "id" in body:
+                error = requests.exceptions.HTTPError(
+                    f"HTTP error {response.status_code} "
+                    f"with message '{response.json()['message']}' "
+                    f"and ID {response.json()['id']}"
+                )
+            elif "errors" in body:
+                error = requests.exceptions.HTTPError(
+                    f"HTTP error {response.status_code} "
+                    f"with errors '{response.json()['errors']}'"
+                )
+            raise error from None
