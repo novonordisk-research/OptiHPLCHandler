@@ -421,9 +421,19 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             float: "Double",
             dict: "Enumerator",
         }
-        data_type = type(field["value"])
-        logger.debug("Setting data type of field %s to %s", field["name"], data_type)
-        field["dataType"] = data_type_dict[data_type]
+        for key, value in data_type_dict.items():
+            if isinstance(field["value"], key):
+                logger.debug(
+                    "Setting data type of field %s to %s.", field["name"], value
+                )
+                field["dataType"] = value
+        if "dataType" not in field:
+            message = (
+                "No data type found for field "
+                f"{field['name']} with value {field['value']}."
+            )
+            logger.error(message)
+            raise ValueError(message)
 
     def __str__(self):
         return f"EmpowerHandler for project {self.project}, user {self.username}"
