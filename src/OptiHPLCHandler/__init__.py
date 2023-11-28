@@ -4,7 +4,7 @@ from .empower_handler import EmpowerHandler
 from .empower_instrument_method import EmpowerInstrumentMethod
 from .empower_module_method import EmpowerModuleMethod
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 __all__ = [
     "DataField",
