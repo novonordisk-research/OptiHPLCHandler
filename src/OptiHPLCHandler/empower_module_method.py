@@ -342,6 +342,9 @@ def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModule
         if method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
             logger.debug("Creating BSMMethod")
             return BSMMethod(method_definition)
+        if method_definition["name"] in ["ACQ-QSM"]:
+            logger.debug("Creating QSMMethod")
+            return QSMMethod(method_definition)
         # Add more cases as they are coded
         else:
             logger.debug(
