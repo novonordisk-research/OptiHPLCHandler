@@ -5,6 +5,7 @@ import warnings
 
 from OptiHPLCHandler.empower_module_method import (
     BSMMethod,
+    QSMMethod,
     ColumnManagerMethod,
     ColumnOvenMethod,
     EmpowerModuleMethod,
@@ -275,6 +276,537 @@ class TestColumnOvens(unittest.TestCase):
         module_method.column_temperature = 40.06
         assert module_method.column_temperature == "40.1"
         # Rounding, not concatenating
+
+
+class testQSMMethod(unittest.TestCase):
+    def setUp(self) -> None:
+        qsm_method_list = [
+            definition["results"][0]["modules"]
+            for name, definition in load_example_files().items()
+            if "QSM" in name
+        ]  # Finding all instrument method definitions that controls a QSM
+        for i, qsm_method in enumerate(qsm_method_list):
+            qsm_method_list[i] = [
+                module for module in qsm_method if module["name"] == "rAcquityQSM"
+            ][0]
+        # Finding the QSM module method in the instrument method definition
+        self.qsm_method_list = qsm_method_list
+        self.minimal_definition = {
+            "name": "rAcquityQSM",
+            "nativeXml": (
+                "<SolventSelectionValveAPosition>0</SolventSelectionValveAPosition>"
+                "<SolventSelectionValveBPosition>0</SolventSelectionValveBPosition>"
+                "<SolventSelectionValveCPosition>0</SolventSelectionValveCPosition>"
+                "<SolventSelectionValveDPosition>5</SolventSelectionValveDPosition>"
+                "<GradientTable>"
+                "<GradientRow>"
+                "<Time>Initial</Time><Flow>1.5</Flow>"
+                "<CompositionA>25.0</CompositionA>"
+                "<CompositionB>25.0</CompositionB>"
+                "<CompositionC>25.0</CompositionC>"
+                "<CompositionD>25.0</CompositionD>"
+                "<Curve>Initial</Curve>"
+                "</GradientRow>"
+                "</GradientTable>"
+            ),
+        }
+        self.medium_definition = {
+            "name": "rAcquityQSM",
+            "nativeXml": (
+                "<SolventSelectionValveAPosition>0</SolventSelectionValveAPosition>"
+                "<SolventSelectionValveBPosition>0</SolventSelectionValveBPosition>"
+                "<SolventSelectionValveCPosition>0</SolventSelectionValveCPosition>"
+                "<SolventSelectionValveDPosition>5</SolventSelectionValveDPosition>"
+                "<GradientTable>"
+                "<GradientRow>"
+                "<Time>Initial</Time><Flow>1.5</Flow>"
+                "<CompositionA>25.0</CompositionA>"
+                "<CompositionB>25.0</CompositionB>"
+                "<CompositionC>25.0</CompositionC>"
+                "<CompositionD>25.0</CompositionD>"
+                "<Curve>Initial</Curve>"
+                "</GradientRow>"
+                "<GradientRow>"
+                "<Time>69</Time><Flow>0.69</Flow>"
+                "<CompositionA>10.0</CompositionA>"
+                "<CompositionB>10.0</CompositionB>"
+                "<CompositionC>10.0</CompositionC>"
+                "<CompositionD>70.0</CompositionD>"
+                "<Curve>6</Curve>"
+                "</GradientRow>"
+                "</GradientTable>"
+            ),
+        }
+
+    def test_factory(self):
+        module_method = module_method_factory(self.minimal_definition)
+        assert isinstance(module_method, QSMMethod)
+
+        module_method = module_method_factory(self.medium_definition)
+        assert isinstance(module_method, QSMMethod)
+
+        for qsm_method in self.qsm_method_list:
+            qsm = module_method_factory(qsm_method)
+            assert isinstance(qsm, QSMMethod)
+
+    def test_valve_position(self):
+        module_method = QSMMethod(self.minimal_definition)
+        assert module_method.valve_position == ["A0", "B0", "C0", "D5"]
+        assert "A0" in str(module_method)
+        assert "B0" in str(module_method)
+        assert "C0" in str(module_method)
+        assert "D5" in str(module_method)
+        module_method = QSMMethod(self.medium_definition)
+        assert module_method.valve_position == ["A0", "B0", "C0", "D5"]
+        assert "A0" in str(module_method)
+        assert "B0" in str(module_method)
+        assert "C0" in str(module_method)
+        assert "D5" in str(module_method)
+        for qsm_method in self.qsm_method_list:
+            qsm = QSMMethod(qsm_method)
+            assert qsm.valve_position == ["A0", "B0", "C0", "D0"]
+            # All examples us A0, B0, C0 and D0
+
+    def test_valve_position_setter(self):
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.valve_position = ["A0", "B0", "C0", "D5"]
+        assert module_method.valve_position == ["A0", "B0", "C0", "D5"]
+        assert "A0" in str(module_method)
+        assert "B0" in str(module_method)
+        assert "C0" in str(module_method)
+        assert "D5" in str(module_method)
+        assert (
+            "<SolventSelectionValveAPosition>0</SolventSelectionValveAPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+        assert (
+            "<SolventSelectionValveBPosition>0</SolventSelectionValveBPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+        assert (
+            "<SolventSelectionValveCPosition>0</SolventSelectionValveCPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+        assert (
+            "<SolventSelectionValveDPosition>5</SolventSelectionValveDPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+        module_method.valve_position = "D1"
+        assert module_method.valve_position == ["A0", "B0", "C0", "D1"]
+        assert "A0" in str(module_method)
+        assert "B0" in str(module_method)
+        assert "C0" in str(module_method)
+        assert "D1" in str(module_method)
+        assert (
+            "<SolventSelectionValveAPosition>0</SolventSelectionValveAPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+        assert (
+            "<SolventSelectionValveBPosition>0</SolventSelectionValveBPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+        assert (
+            "<SolventSelectionValveCPosition>0</SolventSelectionValveCPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+        assert (
+            "<SolventSelectionValveDPosition>1</SolventSelectionValveDPosition>"
+            in module_method.current_method["nativeXml"]
+        )
+
+    def test_gradient_table(self):
+        module_method = QSMMethod(self.minimal_definition)
+        assert len(module_method.gradient_table) == 1
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "1.5"
+        assert module_method.gradient_table[0]["CompositionA"] == "25.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "25.0"
+        assert module_method.gradient_table[0]["CompositionC"] == "25.0"
+        assert module_method.gradient_table[0]["CompositionD"] == "25.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        module_method = QSMMethod(self.medium_definition)
+        assert len(module_method.gradient_table) == 2
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "1.5"
+        assert module_method.gradient_table[0]["CompositionA"] == "25.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "25.0"
+        assert module_method.gradient_table[0]["CompositionC"] == "25.0"
+        assert module_method.gradient_table[0]["CompositionD"] == "25.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        assert module_method.gradient_table[1]["Time"] == "69"
+        assert module_method.gradient_table[1]["Flow"] == "0.69"
+        assert module_method.gradient_table[1]["CompositionA"] == "10.0"
+        assert module_method.gradient_table[1]["CompositionB"] == "10.0"
+        assert module_method.gradient_table[1]["CompositionC"] == "10.0"
+        assert module_method.gradient_table[1]["CompositionD"] == "70.0"
+        assert str(module_method.gradient_table[1]["Curve"]) == "6"
+
+    def test_gradient_table_setter(self):
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "3.3",
+                "CompositionA": "33.0",
+                "CompositionB": "33.0",
+                "CompositionC": "33.0",
+                "CompositionD": "1.0",
+                "Curve": "Initial",
+            }
+        ]
+        assert len(module_method.gradient_table) == 1
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "3.3"
+        assert module_method.gradient_table[0]["CompositionA"] == "33.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "33.0"
+        assert module_method.gradient_table[0]["CompositionC"] == "33.0"
+        assert module_method.gradient_table[0]["CompositionD"] == "1.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+
+    def test_gradient_table_setter_default(self):
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "0.0",
+                "Flow": "3.3",
+                "CompositionA": "33.0",
+                "CompositionB": "33.0",
+                "CompositionC": "33.0",
+                "CompositionD": "1.0",
+            },
+            {
+                "Time": "0.0",
+                "Flow": "3.3",
+                "CompositionA": "33.0",
+                "CompositionB": "33.0",
+                "CompositionC": "33.0",
+                "CompositionD": "1.0",
+            },
+        ]
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        assert str(module_method.gradient_table[1]["Curve"]) == "6"
+
+    def test_gradient_table_setter_multiple(self):
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.500",
+                "CompositionA": "70.0",
+                "CompositionB": "10.0",
+                "CompositionC": "10.0",
+                "CompositionD": "10.0",
+                "Curve": "Initial",
+            },
+            {
+                "Time": "10.00",
+                "Flow": "0.600",
+                "CompositionA": "10.0",
+                "CompositionB": "80.0",
+                "CompositionC": "0.0",
+                "CompositionD": "10.0",
+                "Curve": "10",
+            },
+        ]
+        assert len(module_method.gradient_table) == 2
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Flow"] == "0.500"
+        assert module_method.gradient_table[0]["CompositionA"] == "70.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "10.0"
+        assert module_method.gradient_table[0]["CompositionC"] == "10.0"
+        assert module_method.gradient_table[0]["CompositionD"] == "10.0"
+        assert str(module_method.gradient_table[0]["Curve"]) == "Initial"
+        assert module_method.gradient_table[1]["Time"] == "10.00"
+        assert module_method.gradient_table[1]["Flow"] == "0.600"
+        assert module_method.gradient_table[1]["CompositionA"] == "10.0"
+        assert module_method.gradient_table[1]["CompositionB"] == "80.0"
+        assert module_method.gradient_table[1]["CompositionC"] == "0.0"
+        assert module_method.gradient_table[1]["CompositionD"] == "10.0"
+        assert str(module_method.gradient_table[1]["Curve"]) == "10"
+
+    def test_gradient_xml_setter(self):
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.500",
+                "CompositionA": "70.0",
+                "CompositionB": "10.0",
+                "CompositionC": "10.0",
+                "CompositionD": "10.0",
+                "Curve": "Initial",
+            },
+            {
+                "Time": "10.00",
+                "Flow": "0.600",
+                "CompositionA": "80.0",
+                "CompositionB": "0.0",
+                "CompositionC": "10.0",
+                "CompositionD": "10.0",
+                "Curve": "10",
+            },
+        ]
+        new_method = QSMMethod(module_method.current_method)
+        assert new_method.gradient_table == module_method.gradient_table
+
+    def test_floats_and_strings(self):
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 1,
+                "CompositionA": 40,
+                "CompositionB": 40,
+                "CompositionC": 10,
+                "CompositionD": 10,
+                "Curve": "Initial",
+            },
+        ]
+        assert float(module_method.gradient_table[0]["Flow"]) == 1.0
+        assert float(module_method.gradient_table[0]["CompositionA"]) == 40.0
+        assert float(module_method.gradient_table[0]["CompositionB"]) == 40.0
+        assert float(module_method.gradient_table[0]["CompositionC"]) == 10.0
+        assert float(module_method.gradient_table[0]["CompositionD"]) == 10.0
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.5",
+                "CompositionA": "30.0",
+                "CompositionB": "30.0",
+                "CompositionC": "30.0",
+                "CompositionD": "10.0",
+                "Curve": "Initial",
+            },
+        ]
+        assert module_method.gradient_table[0]["Flow"] == "0.5"
+        assert module_method.gradient_table[0]["CompositionA"] == "30.0"
+        assert module_method.gradient_table[0]["CompositionB"] == "30.0"
+        assert module_method.gradient_table[0]["CompositionC"] == "30.0"
+        assert module_method.gradient_table[0]["CompositionD"] == "10.0"
+
+    def test_rounding_floats(self):
+        # Empower gives the wrong numbers if more than 10 decimals are given for
+        # parameters in the gradient table. This test checks that the numbers are
+        # rounded to 3 decimals before being sent to Empower.
+        # Consider adding test for 3*1/3 = 1
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 1 / 3,
+                "CompositionA": 2 / 3,
+                "CompositionB": 0,
+                "CompositionC": 1 / 3,
+                "CompositionD": 0,
+                "Curve": "Initial",
+            },
+            {
+                "Time": 1 / 3,
+                "Flow": 1 / 3,
+                "CompositionA": 1 / 3,
+                "CompositionB": 0,
+                "CompositionC": 0,
+                "CompositionD": 2 / 3,
+                "Curve": 6,
+            },
+        ]
+        assert module_method.gradient_table[0]["Flow"] == "0.333"
+        assert module_method.gradient_table[0]["CompositionA"] == "0.667"
+        assert module_method.gradient_table[0]["CompositionB"] == "0"
+        assert module_method.gradient_table[0]["CompositionC"] == "0.333"
+        assert module_method.gradient_table[0]["CompositionD"] == "0"
+        assert module_method.gradient_table[1]["Time"] == "0.333"
+        assert module_method.gradient_table[1]["Flow"] == "0.333"
+        assert module_method.gradient_table[1]["CompositionA"] == "0.333"
+        assert module_method.gradient_table[1]["CompositionB"] == "0"
+        assert module_method.gradient_table[1]["CompositionC"] == "0"
+        assert module_method.gradient_table[1]["CompositionD"] == "0.667"
+        assert (
+            "0.3333" not in module_method.current_method
+        )  # If values are given as strings, EmpowerHandler should not round them
+        module_method = QSMMethod(self.minimal_definition)
+        with self.assertWarns(UserWarning):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": "0.33333",  # No rounding, since this is a string
+                    "CompositionA": 0.66667,  # Rounding, since this is a float
+                    "CompositionB": "0",
+                    "CompositionC": "0",
+                    "CompositionD": "0.33333",
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": "0.33333333",  # 8 decimals should give a warning
+                    "Flow": "0.33333",
+                    "CompositionA": "0.33333",
+                    "CompositionB": "0",
+                    "CompositionC": "0.66667",
+                    "CompositionD": "0",
+                    "Curve": 6,
+                },
+            ]
+        assert module_method.gradient_table[0]["Flow"] == "0.33333"
+        assert module_method.gradient_table[0]["CompositionA"] == "0.667"
+        assert module_method.gradient_table[0]["CompositionB"] == "0"
+        assert module_method.gradient_table[0]["CompositionC"] == "0"
+        assert module_method.gradient_table[0]["CompositionD"] == "0.33333"
+        assert module_method.gradient_table[1]["Time"] == "0.33333333"
+        assert module_method.gradient_table[1]["Flow"] == "0.33333"
+        assert module_method.gradient_table[1]["CompositionA"] == "0.33333"
+        assert module_method.gradient_table[1]["CompositionB"] == "0"
+        assert module_method.gradient_table[1]["CompositionC"] == "0.66667"
+        assert module_method.gradient_table[1]["CompositionD"] == "0"
+        assert "0.3333" in module_method.current_method["nativeXml"]
+
+    def test_manually_than_gradient_table_changed(self):
+        # Checks that manual changes in the gradient table does not proclude the use
+        # of the gradient_table setter.
+        module_method = QSMMethod(self.minimal_definition)
+        module_method.replace("<Flow>0.600</Flow>", "<Flow>0.010</Flow>")
+        new_gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.500",
+                "CompositionA": "50.0",
+                "CompositionB": "0.0",
+                "CompositionC": "50.0",
+                "CompositionD": "0.0",
+                "Curve": "Initial",
+            },
+        ]
+        module_method.gradient_table = new_gradient_table
+        assert module_method.gradient_table == new_gradient_table
+
+    def test_gradient_table_then_manual(self):
+        module_method = QSMMethod(self.minimal_definition)
+        new_gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": "0.500",
+                "CompositionA": "50.0",
+                "CompositionB": "0.0",
+                "CompositionC": "50.0",
+                "CompositionD": "0.0",
+                "Curve": "Initial",
+            },
+        ]
+        module_method.gradient_table = new_gradient_table
+        module_method.replace("<Flow>0.500</Flow>", "<Flow>0.010</Flow>")
+        assert module_method.gradient_table[0]["Flow"] == "0.010"
+
+    def test_gradient_table_float(self):
+        module_method = QSMMethod(self.minimal_definition)
+        new_gradient_table = [
+            {
+                "Time": "Initial",
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 0.0,
+                "CompositionC": 50.0,
+                "CompositionD": 0.0,
+                "Curve": "Initial",
+            },
+            {
+                "Time": 10,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 0.0,
+                "CompositionC": 0.0,
+                "CompositionD": 50.0,
+                "Curve": 6,
+            },
+        ]
+        module_method.gradient_table = new_gradient_table
+        assert float(module_method.gradient_table[0]["Flow"]) == 0.5
+
+    def test_initial(self):
+        module_method = QSMMethod(self.minimal_definition)
+        new_gradient_table = [
+            {
+                "Time": 0,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 0.0,
+                "CompositionC": 50.0,
+                "CompositionD": 0.0,
+                "Curve": 6,
+            },
+            {
+                "Time": 10,
+                "Flow": 0.500,
+                "CompositionA": 50.0,
+                "CompositionB": 0.0,
+                "CompositionC": 0.0,
+                "CompositionD": 50.0,
+                "Curve": 6,
+            },
+        ]
+        module_method.gradient_table = new_gradient_table
+        assert module_method.gradient_table[0]["Time"] == "Initial"
+        assert module_method.gradient_table[0]["Curve"] == "Initial"
+        assert module_method.gradient_table[1]["Time"] != "Initial"
+        assert module_method.gradient_table[1]["Curve"] != "Initial"
+
+    def test_initial_error(self):
+        module_method = QSMMethod(self.minimal_definition)
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": 10,
+                    "Flow": 0.500,
+                    "CompositionA": 30.0,
+                    "CompositionB": 30.0,
+                    "CompositionC": 30.0,
+                    "CompositionD": 10.0,
+                    "Curve": "Initial",
+                }
+            ]
+
+    def test_error_if_late_initial(self):
+        module_method = QSMMethod(self.minimal_definition)
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 10.0,
+                    "CompositionB": 10.0,
+                    "CompositionC": 10.0,
+                    "CompositionD": 70.0,
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": 10,
+                    "Flow": 0.500,
+                    "CompositionA": 10.0,
+                    "CompositionB": 10.0,
+                    "CompositionC": 10.0,
+                    "CompositionD": 70.0,
+                    "Curve": "Initial",
+                },
+            ]
+        with self.assertRaises(ValueError):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 10.0,
+                    "CompositionB": 10.0,
+                    "CompositionC": 10.0,
+                    "CompositionD": 70.0,
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": "Initial",
+                    "Flow": 0.500,
+                    "CompositionA": 10.0,
+                    "CompositionB": 10.0,
+                    "CompositionC": 10.0,
+                    "CompositionD": 70.0,
+                    "Curve": "Initial",
+                },
+            ]
 
 
 class testBSMMethod(unittest.TestCase):
