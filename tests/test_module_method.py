@@ -374,7 +374,7 @@ class testQSMMethod(unittest.TestCase):
         assert "A0" in str(module_method)
         assert "B0" in str(module_method)
         assert "C0" in str(module_method)
-        assert "D5" in str(module_method)
+        assert "D2" in str(module_method)
         assert (
             "<SolventSelectionValveAPosition>0</SolventSelectionValveAPosition>"
             in module_method.current_method["nativeXml"]
