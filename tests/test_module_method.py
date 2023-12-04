@@ -388,7 +388,7 @@ class testQSMMethod(unittest.TestCase):
             in module_method.current_method["nativeXml"]
         )
         assert (
-            "<SolventSelectionValveDPosition>5</SolventSelectionValveDPosition>"
+            "<SolventSelectionValveDPosition>2</SolventSelectionValveDPosition>"
             in module_method.current_method["nativeXml"]
         )
         module_method.valve_position = "D1"
