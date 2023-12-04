@@ -5,10 +5,10 @@ import warnings
 
 from OptiHPLCHandler.empower_module_method import (
     BSMMethod,
-    QSMMethod,
     ColumnManagerMethod,
     ColumnOvenMethod,
     EmpowerModuleMethod,
+    QSMMethod,
     SampleManagerMethod,
     module_method_factory,
 )
