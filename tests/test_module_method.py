@@ -370,7 +370,7 @@ class testQSMMethod(unittest.TestCase):
     def test_valve_position_setter(self):
         module_method = QSMMethod(self.minimal_definition)
         module_method.valve_position = ["A0", "B0", "C0", "D2"]
-        assert module_method.valve_position == ["A0", "B0", "C0", "D5"]
+        assert module_method.valve_position == ["A0", "B0", "C0", "D2"]
         assert "A0" in str(module_method)
         assert "B0" in str(module_method)
         assert "C0" in str(module_method)
