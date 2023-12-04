@@ -206,7 +206,7 @@ class EmpowerConnection:
                 f"Get call to endpoint {endpoint} could be slow, "
                 f"timeout is set to {timeout} seconds"
             )
-        logger.debug("Getting data from %s with timeout", endpoint, timeout)
+        logger.debug("Getting data from %s with timeout %s", endpoint, timeout)
         response = self._requests_wrapper(
             method="get", endpoint=endpoint, body=None, timeout=timeout
         )
