@@ -71,7 +71,9 @@ class EmpowerModuleMethod:
     @property
     def current_method(self) -> DataModel:
         """The current method definition, including the changes that have been made."""
-        logger.debug("Applying changes to create current method")
+        logger.debug(
+            "Applying changes to method of type %s to create current method", type(self)
+        )
         return self.alter_method(self.original_method, self._change_list)
 
     def __getitem__(self, key: str) -> str:
@@ -122,7 +124,6 @@ class EmpowerModuleMethod:
                 # there are no changes to apply, we can just return the original method.
                 return method
         for original, new in change_list:
-            logger.debug("Replacing %s with %s", original, new)
             num_replaced = xml.count(original)
             if num_replaced == 0:
                 logger.warning(
