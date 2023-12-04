@@ -169,3 +169,6 @@ testnotebook.ipynb
 
 # Automatically created class diagrams
 docs/class_diagrams/*.html
+
+# API address
+examples/address.txt
