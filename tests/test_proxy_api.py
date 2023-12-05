@@ -566,3 +566,26 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         assert self.handler.connection.post.call_args[1]["body"]["name"] == (
             "test_method_name"
         )
+
+
+class TestStatus(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+
+    def test_get(self):
+        self.handler.connection.get.return_value = (
+            [
+                {"name": "FirstKey", "value": "FirstValue"},
+                {"name": "SecondKey", "value": "SecondValue"},
+            ],
+        )
+        result = self.handler.GetStatus(node="test_node", system="test_system")
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "acquisition/chromatographic-system-status"
+            "?nodeName=test_node&systemName=test_system"
+        )
+        assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
