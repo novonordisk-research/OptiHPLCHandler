@@ -339,10 +339,10 @@ def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModule
         if method_definition["name"] in ["AcquityCM", "ACQ-CM"]:
             logger.debug("Creating ColumnManagerMethod")
             return ColumnManagerMethod(method_definition)
-        if method_definition["name"] in ["AcquityBSM", "ACQ-BSM"]:
+        if method_definition["name"] in ["AcquityBSM", "ACQ-BSM", "rAcquityBSM"]:
             logger.debug("Creating BSMMethod")
             return BSMMethod(method_definition)
-        if method_definition["name"] in ["ACQ-QSM"]:
+        if method_definition["name"] in ["AcquityQSM", "ACQ-QSM", "rAcquityQSM"]:
             logger.debug("Creating QSMMethod")
             return QSMMethod(method_definition)
         # Add more cases as they are coded
