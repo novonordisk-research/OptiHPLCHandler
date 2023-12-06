@@ -413,6 +413,14 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             endpoint += f"?stringFilter={filter_string}"
         return self.connection.get(endpoint=endpoint)[0]
 
+    def GetStatus(self, node: str, system: str):
+        endpoint = (
+            "acquisition/chromatographic-system-status"
+            f"?nodeName={node}&systemName={system}"
+        )
+        result_list = self.connection.get(endpoint=endpoint, timeout=120)[0]
+        return {entry["name"]: entry["value"] for entry in result_list}
+
     def _set_data_type(self, field: Mapping[str, Any]):
         """Find and set the data type of the field, based on the type of `value`"""
         data_type_dict = {
