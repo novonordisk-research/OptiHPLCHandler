@@ -127,6 +127,7 @@ class EmpowerConnection:
         response = requests.delete(
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
             headers=self.authorization_header,
+            timeout=self.default_post_timeout,
         )
         if response.status_code == 404:
             logger.debug(
@@ -278,7 +279,7 @@ class EmpowerConnection:
         """
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError:
+        except requests.exceptions.HTTPError as error:
             body = response.json()
             if "message" in body and "id" in body:
                 error = requests.exceptions.HTTPError(
