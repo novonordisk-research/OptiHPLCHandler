@@ -128,7 +128,7 @@ class EmpowerModuleMethod:
             if num_replaced == 0:
                 logger.warning(
                     f"Could not find {original} in {method}, no changes made to method."
-                )  # Consider trying to replace `<` with `&lt` aand `>` with `&gt;` and
+                )  # Consider trying to replace `<` with `&lt` and `>` with `&gt;` and
                 # then trying again.
             else:
                 xml = xml.replace(original, new)
@@ -144,9 +144,10 @@ class EmpowerModuleMethod:
             rounded_value = f"{value:.{decimal_digits}f}"
             if float(rounded_value) != value:
                 logger.warning(
-                    "Rounding %s to %s, as Empower only accepts 3 decimals.",
+                    "Rounding %s to %s, as Empower only accepts %s decimal(s).",
                     value,
                     rounded_value,
+                    decimal_digits,
                 )  # No user warning, since it should only be accessed through the
                 # property methods, and it is described in the docstring.
                 return rounded_value
