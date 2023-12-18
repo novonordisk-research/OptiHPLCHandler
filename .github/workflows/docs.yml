@@ -25,7 +25,7 @@ jobs:
             pyreverse $file -A -S --output html --output-directory docs/class_diagrams
             mv docs/class_diagrams/classes.html docs/class_diagrams/$(basename $file).html
           done
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: class_diagrams
           path: docs/class_diagrams
