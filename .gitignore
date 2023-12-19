@@ -172,3 +172,6 @@ docs/class_diagrams/*.html
 
 # API address
 examples/address.txt
+
+# sphinx build folder
+_build/
