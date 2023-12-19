@@ -76,7 +76,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         :param allow_login_without_context_manager: If `False` (default), an error will
             be raised when logging in without a context manager. If True, logging in
             without a context manager will merely raise a warning. This is not
-            recommended, as it can lead to forgetting loggin out.
+            recommended, as it can lead to forgetting logging out.
         :param auto_login: If True (default), the handler will log in automatically when
             you start a context manager. If `False`, you will have to call `login`
             manually. If you are to provide the password, you need to set this to
