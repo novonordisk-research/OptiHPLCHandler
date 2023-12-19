@@ -18,23 +18,23 @@ class EmpowerInstrumentMethod:
     """
     A class to handle Empower instrument methods.
 
-    : attribute original_method: The original method definition.
-    : attribute current_method: The current method definition.
-    : attribute column_oven_list: A list of column ovens in the instrument method.
-    : attribute module_method_list: A list of module methods in the instrument
+    :ivar original_method: The original method definition.
+    :ivar current_method: The current method definition.
+    :ivar column_oven_list: A list of column ovens in the instrument method.
+    :ivar module_method_list: A list of module methods in the instrument
         method.
-    : attribute solvent_handler_method: The solvent manager module method.
-    : attribute column_temperature: The column temperature. If multiple column ovens are
+    :ivar solvent_handler_method: The solvent manager module method.
+    :ivar column_temperature: The column temperature. If multiple column ovens are
         found, the temperature is only returned if all column ovens have the same
         temperature. Otherwise, a ValueError is raised. If no column ovens are found, a
         ValueError is raised. When setting the column temperature, all column ovens
         will be set to the same temperature, regardless of the original temperatures. If
         no column ovens are found, a ValueError is raised.
-    : attribute gradient_table: The gradient table. If no solvent manager is found, a
+    :ivar gradient_table: The gradient table. If no solvent manager is found, a
         ValueError is raised. When setting the gradient table, the gradient table of the
         solvent manager will be set to the provided gradient table. If no solvent
         manager is found, a ValueError is raised.
-    : attribute valve_position: The valve position. If no solvent manager is found, a
+    :ivar valve_position: The valve position. If no solvent manager is found, a
         ValueError is raised. When setting the valve position, the valve position of the
         solvent manager will be set to the provided valve position. If no solvent
         manager is found, a ValueError is raised.
