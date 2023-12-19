@@ -52,7 +52,7 @@ build = [
   "build==1.0.3",
 ]
 doc = [
-  "pylint==3.0.2",
+  "pylint==3.0.3",
   "sphinx==7.2.6",
 ]
 
