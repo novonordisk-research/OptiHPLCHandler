@@ -51,9 +51,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     This handler is stateful, meaning that you can save methods to the HPLC and run them
     later, and make runs based on the methods that are already on the HPLC.
 
-    :attribute project: Name of the project to connect to.
-    :attribute address: Address of the Empower server.
-    :attribute username: Username to use to connect to Empower.
+    :ivar project: Name of the project to connect to.
+    :ivar address: Address of the Empower server.
+    :ivar username: Username to use to connect to Empower.
     """
 
     def __init__(
@@ -188,26 +188,22 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """
         Post the experiment to the HPLC.
 
-
         :param sample_set_method_name: Name of the sample set method to create.
-
         :param sample_list: List of samples to run. Each sample is a dictionary with
             the following keys:
-            - Method: Name of the method to use for the sample.
-            - SamplePos: Position of the sample in the autosampler, including plate and
-                position on the plate.
-            - SampleName: Name of the sample.
-            - InjectionVolume: Volume of the sample to inject in micro liters.
+                - Method: Name of the method to use for the sample.
+                - SamplePos: Position of the sample in the autosampler, including plate
+                    and position on the plate.
+                - SampleName: Name of the sample.
+                - InjectionVolume: Volume of the sample to inject in micro liters.
+
             Any other keys will be added as fields to the sample, including custom
-                fields.
+            fields.
             If the key Function does not exist, the Function is set to "Inject Sample"
             For all fields, the datatype will be autodetermined according the the type
-                of the value.
-
+            of the value.
         :param plate_list: Dict of plates to use. The keys should be the position of the
             plate, the value should be the plate type.
-
-
         :param audit_trail_message: Message to add to the audit trail of the sample set
             method.
         """
@@ -345,7 +341,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         Get a method set method.
 
         :param method_name: Name of the method set method to get.
-        : param use_sample_manager_oven: If True, both sample manager oven and column
+        :param use_sample_manager_oven: If True, both sample manager oven and column
             manager oven will be used. If False, only column manager oven will be used.
         """
         response = self.connection.get(
