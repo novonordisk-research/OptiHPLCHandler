@@ -88,7 +88,7 @@ class EmpowerModuleMethod:
         self.replace(f"<{key}>{current_value}</{key}>", f"<{key}>{value}</{key}>")
 
     @staticmethod
-    def find_value(xml: str, key: str):
+    def find_value(xml: str, key: str) -> str:
         """Find the value of a key in an xml from Empower."""
         search_result = re.search(f"<{key}>(.*)</{key}>", xml, re.DOTALL)
         # The re.DOTALL flag ensures that newline charaters are also matched by the dot.
@@ -159,7 +159,10 @@ class ColumnOvenMethod(EmpowerModuleMethod):
     Class for module methods that have a column temperature.
 
     Attributes in addition to the ones from EmpowerModuleMethod:
+
     :ivar column_temperature: The column temperature.
+
+    :meta private:
     """
 
     TEMPERATURE_KEY: str
@@ -197,6 +200,8 @@ class SolventManagerMethod(EmpowerModuleMethod):
     Attributes in addition to the ones from EmpowerModuleMethod:
     :ivar valve_position: The current valve position for each solvent line.
     :ivar gradient_table: The gradient table for the method.
+
+    :meta private:
     """
 
     valve_tag_prefix: str
@@ -205,7 +210,12 @@ class SolventManagerMethod(EmpowerModuleMethod):
 
     @property
     def valve_position(self) -> List[str]:
-        """The current valve position for each solvent line."""
+        """
+        The current valve position for each solvent line. When setting, the value can be
+        a string or a list of strings. If a string is given, it should be of the form
+        `XY`, where `X` is the solvent line (A, B, C, D) and `Y` is the position (0-6).
+        If a list is given, each string should be of that form.
+        """
         valve_position_tags = [
             self.valve_tag_prefix + solvent + self.valve_tag_suffix
             for solvent in self.solvent_lines
@@ -241,10 +251,10 @@ class SolventManagerMethod(EmpowerModuleMethod):
         The gradient table for the method. It is a list of dicts, one for each row.
 
         The dicts have the following keys:
-        - Time: The time in minutes (or Initial).
-        - Flow: The flow in mL/min.
-        - CompositionX: The composition of solvent line X (A, B, C, D) in %.
-        - Curve: The curve type (Initial, or 1-11, 6 is linear and default).
+          - Time: The time in minutes (or Initial).
+          - Flow: The flow in mL/min.
+          - CompositionX: The composition of solvent line X (A, B, C, D) in %.
+          - Curve: The curve type (Initial, or 1-11, 6 is linear and default).
 
         When setting, values can be strings or numbers. Floats will be rounded to 3
         decimals, as Empower has problems with too many decimals. The exception is
