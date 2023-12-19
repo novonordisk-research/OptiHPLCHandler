@@ -27,8 +27,8 @@ class EmpowerModuleMethod:
     If no xml key is present in the method definition, no changes can be made to the
     method, but the original method definition can still be retrieved.
 
-    :attribute original_method: The original method definition.
-    :attribute current_method: The current method definition, including the changes that
+    :ivar original_method: The original method definition.
+    :ivar current_method: The current method definition, including the changes that
         have been made.
     """
 
@@ -159,7 +159,7 @@ class ColumnOvenMethod(EmpowerModuleMethod):
     Class for module methods that have a column temperature.
 
     Attributes in addition to the ones from EmpowerModuleMethod:
-    :attribute column_temperature: The column temperature.
+    :ivar column_temperature: The column temperature.
     """
 
     TEMPERATURE_KEY: str
@@ -195,8 +195,8 @@ class SolventManagerMethod(EmpowerModuleMethod):
     valve_tag_prefix, valve_tag_suffix, and solvent_lines.
 
     Attributes in addition to the ones from EmpowerModuleMethod:
-    :attribute valve_position: The current valve position for each solvent line.
-    :attribute gradient_table: The gradient table for the method.
+    :ivar valve_position: The current valve position for each solvent line.
+    :ivar gradient_table: The gradient table for the method.
     """
 
     valve_tag_prefix: str

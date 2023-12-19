@@ -24,14 +24,14 @@ class EmpowerConnection:
     The password is stored in the keyring if available, otherwise it is asked for every
     time.
 
-    :attribute address: The address of the Empower server.
-    :attribute username: The username to use for logging in.
-    :attribute project: The project to log into.
-    :attribute service: The service to use for logging in.
-    :attribute token: The bearer token used for authentication.
-    :attribute session_id: The session ID. None if not logged in.
-    :attribute default_get_timeout: The default timeout to use for get requests.
-    :attribute default_post_timeout: The default timeout to use for post requests.
+    :ivar address: The address of the Empower server.
+    :ivar username: The username to use for logging in.
+    :ivar project: The project to log into.
+    :ivar service: The service to use for logging in.
+    :ivar token: The bearer token used for authentication.
+    :ivar session_id: The session ID. None if not logged in.
+    :ivar default_get_timeout: The default timeout to use for get requests.
+    :ivar default_post_timeout: The default timeout to use for post requests.
     """
 
     def __init__(
