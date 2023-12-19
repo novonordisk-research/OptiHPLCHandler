@@ -30,7 +30,3 @@ html_static_path = ["_static"]
 
 # Extensions
 extensions = ["sphinx.ext.autodoc"]
-
-import os, sys
-
-sys.path.append(os.path.abspath("./src"))

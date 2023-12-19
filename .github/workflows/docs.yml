@@ -14,16 +14,20 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.9
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install .[doc]
+      - name: Create docs
+        run: |
+          ./Makefile html
       - name: Create class diagram
         run: |
+          mkdir -p _build/class_diagrams
           for file in ${{ env.source_file_list }}; do
             pyreverse $file -A -S --output html --output-directory docs/class_diagrams
-            mv docs/class_diagrams/classes.html docs/class_diagrams/$(basename $file).html
+            mv docs/class_diagrams/classes.html _build/images/$(basename $file).html
           done
       - uses: actions/upload-artifact@v3
         with:
