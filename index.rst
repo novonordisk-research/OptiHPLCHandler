@@ -97,7 +97,7 @@ Detailed Usage
 Class EmpowerHandler
 ==========================
 
-`EmpowerHandler class diagram <./class_diagrams/empower_handler.html>`_
+`EmpowerHandler class diagram <./_static/empower_handler.html>`_
 
 .. autoclass:: OptiHPLCHandler.EmpowerHandler
     :members:
@@ -109,7 +109,7 @@ Class EmpowerHandler
 Empower instrument method
 =============================
 
-`Instrument class diagram <./class_diagrams/empower_instrument_method.html>`_
+`Instrument class diagram <./_static/empower_instrument_method.html>`_
 
 .. autoclass:: OptiHPLCHandler.EmpowerInstrumentMethod
    :show-inheritance:
