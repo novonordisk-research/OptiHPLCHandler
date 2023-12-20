@@ -33,7 +33,7 @@ html_theme = "alabaster"
 html_static_path = ["_static"]
 
 # Making the class diagrams
-os.makedirs("./_build/html/_static/", exist_ok=True)
+os.makedirs("./_readthedocs/html/_static/", exist_ok=True)
 class_diagram_files = ["empower_instrument_method", "empower_handler"]
 for file in class_diagram_files:
     subprocess.call(
@@ -49,5 +49,5 @@ for file in class_diagram_files:
         ]
     )  # Crating the class diagrams
     shutil.move(
-        "classes_" + file + ".html", "_build/html/_static/" + file + ".html"
+        "classes_" + file + ".html", "_readthedocs/html/_static/" + file + ".html"
     )  # Moving the class diagrams so that sphinx can find them
