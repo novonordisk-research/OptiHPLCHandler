@@ -1,5 +1,5 @@
 import logging
-from typing import List, Union
+from typing import List, Optional, Union
 
 from OptiHPLCHandler.data_types import EmpowerInstrumentMethodModel as DataModel
 from OptiHPLCHandler.empower_module_method import (
@@ -55,7 +55,7 @@ class EmpowerInstrumentMethod:
         """
         self.column_oven_method_list: list[ColumnOvenMethod] = []
         self.module_method_list: list[EmpowerModuleMethod] = []
-        self.solvent_handler_method = None
+        self.solvent_handler_method: Optional[SolventManagerMethod] = None
 
         if use_sample_manager_oven:
             oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
