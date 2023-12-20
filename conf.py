@@ -1,6 +1,6 @@
 import os
-import subprocess
 import shutil
+import subprocess
 
 # Configuration file for the Sphinx documentation builder.
 #
