@@ -45,10 +45,9 @@ for file in class_diagram_files:
             "html",
             "-p",
             file,
-            "./src/OptiHPLCHandler/" + file + ".py"
+            "./src/OptiHPLCHandler/" + file + ".py",
         ]
     )  # Crating the class diagrams
     shutil.move(
-        "classes_" + file + ".html",
-        "_build/html/class_diagrams/" + file + ".html"
+        "classes_" + file + ".html", "_build/html/class_diagrams/" + file + ".html"
     )  # Moving the class diagrams so that sphinx can find them
