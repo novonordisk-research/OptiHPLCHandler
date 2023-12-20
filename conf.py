@@ -1,3 +1,7 @@
+import os
+import shutil
+import subprocess
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -16,7 +20,7 @@ release = "2.5.0"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = ["sphinx.ext.autodoc"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
@@ -28,5 +32,22 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "alabaster"
 html_static_path = ["_static"]
 
-# Extensions
-extensions = ["sphinx.ext.autodoc"]
+# Making the class diagrams
+os.makedirs("./_build/html/class_diagrams/", exist_ok=True)
+class_diagram_files = ["empower_instrument_method", "empower_handler"]
+for file in class_diagram_files:
+    subprocess.call(
+        [
+            "pyreverse",
+            "-A",
+            "-S",
+            "-o",
+            "html",
+            "-p",
+            file,
+            "./src/OptiHPLCHandler/" + file + ".py",
+        ]
+    )  # Crating the class diagrams
+    shutil.move(
+        "classes_" + file + ".html", "_build/html/class_diagrams/" + file + ".html"
+    )  # Moving the class diagrams so that sphinx can find them
