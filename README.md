@@ -1,5 +1,11 @@
 # OptiHPLCHandler
 
+<a href="https://pypi.python.org/pypi/Opti-HPLC-Handler"><img src="https://img.shields.io/pypi/v/Opti-HPLC-Handler.svg" alt="PyPI Version"></a>
+<a href="https://zenodo.org/doi/10.5281/zenodo.8386699"><img src="https://zenodo.org/badge/673355902.svg" alt="Zenodo DOI"></a>
+<a href="https://github.com/novonordisk-research/OptiHPLCHandler/blob/main/LICENSE"><img src="https://img.shields.io/pypi/l/Opti-HPLC-Handler.svg" alt="License"></a>
+<a href="https://pepy.tech/project/opti-hplc-handler"><img src="https://img.shields.io/pypi/dm/Opti-HPLC-Handler.svg" alt="PyPI Downloads"></a>
+<a href="https://github.com/novonordisk-research/OptiHPLCHandler"><img src="https://img.shields.io/github/last-commit/novonordisk-research/OptiHPLCHandler.svg" alt="Source code on GitHub"></a>
+
 Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
 putting data into and getting data out of Empower easy, with the aim of automating
 running samples. It will not feature changing data already in Empower.
