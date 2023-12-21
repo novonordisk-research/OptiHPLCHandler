@@ -20,7 +20,7 @@ Welcome to OptiHPLCHandler's documentation!
    :target: https://zenodo.org/doi/10.5281/zenodo.8386699
 
 .. image:: https://img.shields.io/pypi/l/Opti-HPLC-Handler.svg
-   :alt: PyPI License
+   :alt: License
    :target: https://github.com/novonordisk-research/OptiHPLCHandler/blob/main/LICENSE
 
 .. image:: https://img.shields.io/pypi/dm/Opti-HPLC-Handler.svg
@@ -28,7 +28,7 @@ Welcome to OptiHPLCHandler's documentation!
    :target: https://pepy.tech/project/opti-hplc-handler
 
 .. image:: https://img.shields.io/github/last-commit/novonordisk-research/OptiHPLCHandler.svg
-   :alt: GitHub last commit
+   :alt: Source code on GitHub
    :target: https://github.com/novonordisk-research/OptiHPLCHandler
 
 OptiHPLCHandler is a simplified proxy API for interacting with the Waters Empower Web
