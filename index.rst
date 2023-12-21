@@ -15,8 +15,9 @@ Welcome to OptiHPLCHandler's documentation!
    :alt: PyPI Version
    :target: https://pypi.python.org/pypi/Opti-HPLC-Handler
 
-.. image:: https://img.shields.io/pypi/pyversions/Opti-HPLC-Handler.svg
-   :alt: PyPI Supported Versions
+.. image:: https://zenodo.org/badge/673355902.svg
+   :alt: Zenodo DOI
+   :target: https://zenodo.org/doi/10.5281/zenodo.8386699
 
 .. image:: https://img.shields.io/pypi/l/Opti-HPLC-Handler.svg
    :alt: PyPI License
@@ -24,6 +25,7 @@ Welcome to OptiHPLCHandler's documentation!
 
 .. image:: https://img.shields.io/pypi/dm/Opti-HPLC-Handler.svg
    :alt: PyPI Downloads
+   :target: https://pepy.tech/project/opti-hplc-handler
 
 .. image:: https://img.shields.io/github/last-commit/novonordisk-research/OptiHPLCHandler.svg
    :alt: GitHub last commit
