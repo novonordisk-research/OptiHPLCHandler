@@ -33,9 +33,11 @@ html_theme = "alabaster"
 html_static_path = ["_static"]
 
 # Making the class diagrams
+# Approach inspired by https://pythonhosted.org/theape/documentation/developer/explorations/explore_graphs/explore_pyreverse.html # noqa: E501
 os.makedirs("./_readthedocs/html/_static/", exist_ok=True)
 class_diagram_files = ["empower_instrument_method", "empower_handler"]
 for file in class_diagram_files:
+    # Might be more readable with shlex.split as in the link above.
     subprocess.call(
         [
             "pyreverse",
