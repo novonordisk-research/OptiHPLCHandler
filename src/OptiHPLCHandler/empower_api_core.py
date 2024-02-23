@@ -69,8 +69,8 @@ class EmpowerConnection:
         self.project = project
         self.session_id = None
         self.token = None
-        self.default_get_timeout = 10
-        self.default_post_timeout = 20
+        self.default_get_timeout = 20
+        self.default_post_timeout = 40
 
     def login(
         self, username: Optional[str] = None, password: Optional[str] = None
