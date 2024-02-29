@@ -55,7 +55,9 @@ class EmpowerConnection:
             logger.debug("No service specified, getting service from Empower")
             try:
                 response = requests.get(
-                    self.address + "/authentication/db-service-list", timeout=10
+                    self.address + "/authentication/db-service-list",
+                    timeout=10,
+                    verify=False,
                 )
             except requests.exceptions.Timeout as e:
                 timeout_string = f"Getting service from {self.address} timed out"
@@ -105,12 +107,12 @@ class EmpowerConnection:
                 self.address + "/authentication/login",
                 json=body,
                 timeout=60,
+                verify=False
             )
         except requests.exceptions.Timeout as e:
             timeout_string = (
                 f"Login to {self.address} with username = {self.username} timed out"
             )
-            print(timeout_string)
             logger.error(timeout_string)
             raise requests.exceptions.Timeout(timeout_string) from e
         self.raise_for_status(response)
@@ -128,6 +130,7 @@ class EmpowerConnection:
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
             headers=self.authorization_header,
             timeout=self.default_post_timeout,
+            verify=False
         )
         if response.status_code == 404:
             logger.debug(
