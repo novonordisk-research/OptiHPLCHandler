@@ -107,7 +107,7 @@ class EmpowerConnection:
                 self.address + "/authentication/login",
                 json=body,
                 timeout=60,
-                verify=False
+                verify=False,
             )
         except requests.exceptions.Timeout as e:
             timeout_string = (
@@ -130,7 +130,7 @@ class EmpowerConnection:
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
             headers=self.authorization_header,
             timeout=self.default_post_timeout,
-            verify=False
+            verify=False,
         )
         if response.status_code == 404:
             logger.debug(
