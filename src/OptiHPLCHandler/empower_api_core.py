@@ -32,6 +32,7 @@ class EmpowerConnection:
     :ivar session_id: The session ID. None if not logged in.
     :ivar default_get_timeout: The default timeout to use for get requests.
     :ivar default_post_timeout: The default timeout to use for post requests.
+    :ivar verify: Whether to verify SSL certificates when connecting via HTTPS.
     """
 
     def __init__(
