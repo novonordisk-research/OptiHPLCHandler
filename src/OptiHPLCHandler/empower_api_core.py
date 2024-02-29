@@ -1,7 +1,7 @@
 import getpass
 import logging
 import warnings
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import keyring
 import requests
@@ -39,6 +39,7 @@ class EmpowerConnection:
         address: str,
         project: Optional[str] = None,
         service: Optional[str] = None,
+        verify: Union[bool, str] = True,
     ) -> None:
         """
         Initialize the EmpowerConnection.
@@ -48,16 +49,21 @@ class EmpowerConnection:
             is used.
         :param service: The service to use for logging in. If None, the first service in
             the list is used.
+        :param verify: Bool or string. If False, no verification of SSL certificates
+            is done when connecting via HTTPS. If it is a string, it should be the
+            path to the CA_BUNDLE file or directory with certificates of trusted CAs-
+            If true, the built-in list of trusted CAs will be used.
         """
         self.address = address.rstrip("/")  # Remove trailing slash if present
         self.username = getpass.getuser()
+        self.verify = verify
         if service is None:
             logger.debug("No service specified, getting service from Empower")
             try:
                 response = requests.get(
                     self.address + "/authentication/db-service-list",
                     timeout=10,
-                    verify=False,
+                    verify=self.verify,
                 )
             except requests.exceptions.Timeout as e:
                 timeout_string = f"Getting service from {self.address} timed out"
@@ -107,7 +113,7 @@ class EmpowerConnection:
                 self.address + "/authentication/login",
                 json=body,
                 timeout=60,
-                verify=False,
+                verify=self.verify,
             )
         except requests.exceptions.Timeout as e:
             timeout_string = (
@@ -130,7 +136,7 @@ class EmpowerConnection:
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
             headers=self.authorization_header,
             timeout=self.default_post_timeout,
-            verify=False,
+            verify=self.verify,
         )
         if response.status_code == 404:
             logger.debug(
@@ -155,7 +161,7 @@ class EmpowerConnection:
         :return: The results and message from the response.
         """
 
-        def _request_with_timeout(method, endpoint, header, body, timeout):
+        def _request_with_timeout(method, endpoint, header, body, timeout, verify):
             try:
                 return requests.request(
                     method,
@@ -163,7 +169,7 @@ class EmpowerConnection:
                     json=body,
                     headers=header,
                     timeout=timeout,
-                    verify=False,
+                    verify=verify,
                 )
             except requests.exceptions.Timeout as e:
                 timeout_string = f"{method}ing {body} to {endpoint} timed out"
@@ -176,13 +182,13 @@ class EmpowerConnection:
         # Add slash between address and endpoint
         logger.debug("%sing %s to %s", method, body, address)
         response = _request_with_timeout(
-            method, address, self.authorization_header, body, timeout
+            method, address, self.authorization_header, body, timeout, self.verify
         )
         if response.status_code == 401:
             logger.debug("Token expired, logging in again")
             self.login()
             response = _request_with_timeout(
-                method, address, self.authorization_header, body, timeout
+                method, address, self.authorization_header, body, timeout, self.verify
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
