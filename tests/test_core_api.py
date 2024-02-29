@@ -34,7 +34,7 @@ class TestEmpowerConnection(unittest.TestCase):
             project="test_project",
             address="https://test_address/",
             service="test_service",
-            verify="test/CA/path"
+            verify="test/CA/path",
         )
         self.verify_connection.login("", "")
 
