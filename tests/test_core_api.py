@@ -59,6 +59,20 @@ class TestEmpowerConnection(unittest.TestCase):
             self.connection.login(username="test_username", password="test_password")
             assert "timeout" in mock_post.call_args[1]
 
+    def test_not_verify_post(self):
+        # Test that request doesn't verify TLS certificate of the server, since
+        # this will cause issues when using a locally defined TLD as its root
+        with patch("OptiHPLCHandler.empower_api_core.requests.request") as mock_request:
+            self.connection.post("", {})
+            assert mock_request.call_args[1]["verify"] is False
+
+    def test_not_verify_get(self):
+        # Test that request doesn't verify TLS certificate of the server, since
+        # this will cause issues when using a locally defined TLD as its root
+        with patch("OptiHPLCHandler.empower_api_core.requests.request") as mock_request:
+            self.connection.get("")
+            assert mock_request.call_args[1]["verify"] is False
+
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_automatic_service_name(self, mock_requests):
         mock_response_service = MagicMock()

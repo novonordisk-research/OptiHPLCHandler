@@ -160,6 +160,7 @@ class EmpowerConnection:
                     json=body,
                     headers=header,
                     timeout=timeout,
+                    verify=False,
                 )
             except requests.exceptions.Timeout as e:
                 timeout_string = f"{method}ing {body} to {endpoint} timed out"
