@@ -15,7 +15,7 @@ updates:
       # Prefix all commit messages with "[pip]"
       prefix: "[pip] "
     ignore:
-      - update-types: ["version-update:semver-patch", version-update:semver-minor] # Ignore everything except major updates with semantic versioning
+      - update-types: ["version-update:semver-patch", "version-update:semver-minor"] # Ignore everything except major updates with semantic versioning
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
