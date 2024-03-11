@@ -96,6 +96,11 @@ sample set has been defined.
 Detailed Usage
 **************
 
+In general, properties that the user could be intercting with are exposed in
+`EmpowerHandler`. An example would be `project`, which the user could set to
+change which Empower project to log in to. Properties only exposed in 
+`EmpowerHandler.connection`, like `verify`, require more consideration to set.
+
 Class EmpowerHandler
 ==========================
 
