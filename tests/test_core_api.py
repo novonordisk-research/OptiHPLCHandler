@@ -15,6 +15,7 @@ class TestEmpowerConnection(unittest.TestCase):
             "results": [{"token": "test_token", "id": "test_id"}]
         }
         mock_response.status_code = 200
+        self.mock_response = mock_response
         mock_requests.post.return_value = mock_response
         # Since we log in, we need to mock that connection.
 
@@ -29,6 +30,13 @@ class TestEmpowerConnection(unittest.TestCase):
             service="test_service",
         )
         self.connection.login(username="test_username", password="test_password")
+        self.verify_connection = EmpowerConnection(
+            project="test_project",
+            address="https://test_address/",
+            service="test_service",
+            verify="test/CA/path",
+        )
+        self.verify_connection.login("", "")
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_auto_service(self, mock_requests):
@@ -58,6 +66,38 @@ class TestEmpowerConnection(unittest.TestCase):
         with patch("OptiHPLCHandler.empower_api_core.requests.post") as mock_post:
             self.connection.login(username="test_username", password="test_password")
             assert "timeout" in mock_post.call_args[1]
+
+    def test_verify_post(self):
+        with patch("OptiHPLCHandler.empower_api_core.requests.request") as mock_request:
+            self.connection.post("", {})
+            assert mock_request.call_args[1]["verify"] is True
+        with patch("OptiHPLCHandler.empower_api_core.requests.request") as mock_request:
+            self.verify_connection.post("", {})
+            assert mock_request.call_args[1]["verify"] == "test/CA/path"
+
+    def test_verify_get(self):
+        with patch("OptiHPLCHandler.empower_api_core.requests.request") as mock_request:
+            self.connection.get("")
+            assert mock_request.call_args[1]["verify"] is True
+        with patch("OptiHPLCHandler.empower_api_core.requests.request") as mock_request:
+            self.verify_connection.post("", {})
+            assert mock_request.call_args[1]["verify"] == "test/CA/path"
+
+    def test_verify_login(self):
+        with patch("OptiHPLCHandler.empower_api_core.requests.post") as mock_request:
+            self.connection.login("", "")
+            assert mock_request.call_args[1]["verify"] is True
+        with patch("OptiHPLCHandler.empower_api_core.requests.post") as mock_request:
+            self.verify_connection.login("", "")
+            assert mock_request.call_args[1]["verify"] == "test/CA/path"
+
+    def test_verify_logout(self):
+        with patch("OptiHPLCHandler.empower_api_core.requests.delete") as mock_request:
+            self.connection.logout()
+            assert mock_request.call_args[1]["verify"] is True
+        with patch("OptiHPLCHandler.empower_api_core.requests.delete") as mock_request:
+            self.verify_connection.logout()
+            assert mock_request.call_args[1]["verify"] == "test/CA/path"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_automatic_service_name(self, mock_requests):
