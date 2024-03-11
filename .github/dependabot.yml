@@ -5,15 +5,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "pip" # Pytohn packages
+    directory: "/" # Location of package manifest
     schedule:
       interval: "weekly"
-    assignees:
+    reviewers:
       - "SRFU-NN"
     commit-message:
-      # Prefix all commit messages with "[docker] " (no colon, but a trailing whitespace)
+      # Prefix all commit messages with "[pip]"
       prefix: "[pip] "
+    ignore:
+      - update-types: ["version-update:semver-patch", version-update:semver-minor] # Ignore everything except major updates with semantic versioning
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -21,8 +23,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    assignees:
+    reviewers:
       - "SRFU-NN"
     commit-message:
-      # Prefix all commit messages with "[docker] " (no colon, but a trailing whitespace)
+      # Prefix all commit messages with "[github-actions]"
       prefix: "[github-actions] "
