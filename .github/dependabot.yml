@@ -5,7 +5,7 @@
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # Pytohn packages
+  - package-ecosystem: "pip" # Python packages
     directory: "/" # Location of package manifest
     schedule:
       interval: "weekly"
