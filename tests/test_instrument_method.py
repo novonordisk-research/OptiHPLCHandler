@@ -209,11 +209,11 @@ class TestSolventManager(unittest.TestCase):
     def setUp(self) -> None:
         self.example = get_example_file_dict()
         self.bsm_example = self.example["response-BSM-PDA-Acq.json"]
+        self.method = EmpowerInstrumentMethod(self.bsm_example)
 
     def test_init(self):
-        method = EmpowerInstrumentMethod(self.bsm_example)
-        assert method.solvent_handler_method is not None
-        assert isinstance(method.solvent_handler_method, SolventManagerMethod)
+        assert self.method.solvent_handler_method is not None
+        assert isinstance(self.method.solvent_handler_method, SolventManagerMethod)
 
     def test_init_none(self):
         method_definition = self.bsm_example["results"][0]
@@ -228,8 +228,7 @@ class TestSolventManager(unittest.TestCase):
             EmpowerInstrumentMethod(method_definition)
 
     def test_get_gradient_table(self):
-        method = EmpowerInstrumentMethod(self.bsm_example)
-        gradient_table = method.gradient_table
+        gradient_table = self.method.gradient_table
         assert isinstance(gradient_table, list)
         assert isinstance(gradient_table[0], dict)
 
@@ -241,16 +240,18 @@ class TestSolventManager(unittest.TestCase):
             method.gradient_table
 
     def test_set_gradient_table(self):
-        method = EmpowerInstrumentMethod(self.bsm_example)
-        gradient_table = method.gradient_table
+        gradient_table = self.method.gradient_table
         assert gradient_table[0]["Flow"] != "0.1"
         assert (
-            "<Flow>0.1</Flow>" not in method.current_method["modules"][1]["nativeXml"]
+            "<Flow>0.1</Flow>"
+            not in self.method.current_method["modules"][1]["nativeXml"]
         )
         gradient_table[0]["Flow"] = "0.1"
-        method.gradient_table = gradient_table
-        assert method.gradient_table[0]["Flow"] == "0.1"
-        assert "<Flow>0.1</Flow>" in method.current_method["modules"][1]["nativeXml"]
+        self.method.gradient_table = gradient_table
+        assert self.method.gradient_table[0]["Flow"] == "0.1"
+        assert (
+            "<Flow>0.1</Flow>" in self.method.current_method["modules"][1]["nativeXml"]
+        )
 
     def test_set_gradient_table_none(self):
         method_definition = self.bsm_example["results"][0]
@@ -264,10 +265,10 @@ class TestValvePosition(unittest.TestCase):
     def setUp(self) -> None:
         self.example = get_example_file_dict()
         self.bsm_example = self.example["response-BSM-PDA-Acq.json"]
+        self.method = EmpowerInstrumentMethod(self.bsm_example)
 
     def test_get(self):
-        method = EmpowerInstrumentMethod(self.bsm_example)
-        assert method.valve_position == ["A1", "B1"]
+        assert self.method.valve_position == ["A1", "B1"]
 
     def test_get_none(self):
         method_definition = self.bsm_example["results"][0]
@@ -276,27 +277,52 @@ class TestValvePosition(unittest.TestCase):
         with self.assertRaises(ValueError):
             method.valve_position
 
-    def test_set(self):
-        method = EmpowerInstrumentMethod(self.bsm_example)
-        method.valve_position = "A2"
-        assert method.valve_position == ["A2", "B1"]
+    def test_set_list_one(self):
+        self.method.valve_position = ["A2"]
+        assert self.method.valve_position == ["A2", "B1"]
         assert (
             "<FlowSourceA>2</FlowSourceA>"
-            in method.current_method["modules"][1]["nativeXml"]
+            in self.method.current_method["modules"][1]["nativeXml"]
         )
         assert (
             "<FlowSourceB>1</FlowSourceB>"
-            in method.current_method["modules"][1]["nativeXml"]
+            in self.method.current_method["modules"][1]["nativeXml"]
         )
-        method.valve_position = ["A7", "B5"]
-        assert method.valve_position == ["A7", "B5"]
+
+    def test_set_list_multiple(self):
+        self.method.valve_position = ["A7", "B5"]
+        assert self.method.valve_position == ["A7", "B5"]
         assert (
             "<FlowSourceA>7</FlowSourceA>"
-            in method.current_method["modules"][1]["nativeXml"]
+            in self.method.current_method["modules"][1]["nativeXml"]
         )
         assert (
             "<FlowSourceB>5</FlowSourceB>"
-            in method.current_method["modules"][1]["nativeXml"]
+            in self.method.current_method["modules"][1]["nativeXml"]
+        )
+
+    def test_set_str_single(self):
+        self.method.valve_position = "A2"
+        assert self.method.valve_position == ["A2", "B1"]
+        assert (
+            "<FlowSourceA>2</FlowSourceA>"
+            in self.method.current_method["modules"][1]["nativeXml"]
+        )
+        assert (
+            "<FlowSourceB>1</FlowSourceB>"
+            in self.method.current_method["modules"][1]["nativeXml"]
+        )
+
+    def test_set_str_multiple(self):
+        self.method.valve_position = "A2, B3"
+        assert self.method.valve_position == ["A2", "B3"]
+        assert (
+            "<FlowSourceA>2</FlowSourceA>"
+            in self.method.current_method["modules"][1]["nativeXml"]
+        )
+        assert (
+            "<FlowSourceB>3</FlowSourceB>"
+            in self.method.current_method["modules"][1]["nativeXml"]
         )
 
     def test_set_none(self):
@@ -309,8 +335,7 @@ class TestValvePosition(unittest.TestCase):
             method.valve_position = ["A2", "B1"]
 
     def test_method_name(self):
-        method = EmpowerInstrumentMethod(self.bsm_example)
-        assert method.method_name == "AcquityBSMPDA"
-        method.method_name = "new_name"
-        assert method.method_name == "new_name"
-        assert method.current_method["methodName"] == "new_name"
+        assert self.method.method_name == "AcquityBSMPDA"
+        self.method.method_name = "new_name"
+        assert self.method.method_name == "new_name"
+        assert self.method.current_method["methodName"] == "new_name"
