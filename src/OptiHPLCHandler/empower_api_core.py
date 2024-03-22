@@ -113,7 +113,7 @@ class EmpowerConnection:
             response = requests.post(
                 self.address + "/authentication/login",
                 json=body,
-                timeout=60,
+                timeout=600,
                 verify=self.verify,
             )
         except requests.exceptions.Timeout as e:
