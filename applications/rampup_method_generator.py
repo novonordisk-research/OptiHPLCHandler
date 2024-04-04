@@ -1,5 +1,6 @@
-from OptiHPLCHandler import EmpowerHandler
 from typing import List
+
+from OptiHPLCHandler import EmpowerHandler
 
 
 def generate_rampup_method(
@@ -12,7 +13,7 @@ def generate_rampup_method(
     Generate a ramp-up method based on the given full method.
 
     Args:
-        full_method (EmpowerHandler): The full method to generate the ramp-up method from.
+        full_method (EmpowerHandler): The full method to generate the ramp-up method.
         rampup_time (int): The ramp-up time in seconds. Default is 10.
         low_flow_rate (float): The low flow rate in mL/min. Default is 0.05.
         flow_curve (int): The flow curve number. Default is 6.
