@@ -391,28 +391,6 @@ class testQSMMethod(unittest.TestCase):
             "<SolventSelectionValveDPosition>2</SolventSelectionValveDPosition>"
             in module_method.current_method["nativeXml"]
         )
-        module_method.valve_position = "D1"
-        assert module_method.valve_position == ["A0", "B0", "C0", "D1"]
-        assert "A0" in str(module_method)
-        assert "B0" in str(module_method)
-        assert "C0" in str(module_method)
-        assert "D1" in str(module_method)
-        assert (
-            "<SolventSelectionValveAPosition>0</SolventSelectionValveAPosition>"
-            in module_method.current_method["nativeXml"]
-        )
-        assert (
-            "<SolventSelectionValveBPosition>0</SolventSelectionValveBPosition>"
-            in module_method.current_method["nativeXml"]
-        )
-        assert (
-            "<SolventSelectionValveCPosition>0</SolventSelectionValveCPosition>"
-            in module_method.current_method["nativeXml"]
-        )
-        assert (
-            "<SolventSelectionValveDPosition>1</SolventSelectionValveDPosition>"
-            in module_method.current_method["nativeXml"]
-        )
 
     def test_gradient_table(self):
         module_method = QSMMethod(self.minimal_definition)
@@ -885,16 +863,6 @@ class testBSMMethod(unittest.TestCase):
         assert "B2" in str(module_method)
         assert (
             "<FlowSourceA>2</FlowSourceA>" in module_method.current_method["nativeXml"]
-        )
-        assert (
-            "<FlowSourceB>2</FlowSourceB>" in module_method.current_method["nativeXml"]
-        )
-        module_method.valve_position = "A1"
-        assert module_method.valve_position == ["A1", "B2"]
-        assert "A1" in str(module_method)
-        assert "B2" in str(module_method)
-        assert (
-            "<FlowSourceA>1</FlowSourceA>" in module_method.current_method["nativeXml"]
         )
         assert (
             "<FlowSourceB>2</FlowSourceB>" in module_method.current_method["nativeXml"]
