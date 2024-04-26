@@ -1,7 +1,9 @@
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
-from empower_implementation.empower_tools import determine_if_isocratic_method
+from applications.empower_implementation.empower_tools import (
+    determine_if_isocratic_method,
+)
 
 
 def condense_gradient_table(

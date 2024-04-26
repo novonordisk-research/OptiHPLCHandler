@@ -1,9 +1,9 @@
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
-from empower_implementation.empower_tools import (
+from applications.empower_implementation.empower_tools import (
     determine_if_isocratic_method,
-    determine_index_of_max_compositon_value,
+    determine_max_compositon_value,
     determine_strong_eluent,
 )
 
@@ -48,7 +48,7 @@ def generate_altered_strong_eluent_method_pct(
     strong_eluent, list_weak_eluents = determine_strong_eluent(gradient_table)
 
     # determine max composition value
-    max_value = determine_index_of_max_compositon_value(gradient_table, strong_eluent)
+    max_value = determine_max_compositon_value(gradient_table, strong_eluent)
 
     # change the strong eluent composition
     for step in gradient_table:
