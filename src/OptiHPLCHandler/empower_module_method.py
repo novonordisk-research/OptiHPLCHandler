@@ -4,7 +4,7 @@ import warnings
 from typing import Dict, List, Mapping, Tuple, Union
 from xml.etree import ElementTree as ET
 
-from OptiHPLCHandler.data_types import EmpowerModuleMethodModel as DataModel
+from OptiHPLCHandler.utils.data_types import EmpowerModuleMethodModel as DataModel
 
 logger = logging.getLogger(__name__)
 
@@ -241,9 +241,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
                     f"Invalid valve position {position}, "
                     f"must start with one of {self.solvent_lines}"
                 )
-            self[
-                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
-            ] = position[1:]
+            self[self.valve_tag_prefix + position[0] + self.valve_tag_suffix] = (
+                position[1:]
+            )
 
     @property
     def gradient_table(self) -> List[Dict[str, str]]:

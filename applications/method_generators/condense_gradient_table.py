@@ -1,27 +1,22 @@
-from OptiHPLCHandler import EmpowerInstrumentMethod, EmpowerHandler
-from empower_implementation.empower_tools import (
-    truncate_method_name,
-    post_instrument_methodset_method,
-    determine_if_isocratic_method,
-    validate_gradient_table,
-)
+from OptiHPLCHandler import EmpowerInstrumentMethod
+from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
+from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
+from empower_implementation.empower_tools import determine_if_isocratic_method
 
 
 def condense_gradient_table(
     method: EmpowerInstrumentMethod,
-    handler: EmpowerHandler,
-    minutes: int = 10,
-    post_method: bool = False,
+    new_method_time: int = 10,
 ) -> EmpowerInstrumentMethod:
     """
     Condenses the gradient table of a method into a specified number of minutes
     """
 
     # Variables
-    SUFFIX = f"_cond_{minutes}m"
+    suffix = f"_cond_{new_method_time}m"
 
     # Generate method name
-    method_name = truncate_method_name(method.method_name, SUFFIX)
+    method_name = append_truncate_method_name(method.method_name, suffix)
     method.method_name = method_name
 
     # Gradient variable
@@ -41,8 +36,8 @@ def condense_gradient_table(
 
     # scale the times to the new final time
     final_time = times[-1]
-    scale_factor = minutes / final_time
-    times = [round(x * scale_factor, 2) for x in times]
+    scale_factor = new_method_time / final_time
+    times = [x * scale_factor for x in times]
 
     # replace 0 with 'Initial'
     times[0] = "Initial"
@@ -51,9 +46,9 @@ def condense_gradient_table(
     for i in range(len(gradient_table)):
         gradient_table[i]["Time"] = str(times[i])
 
+    # Validate output method
+    validate_gradient_table(gradient_table)
+
     method.gradient_table = gradient_table
 
-    # Optionally posts the method to Empower
-    if post_method:
-        post_instrument_methodset_method(handler, method)
     return method

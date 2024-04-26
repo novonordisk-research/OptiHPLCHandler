@@ -3,47 +3,6 @@ from typing import List, Optional
 from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
 
 
-def make_method_name_string_compatible_with_empower(method_name: str) -> str:
-    """
-    Replaces special characters in empower method names.
-
-    Args:
-        method_name (str): The original method name.
-
-    Returns:
-        str: The method name with special characters replaced.
-    """
-
-    new_method_name = method_name.replace(".", "_")
-    new_method_name = new_method_name.replace("-", "m")  # assuming minus
-    return new_method_name
-
-
-def truncate_method_name(method_name: str, suffix: str) -> str:
-    """
-    Truncates the given method name and appends the provided suffix.
-    Also replaces characters that are not allowed in Empower method names.
-
-    Args:
-        method_name (str): The original method name.
-        suffix (str): The suffix to be appended.
-
-    Returns:
-        str: The truncated method name with the suffix.
-    """
-
-    # Truncate
-    if len(method_name) > 30 - len(suffix):
-        new_method_name = method_name[: 30 - len(suffix)] + suffix
-    else:
-        new_method_name = method_name + suffix
-
-    # Replace special characters
-    new_method_name = make_method_name_string_compatible_with_empower(new_method_name)
-
-    return new_method_name
-
-
 def post_instrument_methodset_method(
     handler: EmpowerHandler,
     method: EmpowerInstrumentMethod,
@@ -62,14 +21,13 @@ def post_instrument_methodset_method(
     Returns:
         None
     """
-    with handler:
-        handler.PostInstrumentMethod(method)
-        if post_method_set_method:
-            method_set_method = {
-                "name": method.method_name,
-                "instrumentMethod": method.method_name,
-            }
-            handler.PostMethodSetMethod(method_set_method)
+    handler.PostInstrumentMethod(method)
+    if post_method_set_method:
+        method_set_method = {
+            "name": method.method_name,
+            "instrumentMethod": method.method_name,
+        }
+        handler.PostMethodSetMethod(method_set_method)
 
 
 def determine_if_isocratic_method(gradient_table: List[dict]) -> bool:
@@ -82,56 +40,54 @@ def determine_if_isocratic_method(gradient_table: List[dict]) -> bool:
     Returns:
         bool: True if the method is isocratic, False otherwise.
     """
-    # Check if the compostions are the same for all rows (using composition A as reference)
+    composition_table = []
     for row in gradient_table:
-        if float(row["CompositionA"]) != float(gradient_table[0]["CompositionA"]):
-            return False
+        composition_table.append(
+            {key: value for key, value in row.items() if key.startswith("Composition")}
+        )
+    composition_set = set(composition_table)
+    if len(composition_set) != 1:
+        return False
     return True
 
 
 def determine_index_of_max_compositon_value(
     gradient_table: List[dict], composition: str
-) -> tuple[int, str]:
+) -> float:
     """
-    Determines the index of the composition with the maximum value in the gradient table.
+    Determines the maximum value in the gradient table.
 
     Args:
-        gradient_table (List[dict]): A list of dictionaries representing the gradient table.
-        composition (str): The composition string to search for.
+        gradient_table (List[dict]): The gradient table to determine the maximum value.
+        composition (str): The name of the composition entry to determine the maximum value.
 
     Returns:
-        int: The index of the composition with the maximum value and the maximum value.
-
-    Raises:
-        ValueError: If the composition string is not valid.
-
-    Example:
-        gradient_table = [
-            {"CompositionA": "10.0", "CompositionB": "20.0"},
-            {"CompositionA": "15.0", "CompositionB": "25.0"},
-            {"CompositionA": "5.0", "CompositionB": "15.0"}
-        ]
-        composition = "CompositionB"
-        determine_index_of_max_compositon_value(gradient_table, composition)
-        # Output: (2, 25)
+        float: The maximum value in the gradient table.
     """
 
-    # Check composition string is valid
-    list_allowed_compositions = (
-        "CompositionA",
-        "CompositionB",
-        "CompositionC",
-        "CompositionD",
-    )
-    if composition not in list_allowed_compositions:
-        raise ValueError("Invalid composition string.")
-
     # Determine the index of the composition with the maximum value
-    max_index = max(
-        range(len(gradient_table)), key=lambda i: float(gradient_table[i][composition])
-    )
-    max_value = gradient_table[max_index][composition]
-    return max_index, str(max_value)
+    return max([float(step[composition]) for step in gradient_table])
+
+
+def determine_last_high_flow_time(gradient_table: List[dict]) -> float:
+    """
+    Determine the time at which the last high flow rate occurs in a gradient table.
+
+    Parameters
+    ----------
+    gradient_table : List[dict]
+
+    Returns
+    -------
+    float
+    """
+    # return max flow rate accross list of dict gradient
+    max_flow_rate = max([step["Flow"] for step in gradient_table])
+    last_high_flow_time = 0
+    for step in gradient_table:
+        if step["Flow"] == max_flow_rate:
+            last_high_flow_time = step["Time"]
+    return last_high_flow_time
 
 
 def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
@@ -165,44 +121,3 @@ def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
             list_weak_eluents.append(composition)
 
     return strong_eluent, list_weak_eluents
-
-
-def validate_gradient_table(gradient_table: List[dict]) -> bool:
-    """
-    Validates the gradient table to ensure the sum of compositions in each row is 100.
-
-    Args:
-        gradient_table (List[dict]): The gradient table to validate.
-
-    Returns:
-        bool: True if the gradient table is valid, False otherwise.
-    """
-    previous_time = None
-    for row in gradient_table:
-        list_keys = row.keys()
-        if any("Composition" in key for key in list_keys):
-            # Test sum of compositions is 100
-            sum_compositions = sum(
-                float(value) for key, value in row.items() if "Composition" in key
-            )
-            if sum_compositions != 100:
-                raise ValueError(
-                    f"""
-                    The sum of the compositions in the gradient table row is not equal to 
-                    100. The sum is {sum_compositions}. The row is {row}"""
-                )
-
-        # Test time is greater than previous time
-        if "Time" in row:
-            if row["Time"] == "Initial":
-                current_time = 0
-            else:
-                current_time = float(row["Time"])
-            if previous_time is not None:
-                if current_time < previous_time:
-                    raise ValueError(
-                        f"The time in the gradient table row is less than the previous row. The row is {row['Time']} and the previous row is {previous_time}."
-                    )
-            previous_time = current_time
-
-    return True
