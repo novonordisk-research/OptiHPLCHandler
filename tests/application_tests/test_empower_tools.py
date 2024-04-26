@@ -1,13 +1,16 @@
 import unittest
 from applications import (
-    make_method_name_string_compatible_with_empower,
-    truncate_method_name,
     determine_if_isocratic_method,
-    determine_index_of_max_compositon_value,
+    determine_max_compositon_value,
     determine_strong_eluent,
-    validate_gradient_table,
     determine_last_high_flow_time,
 )
+from src.OptiHPLCHandler.utils import (
+    make_method_name_string_compatible_with_empower,
+    append_truncate_method_name,
+)
+
+from src.OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 
 
 class TestMakeMethodNameStringCompatibleWithEmpower(unittest.TestCase):
@@ -43,13 +46,15 @@ class TestMakeMethodNameStringCompatibleWithEmpower(unittest.TestCase):
 
     def test_truncate_method_name():
         method_name = "Test_Method_Name"
-        assert truncate_method_name(method_name, "_copy") == "Test_Method_Name_copy"
+        assert (
+            append_truncate_method_name(method_name, "_copy") == "Test_Method_Name_copy"
+        )
         method_name_long = "Test_Method_Name_That_Is_Longer_Than_30_Characters"
         assert (
-            truncate_method_name(method_name_long, "_copy")
+            append_truncate_method_name(method_name_long, "_copy")
             == "Test_Method_Name_That_Is__copy"
         )
-        assert len(truncate_method_name(method_name_long, "_copy")) <= 30
+        assert len(append_truncate_method_name(method_name_long, "_copy")) <= 30
 
     def test_determine_if_isocratic_method():
         # Create a sample gradient table
@@ -141,13 +146,13 @@ def test_determine_index_of_max_compositon_value():
         {"CompositionA": "5.0", "CompositionB": "15.0"},
     ]
     composition = "CompositionB"
-    assert determine_index_of_max_compositon_value(gradient_table, composition) == (
+    assert determine_max_compositon_value(gradient_table, composition) == (
         1,
         "25.0",
     )
 
     composition = "CompositionA"
-    assert determine_index_of_max_compositon_value(gradient_table, composition) == (
+    assert determine_max_compositon_value(gradient_table, composition) == (
         1,
         "15.0",
     )
@@ -156,7 +161,7 @@ def test_determine_index_of_max_compositon_value():
         {"CompositionZ": "10.0", "CompositionB": "20.0"},
     ]
     try:
-        determine_index_of_max_compositon_value(gradient_table, "CompositionZ")
+        determine_max_compositon_value(gradient_table, "CompositionZ")
     except ValueError as e:
         assert str(e) == "Invalid composition string."
 

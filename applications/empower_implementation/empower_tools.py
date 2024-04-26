@@ -51,7 +51,7 @@ def determine_if_isocratic_method(gradient_table: List[dict]) -> bool:
     return True
 
 
-def determine_index_of_max_compositon_value(
+def determine_max_compositon_value(
     gradient_table: List[dict], composition: str
 ) -> float:
     """
@@ -110,9 +110,7 @@ def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
     # find the composition with the maximum value
     list_weak_eluents = []
     for composition in compositions:
-        _, max_value = determine_index_of_max_compositon_value(
-            gradient_table, composition
-        )
+        max_value = determine_max_compositon_value(gradient_table, composition)
 
         # Determine the strong and weak eluents
         if float(gradient_table[0][composition]) < float(max_value):

@@ -26,25 +26,26 @@ def generate_ramp_method(
 
     """
 
-    # Variables
-    dict_ramp_types = {
-        "rampup": {
+    if ramp_type == "rampup":
+        ramp_settings = {
             "suffix": "_ramp",
             "index": 0,
             "ramp_time": 10,
-        },
-        "rampdown": {
+        }
+    elif ramp_type == "rampdown":
+        ramp_settings = {
             "suffix": "_low",
             "index": 1,
             "ramp_time": 1,
-        },
-    }
+        }
+    else:
+        raise ValueError(f"Unknown ramp type {ramp_type}")
 
     if ramp_time is None:
-        ramp_time = dict_ramp_types[ramp_type]["ramp_time"]
+        ramp_time = ramp_settings["ramp_time"]
 
     # Variables
-    suffix = dict_ramp_types[ramp_type]["suffix"]
+    suffix = ramp_settings["suffix"]
 
     # Rename method
     method.method_name = append_truncate_method_name(method.method_name, suffix)
@@ -59,7 +60,7 @@ def generate_ramp_method(
         gradient_table[0],
         {**gradient_table[0], "Time": ramp_time, "Curve": flow_curve},
     ]
-    gradient_table[dict_ramp_types[ramp_type]["index"]]["Flow"] = low_flow_rate
+    gradient_table[ramp_settings["index"]]["Flow"] = low_flow_rate
 
     # Validate output method
     validate_gradient_table(gradient_table)
