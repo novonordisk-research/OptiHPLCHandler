@@ -1,42 +1,92 @@
 from types import SimpleNamespace
 
-from applications.method_generators.rampup_method import generate_rampup_method
+from applications.method_generators.ramp_method import generate_ramp_method
 from applications.method_generators.alter_temperature import (
     generate_altered_temperature_method,
 )
 from applications.method_generators.alter_strong_eluent_pct import (
     generate_altered_strong_eluent_method_pct,
 )
-from applications.method_generators.add_isocratic_start import (
-    generate_isocratic_start_method,
+from applications.method_generators.add_isocratic_segment import (
+    add_isocratic_segment_to_method,
 )
 from applications.method_generators.condense_gradient_table import (
     condense_gradient_table,
 )
 
 
-def test_generate_rampup_method():
-    # Create a sample full method
-    full_method = SimpleNamespace(
-        method_name="Test_Method",
+def test_generate_ramp_method():
+    method = SimpleNamespace(
         gradient_table=[
-            {"Time": 0, "Flow": 0.3, "Curve": 1},
-            {"Time": 10, "Flow": 0.2, "Curve": 6},
+            {
+                "Time": "Initial",
+                "Flow": 1,
+                "CompositionA": 95,
+                "CompositionB": 5,
+                "Curve": "Initial",
+            },
+            {"Time": 10, "Flow": 1, "CompositionA": 10, "CompositionB": 90, "Curve": 6},
+            {"Time": 20, "Flow": 1, "CompositionA": 95, "CompositionB": 5, "Curve": 6},
+            {"Time": 30, "Flow": 1, "CompositionA": 95, "CompositionB": 5, "Curve": 6},
         ],
+        column_temperature=30,
+        method_name="test",
     )
-    # Generate ramp-up method
-    rampup_method = generate_rampup_method(full_method)
 
-    # Assert the generated method has the correct properties
-    assert rampup_method.method_name == "Test_Method_ramp"
-    assert rampup_method.gradient_table == [
-        {"Time": 0, "Flow": 0.05, "Curve": 1},
-        {"Time": 10, "Flow": 0.3, "Curve": 6},
+    method = generate_ramp_method(
+        method, low_flow_rate=0.05, flow_curve=6, ramp_type="rampup"
+    )
+    print(method.gradient_table)
+    assert method.gradient_table == [
+        {
+            "Time": "Initial",
+            "Flow": 0.05,
+            "CompositionA": 95,
+            "CompositionB": 5,
+            "Curve": "Initial",
+        },
+        {"Time": 10, "Flow": 1, "CompositionA": 95, "CompositionB": 5, "Curve": 6},
     ]
-    assert rampup_method.gradient_table[1]["Time"] == 10
-    assert rampup_method.gradient_table[1]["Curve"] == 6
-    assert rampup_method.gradient_table[1]["Flow"] == 0.3
-    assert rampup_method.gradient_table[0]["Flow"] == 0.05
+    assert method.column_temperature == 30
+    assert method.method_name == "test_ramp"
+
+    method = SimpleNamespace(
+        gradient_table=[
+            {
+                "Time": "Initial",
+                "Flow": 1,
+                "CompositionA": 95,
+                "CompositionB": 5,
+                "Curve": "Initial",
+            },
+            {"Time": 10, "Flow": 1, "CompositionA": 10, "CompositionB": 90, "Curve": 6},
+            {"Time": 20, "Flow": 1, "CompositionA": 95, "CompositionB": 5, "Curve": 6},
+            {"Time": 30, "Flow": 1, "CompositionA": 95, "CompositionB": 5, "Curve": 6},
+        ],
+        method_name="test",
+        column_temperature=30,
+    )
+
+    method = generate_ramp_method(
+        method,
+        low_flow_rate=0.05,
+        flow_curve=6,
+        ramp_type="rampdown",
+        reduce_column_temperature=True,
+    )
+    print(method.gradient_table)
+    assert method.gradient_table == [
+        {
+            "Time": "Initial",
+            "Flow": 1,
+            "CompositionA": 95,
+            "CompositionB": 5,
+            "Curve": "Initial",
+        },
+        {"Time": 1, "Flow": 0.05, "CompositionA": 95, "CompositionB": 5, "Curve": 6},
+    ]
+    assert method.column_temperature == 20
+    assert method.method_name == "test_low"
 
 
 def test_generate_altered_temperature_method():
@@ -109,7 +159,7 @@ def test_generate_varied_gradient_method():
         ],
     )
     varied_method = generate_altered_strong_eluent_method_pct(
-        method=mock_method_bsm, handler=None, strong_eluent_delta=1
+        method=mock_method_bsm, strong_eluent_delta=1
     )
     assert varied_method.gradient_table == [
         {
@@ -205,7 +255,7 @@ def test_generate_varied_gradient_method():
         ],
     )
     varied_method = generate_altered_strong_eluent_method_pct(
-        method=mock_method_bsm, handler=None, strong_eluent_delta=1
+        method=mock_method_bsm, strong_eluent_delta=1
     )
     assert varied_method.gradient_table == [
         {
@@ -302,14 +352,13 @@ def test_generate_varied_gradient_method():
     )
     try:
         varied_method = generate_altered_strong_eluent_method_pct(
-            method=mock_method_bsm, handler=None, strong_eluent_delta=100
+            method=mock_method_bsm, strong_eluent_delta=100
         )
     except ValueError as e:
         assert (
             str(e)
-            == "Weak eluent composition cannot be negative, try a smaller strong eluent delta."
+            == "The composition in the gradient table row is greater than 100 or less than 0. The composition is -10.0. The row is {'Time': 'Initial', 'Flow': '0.3', 'CompositionA': '-10.0', 'CompositionB': '110.0', 'Curve': 'Initial'}"
         )
-
     # BSM method where the gradient table is isocratic
     mock_method_bsm = SimpleNamespace(
         method_name="mock_method_bsm_isocratic",
@@ -325,7 +374,7 @@ def test_generate_varied_gradient_method():
     )
     try:
         varied_method = generate_altered_strong_eluent_method_pct(
-            method=mock_method_bsm, handler=None, strong_eluent_delta=1
+            method=mock_method_bsm, strong_eluent_delta=1
         )
     except ValueError as e:
         assert str(e) == "Cannot generate varied gradient method for isocratic method."
@@ -380,7 +429,6 @@ def test_generate_varied_gradient_method():
     )
     varied_method = generate_altered_strong_eluent_method_pct(
         method=mock_method_bsm,
-        handler=None,
         strong_eluent_delta=1,
         maintain_wash_pct=False,
     )
@@ -491,7 +539,7 @@ def test_generate_varied_gradient_method():
     )
 
     varied_method = generate_altered_strong_eluent_method_pct(
-        method=mock_method_qsm, handler=None, strong_eluent_delta=1
+        method=mock_method_qsm, strong_eluent_delta=1
     )
     assert varied_method.gradient_table == [
         {
@@ -551,22 +599,50 @@ def test_generate_varied_gradient_method():
     ]
 
 
-def test_generate_isocratic_start_method():
-    mock_method = SimpleNamespace(
-        gradient_table=[
-            {"Time": "Initial", "CompositionA": 0, "CompositionB": 100},
-            {"Time": 1, "CompositionA": 0, "CompositionB": 100},
-            {"Time": 2, "CompositionA": 100, "CompositionB": 0},
-        ],
-        method_name="Test Method",
-    )
+def test_add_isocratic_segment_method():
+    index_0 = [
+        {"CompositionA": 95, "CompositionB": 5, "Flow": 0.3, "Time": 0},
+        {"CompositionA": 95, "CompositionB": 5, "Flow": 0.3, "Time": 10},
+        {"CompositionA": 50, "CompositionB": 50, "Flow": 0.3, "Time": 20},
+        {"CompositionA": 40, "CompositionB": 60, "Flow": 0.03, "Time": 30},
+    ]
 
-    gradient_table = generate_isocratic_start_method(
-        mock_method, handler=None, isocratic_duration=2.5, post_method=False
-    ).gradient_table
+    index_1 = [
+        {"CompositionA": 95, "CompositionB": 5, "Flow": 0.3, "Time": 0},
+        {"CompositionA": 50, "CompositionB": 50, "Flow": 0.3, "Time": 10},
+        {"CompositionA": 50, "CompositionB": 50, "Flow": 0.3, "Time": 20},
+        {"CompositionA": 40, "CompositionB": 60, "Flow": 0.03, "Time": 30},
+    ]
 
-    time_list = [entry["Time"] for entry in gradient_table]
-    assert time_list == ["Initial", "2.5", "3.5", "4.5"]
+    index_2 = [
+        {"CompositionA": 95, "CompositionB": 5, "Flow": 0.3, "Time": 0},
+        {"CompositionA": 50, "CompositionB": 50, "Flow": 0.3, "Time": 10},
+        {"CompositionA": 40, "CompositionB": 60, "Flow": 0.03, "Time": 20},
+        {"CompositionA": 40, "CompositionB": 60, "Flow": 0.03, "Time": 30},
+    ]
+
+    list_results = [index_0, index_1, index_2, index_2]
+    list_indices = [0, 1, 2, -1]
+
+    for index, value in enumerate(list_indices):
+        method = SimpleNamespace(
+            gradient_table=[
+                {"CompositionA": 95, "CompositionB": 5, "Flow": 0.3, "Time": 0},
+                {"CompositionA": 50, "CompositionB": 50, "Flow": 0.3, "Time": 10},
+                {"CompositionA": 40, "CompositionB": 60, "Flow": 0.03, "Time": 20},
+            ],
+            method_name="Test Method",
+        )
+
+        method_result = add_isocratic_segment_to_method(method, 10, value)
+        print(method_result.method_name)
+
+        assert method_result.gradient_table == list_results[index]
+        assert (
+            method_result.method_name == f"Test Method_iso_10m_{value}"
+            if value != -1
+            else f"Test Method_iso_10m_{len(method_result.gradient_table)}"
+        )
 
 
 def test_condense_gradient_table():

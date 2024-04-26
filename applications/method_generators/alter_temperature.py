@@ -1,15 +1,10 @@
-from OptiHPLCHandler import EmpowerInstrumentMethod, EmpowerHandler
-from empower_implementation.empower_tools import (
-    truncate_method_name,
-    post_instrument_methodset_method,
-)
+from OptiHPLCHandler import EmpowerInstrumentMethod
+from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 
 def generate_altered_temperature_method(
     method: EmpowerInstrumentMethod,
-    handler: EmpowerHandler = None,
     temperature_delta: float = 2.5,
-    post_method: bool = False,
 ):
     """
     Generates varied temperature methods based on the given method.
@@ -31,18 +26,14 @@ def generate_altered_temperature_method(
     """
 
     # Variables
-    SUFFIX = "_{:.1f}C".format(temperature_delta)
+    suffix = "_{:.1f}C".format(temperature_delta)
 
     # generate method name
-    method.method_name = truncate_method_name(method.method_name, SUFFIX)
+    method.method_name = append_truncate_method_name(method.method_name, suffix)
 
     # change the column temperature
     method.column_temperature = str(
         float(method.column_temperature) + temperature_delta
     )
-
-    # Optionally posts the method to Empower
-    if post_method:
-        post_instrument_methodset_method(handler, method)
 
     return method

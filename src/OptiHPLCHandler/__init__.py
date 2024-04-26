@@ -1,4 +1,4 @@
-from .data_types import DataField, HPLCSetup, Sample
+from .utils.data_types import DataField, HPLCSetup, Sample
 from .empower_api_core import EmpowerConnection
 from .empower_handler import EmpowerHandler
 from .empower_instrument_method import EmpowerInstrumentMethod

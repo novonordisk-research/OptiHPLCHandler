@@ -6,6 +6,7 @@ from applications import (
     determine_index_of_max_compositon_value,
     determine_strong_eluent,
     validate_gradient_table,
+    determine_last_high_flow_time,
 )
 
 
@@ -237,3 +238,13 @@ def test_validate_gradient_table():
             str(e)
             == "The time in the gradient table row is less than the previous row. The row is 9.1 and the previous row is 10.0."
         )
+
+
+def test_determine_last_high_flow_time():
+    gradient_table = [
+        {"Time": 0, "Flow": 0.5},
+        {"Time": 10, "Flow": 1},
+        {"Time": 20, "Flow": 1},
+        {"Time": 30, "Flow": 0.1},
+    ]
+    assert determine_last_high_flow_time(gradient_table) == 20
