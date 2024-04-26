@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import List, Optional, Union
 
 from OptiHPLCHandler.utils.data_types import EmpowerInstrumentMethodModel as DataModel
@@ -135,7 +136,8 @@ class EmpowerInstrumentMethod:
     def valve_position(self):
         """
         The valve position for the solvent manager, if a solvent manager module method
-        is present.
+        is present. When setting, can be a list of valve positions (e.g. ["A1", "B2"]),
+        or a string containing one or more valve positions, (e.g. "A1, B2").
         """
         if self.solvent_handler_method is None:
             raise ValueError(
@@ -145,12 +147,20 @@ class EmpowerInstrumentMethod:
         return self.solvent_handler_method.valve_position
 
     @valve_position.setter
-    def valve_position(self, valve_position: str):
+    def valve_position(self, valve_position: Union[str, List[str]]):
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set valve position, "
                 "no solvent manager found in instrument method."
             )
+        if isinstance(valve_position, str):
+            valve_position = [i[0] for i in re.finditer(r"[A-D]\d", valve_position)]
+            # Make a list of every instance of XY in the string, where X is A, B, C
+            # or D, and Y is a digit (0-9). These are presumed to be valve positions.
+            if len(valve_position) == 0:
+                raise ValueError(
+                    f"Found nothing that could be a valve position in {valve_position}"
+                )
         self.solvent_handler_method.valve_position = valve_position
 
     def __str__(self):

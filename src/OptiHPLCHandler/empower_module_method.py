@@ -212,29 +212,22 @@ class SolventManagerMethod(EmpowerModuleMethod):
     def valve_position(self) -> List[str]:
         """
         The current valve position for each solvent line. When setting, the value can be
-        a string or a list of strings. If a string is given, it should be of the form
-        `XY`, where `X` is the solvent line (A, B, C, D) and `Y` is the position (0-6).
-        If a list is given, each string should be of that form.
+        a list of strings. Each string should should be of the form `XY`, where `X`
+        is the solvent line (A, B, C, D) and `Y` is the position (0-6).
         """
-        valve_position_tags = [
-            self.valve_tag_prefix + solvent + self.valve_tag_suffix
-            for solvent in self.solvent_lines
-        ]
-        valve_positions = [
-            solvent + self[tag]
-            for solvent, tag in zip(self.solvent_lines, valve_position_tags)
+        valve_position_list = [
+            line + self[self.valve_tag_prefix + line + self.valve_tag_suffix]
+            for line in self.solvent_lines
         ]
         # Consider removing the ones that have position 0,
         # to make QSM methods easier to read.
-        return valve_positions
+        return valve_position_list
 
     def __str__(self):
         return f"{type(self).__name__} with valve positions {self.valve_position}"
 
     @valve_position.setter
-    def valve_position(self, value: Union[str, List[str]]) -> None:
-        if isinstance(value, str):
-            value = [value]
+    def valve_position(self, value: List[str]) -> None:
         for position in value:
             if position[0] not in self.solvent_lines:
                 raise ValueError(
@@ -305,9 +298,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
         for row in new_gradient_table:
             row_xml = ET.SubElement(xml, "GradientRow")
             curve = row.get("Curve", "6")
+            # "6" is linear, which covers 90% of the use cases
             ET.SubElement(row_xml, "Time").text = self._round(row["Time"])
             ET.SubElement(row_xml, "Flow").text = self._round(row["Flow"])
-            # "6" is linear, which covers 90% of the use cases
             for line in self.solvent_lines:
                 line_name = f"Composition{line}"
                 ET.SubElement(row_xml, line_name).text = self._round(row[line_name])
