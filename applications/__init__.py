@@ -13,7 +13,7 @@ from applications.method_generators.alter_temperature import (
 )
 from applications.method_generators.ramp_method import generate_ramp_method
 from applications.method_generators.add_isocratic_segment import (
-    add_isocratic_segment_to_method,
+    generate_add_isocratic_segment_to_method,
 )
 
 __all__ = [
@@ -24,6 +24,6 @@ __all__ = [
     "generate_altered_strong_eluent_method_pct",
     "generate_altered_temperature_method",
     "generate_ramp_method",
-    "add_isocratic_segment_to_method",
+    "generate_add_isocratic_segment_to_method",
     "determine_last_high_flow_time",
 ]

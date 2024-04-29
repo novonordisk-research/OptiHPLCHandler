@@ -13,9 +13,9 @@ from method_generators.alter_strong_eluent_pct import (
 )
 from method_generators.alter_temperature import generate_altered_temperature_method
 from method_generators.add_isocratic_segment import (
-    add_isocratic_segment_to_method,
+    generate_add_isocratic_segment_to_method,
 )
-from method_generators.condense_gradient_table import condense_gradient_table
+from method_generators.condense_gradient_table import generate_condense_gradient_table
 from revert_method import revert_method
 
 
@@ -83,7 +83,7 @@ def generate_basic_robustness_instrument_methods(
         )
 
         # Generate scaled gradient condition method
-        condense_gradient_table(
+        generate_condense_gradient_table(
             method,
             10,
         )
@@ -127,7 +127,7 @@ def generate_basic_robustness_instrument_methods(
         for iteration, isocratic_step in enumerate(
             settings["isocratic_start_times"], start=1
         ):
-            add_isocratic_segment_to_method(method, isocratic_step, 0)
+            generate_add_isocratic_segment_to_method(method, isocratic_step, 0)
             dict_methods[f"iso_start_{iteration}"] = {
                 "method_name": method.method_name,
                 "run_time": determine_last_high_flow_time(method.gradient_table),

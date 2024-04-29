@@ -2,7 +2,7 @@ from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 
-def condense_gradient_table(
+def generate_condense_gradient_table(
     method: EmpowerInstrumentMethod,
     new_method_time: int = 10,
 ) -> EmpowerInstrumentMethod:
