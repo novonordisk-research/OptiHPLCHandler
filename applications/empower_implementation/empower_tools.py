@@ -43,9 +43,15 @@ def determine_if_isocratic_method(gradient_table: List[dict]) -> bool:
     composition_table = []
     for row in gradient_table:
         composition_table.append(
-            {key: value for key, value in row.items() if key.startswith("Composition")}
+            {
+                key: float(value)
+                for key, value in row.items()
+                if key.startswith("Composition")
+            }
         )
-    composition_set = set(composition_table)
+
+    composition_set = [dict(t) for t in {tuple(d.items()) for d in composition_table}]
+
     if len(composition_set) != 1:
         return False
     return True

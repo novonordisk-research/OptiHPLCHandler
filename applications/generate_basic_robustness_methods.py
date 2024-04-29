@@ -3,6 +3,7 @@ from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import (
     make_method_name_string_compatible_with_empower,
 )
+from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 from empower_implementation.empower_tools import (
     determine_last_high_flow_time,
 )
@@ -24,6 +25,9 @@ def _post_and_revert_instrument_methodset_method(
     """
     Post an instrument method and a method set method to Empower not including the context manager.
     """
+    # Validate method
+    validate_gradient_table(method.gradient_table)
+
     handler.PostInstrumentMethod(method)
     method_set_method = {
         "name": method.method_name,
@@ -61,6 +65,9 @@ def generate_basic_robustness_instrument_methods(
 
     with handler:
 
+        # Validate input method
+        validate_gradient_table(method.gradient_table)
+
         # Ramp up method
         generate_ramp_method(
             method=method, ramp_time=settings["rampup_time"], ramp_type="rampup"
@@ -69,6 +76,8 @@ def generate_basic_robustness_instrument_methods(
             "method_name": method.method_name,
             "run_time": determine_last_high_flow_time(method.gradient_table),
         }
+
+        # post
         _post_and_revert_instrument_methodset_method(
             handler, method, original_method_name
         )

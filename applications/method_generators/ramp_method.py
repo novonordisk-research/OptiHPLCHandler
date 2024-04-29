@@ -1,7 +1,6 @@
 from typing import Optional
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
-from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 
 
 def generate_ramp_method(
@@ -52,18 +51,15 @@ def generate_ramp_method(
 
     # Generate a new gradient table for the ramp-up method
     gradient_table = method.gradient_table
-
-    # Validate input method
-    validate_gradient_table(gradient_table)
+    gradient_table = [
+        {key: str(value) for key, value in row.items()} for row in gradient_table
+    ]  # convert all values to strings
 
     gradient_table = [
         gradient_table[0],
-        {**gradient_table[0], "Time": ramp_time, "Curve": flow_curve},
+        {**gradient_table[0], "Time": str(ramp_time), "Curve": str(flow_curve)},
     ]
-    gradient_table[ramp_settings["index"]]["Flow"] = low_flow_rate
-
-    # Validate output method
-    validate_gradient_table(gradient_table)
+    gradient_table[ramp_settings["index"]]["Flow"] = str(low_flow_rate)
 
     # Set method name and gradient table in the full method
     method.gradient_table = gradient_table
