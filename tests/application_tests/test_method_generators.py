@@ -9,10 +9,10 @@ from applications.method_generators.alter_strong_eluent_pct import (
     generate_altered_strong_eluent_method_pct,
 )
 from applications.method_generators.add_isocratic_segment import (
-    add_isocratic_segment_to_method,
+    generate_add_isocratic_segment_to_method,
 )
 from applications.method_generators.condense_gradient_table import (
-    condense_gradient_table,
+    generate_condense_gradient_table,
 )
 
 
@@ -708,7 +708,7 @@ class TestMethodGenerators(unittest.TestCase):
                 method_name="Test Method",
             )
 
-            method_result = add_isocratic_segment_to_method(method, 10, value)
+            method_result = generate_add_isocratic_segment_to_method(method, 10, value)
 
             assert method_result.gradient_table == list_results[index]
             assert (
@@ -796,6 +796,6 @@ class TestMethodGenerators(unittest.TestCase):
             },
         ]
 
-        condense_gradient_table(method, 10).gradient_table
+        generate_condense_gradient_table(method, 10).gradient_table
         assert method.gradient_table == resulting_gradient_table
         assert method.method_name == "test_method_cond_10m"
