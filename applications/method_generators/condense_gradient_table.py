@@ -1,9 +1,5 @@
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
-from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
-from applications.empower_implementation.empower_tools import (
-    determine_if_isocratic_method,
-)
 
 
 def condense_gradient_table(
@@ -23,15 +19,9 @@ def condense_gradient_table(
 
     # Gradient variable
     gradient_table = method.gradient_table
-
-    # Validate input method
-    validate_gradient_table(gradient_table)
-
-    # Determine if the method is isocratic
-    if determine_if_isocratic_method(gradient_table):
-        raise ValueError(
-            "Method is isocratic. Cannot condense."
-        )  # column condition is for gradient methods
+    gradient_table = [
+        {key: str(value) for key, value in row.items()} for row in gradient_table
+    ]  # convert all values to strings
 
     # get list of times in gradient table
     times = [float(x["Time"]) if x["Time"] != "Initial" else 0 for x in gradient_table]
@@ -47,9 +37,6 @@ def condense_gradient_table(
     # map the times to the gradient table
     for i in range(len(gradient_table)):
         gradient_table[i]["Time"] = str(times[i])
-
-    # Validate output method
-    validate_gradient_table(gradient_table)
 
     method.gradient_table = gradient_table
 

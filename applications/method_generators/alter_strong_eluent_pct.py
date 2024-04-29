@@ -1,6 +1,5 @@
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
-from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 from applications.empower_implementation.empower_tools import (
     determine_if_isocratic_method,
     determine_max_compositon_value,
@@ -35,9 +34,9 @@ def generate_altered_strong_eluent_method_pct(
     method.method_name = append_truncate_method_name(method.method_name, suffix)
     # gradient table variable
     gradient_table = method.gradient_table
-
-    # Validate the gradient table rows to ensure the sum of compositions in each row is 100 prior to changes
-    validate_gradient_table(gradient_table)
+    gradient_table = [
+        {key: str(value) for key, value in row.items()} for row in gradient_table
+    ]  # convert all values to strings
 
     # determine if isocratic method
     if determine_if_isocratic_method(gradient_table):
@@ -57,6 +56,8 @@ def generate_altered_strong_eluent_method_pct(
         # if maintain wash step, do not change the strong eluent composition in the wash step
         if maintain_wash_pct:
             if step[strong_eluent] == float(max_value):
+                step[strong_eluent] = str(step[strong_eluent])  # make strings
+                step[weak_eluent] = str(step[weak_eluent])  # make strings
                 continue
 
         # Add strong eluent delta to the strong eluent composition in all rows
@@ -74,9 +75,6 @@ def generate_altered_strong_eluent_method_pct(
             new_value = step[weak_eluent] - weak_eluent_delta
 
             step[weak_eluent] = str(new_value)
-
-    # Validate the gradient table rows to ensure the sum of compositions in each row is 100 after the changes
-    validate_gradient_table(gradient_table)
 
     method.gradient_table = gradient_table
 

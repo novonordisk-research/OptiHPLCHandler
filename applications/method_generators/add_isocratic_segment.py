@@ -1,6 +1,5 @@
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
-from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 
 
 def add_isocratic_segment_to_method(
@@ -27,6 +26,9 @@ def add_isocratic_segment_to_method(
     """
     # grab the gradient table
     gradient_table = method.gradient_table
+    gradient_table = [
+        {key: str(value) for key, value in row.items()} for row in gradient_table
+    ]  # convert all values to strings
 
     # If last segment, correct to index
     if index_of_isocratic_segment == -1:
@@ -37,9 +39,6 @@ def add_isocratic_segment_to_method(
 
     # generate method name
     method.method_name = append_truncate_method_name(method.method_name, suffix)
-
-    # validate input
-    validate_gradient_table(gradient_table)
 
     # obtain the row of the index_of_isocratic_segment
     row_after_isocratic_segment = gradient_table[index_of_isocratic_segment].copy()
@@ -55,9 +54,6 @@ def add_isocratic_segment_to_method(
         if row["Time"] == "Initial":
             row["Time"] = "0"
         row["Time"] = str(float(row["Time"]) + float(isocratic_duration))
-
-    # validate after change
-    validate_gradient_table(gradient_table)
 
     # update the gradient table
     method.gradient_table = gradient_table
