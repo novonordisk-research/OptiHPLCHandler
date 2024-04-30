@@ -486,3 +486,27 @@ def generate_basic_robustness_sampleset(
         sample_list.append(dict_rampdown_condition)
 
     return sample_list
+
+
+def post_run_basic_robustness_test(
+    handler, input_method, plates, system, node, post=True, run=False
+):
+
+    # generate methods
+    dict_methods = generate_basic_robustness_instrument_methods(handler, input_method)
+
+    # generate sample set method
+    sample_list = generate_basic_robustness_sampleset(dict_methods)
+    sample_set_method_name = sample_set_namer(input_method.method_name)
+
+    # post and run experiment
+    post_and_run_experiment(
+        handler=handler,
+        sample_set_method_name=sample_set_method_name,
+        sample_list=sample_list,
+        plates=plates,
+        system=system,
+        node=node,
+        post=post,
+        run=run,
+    )
