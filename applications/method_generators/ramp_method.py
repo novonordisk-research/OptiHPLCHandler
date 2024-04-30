@@ -1,4 +1,5 @@
 from typing import Optional
+
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
@@ -18,7 +19,8 @@ def generate_ramp_method(
         ramp_time (int): The time for the ramp-up or ramp-down.
         low_flow_rate (float): The flow rate for the low flow portion.
         flow_curve (int): The flow curve for the ramp-up or ramp-down.
-        ramp_type (str): The type of ramp method to generate. Options are "rampup" or "rampdown".
+        ramp_type (str): The type of ramp method to generate. Options are "rampup" or
+        "rampdown".
 
     Returns:
         EmpowerInstrumentMethod: The ramp-up or ramp-down method.

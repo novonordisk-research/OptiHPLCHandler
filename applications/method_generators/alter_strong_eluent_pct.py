@@ -1,10 +1,10 @@
-from OptiHPLCHandler import EmpowerInstrumentMethod
-from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 from applications.empower_implementation.empower_tools import (
     determine_if_isocratic_method,
     determine_max_compositon_value,
     determine_strong_eluent,
 )
+from OptiHPLCHandler import EmpowerInstrumentMethod
+from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 
 def generate_altered_strong_eluent_method_pct(
@@ -23,8 +23,10 @@ def generate_altered_strong_eluent_method_pct(
         The percentage change to the strong eluent composition, by default 1
 
     maintain_wash_step : bool, optional
-        If True, the wash step strong eluent composition will not be changed, by default True
-        This should be set to False if the wash step is also part of the gradient, otherwise the slope would be altered
+        If True, the wash step strong eluent composition will not be changed,
+        by default True
+        This should be set to False if the wash step is also part of the gradient,
+        otherwise the slope would be altered
     """
 
     # Variables
@@ -53,11 +55,13 @@ def generate_altered_strong_eluent_method_pct(
     for step in gradient_table:
         step[strong_eluent] = float(step[strong_eluent])
 
-        # if maintain wash step, do not change the strong eluent composition in the wash step
+        # if maintain wash step, do not change the strong eluent composition in
+        # the wash step
         if maintain_wash_pct:
             if step[strong_eluent] == float(max_value):
                 step[strong_eluent] = str(step[strong_eluent])  # make strings
-                step[weak_eluent] = str(step[weak_eluent])  # make strings
+                for weak_eluent in list_weak_eluents:
+                    step[weak_eluent] = str(step[weak_eluent])  # make strings
                 continue
 
         # Add strong eluent delta to the strong eluent composition in all rows

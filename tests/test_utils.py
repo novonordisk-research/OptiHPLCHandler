@@ -1,15 +1,13 @@
 import unittest
 
 from src.OptiHPLCHandler.utils import (
-    make_method_name_string_compatible_with_empower,
     append_truncate_method_name,
+    make_method_name_string_compatible_with_empower,
 )
-
 from src.OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 
 
 class TestUtils(unittest.TestCase):
-
     def test_make_method_name_string_compatible_with_empower(self):
         method_name = "Test.Method-Name"
         expected_result = "Test_MethodmName"
@@ -58,7 +56,7 @@ def test_validate_gradient_table(self):
         {"CompositionA": "90.0", "CompositionB": "10.0"},
         {"CompositionA": "10.0", "CompositionB": "90.0"},
     ]
-    assert validate_gradient_table(gradient_table) == True
+    assert validate_gradient_table(gradient_table) is True
 
     gradient_table = [
         {"CompositionA": "10.0", "CompositionB": "90.0"},
@@ -68,11 +66,11 @@ def test_validate_gradient_table(self):
     try:
         validate_gradient_table(gradient_table)
     except ValueError as e:
-        assert (
-            str(e)
-            == "The sum of the compositions in the gradient table row is not equal to 100. The sum is 90.0. The row is {'CompositionA': '10.0', 'CompositionB': '80.0'}"
+        assert str(e) == (
+            "The sum of the compositions in the gradient table row is not equal to "
+            + "100. The sum is 90.0. The row is {'CompositionA': '10.0', "
+            + "'CompositionB': '80.0'}"
         )
-
     gradient_table = [
         {
             "Time": "Initial",
@@ -84,7 +82,7 @@ def test_validate_gradient_table(self):
             "Time": "11.1",
         },
     ]
-    assert validate_gradient_table(gradient_table) == True
+    assert validate_gradient_table(gradient_table) is True
 
     gradient_table = [
         {
@@ -101,7 +99,7 @@ def test_validate_gradient_table(self):
     try:
         validate_gradient_table(gradient_table)
     except ValueError as e:
-        assert (
-            str(e)
-            == "The time in the gradient table row is less than the previous row. The row is 9.1 and the previous row is 10.0."
+        assert str(e) == (
+            +"The time in the gradient table row is less than the previous row."
+            + "The row is 9.1 and the previous row is 10.0."
         )

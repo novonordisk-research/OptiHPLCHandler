@@ -1,23 +1,22 @@
 import unittest
 from types import SimpleNamespace
 
-from applications.method_generators.ramp_method import generate_ramp_method
-from applications.method_generators.alter_temperature import (
-    generate_altered_temperature_method,
+from applications.method_generators.add_isocratic_segment import (
+    generate_add_isocratic_segment_to_method,
 )
 from applications.method_generators.alter_strong_eluent_pct import (
     generate_altered_strong_eluent_method_pct,
 )
-from applications.method_generators.add_isocratic_segment import (
-    generate_add_isocratic_segment_to_method,
+from applications.method_generators.alter_temperature import (
+    generate_altered_temperature_method,
 )
 from applications.method_generators.condense_gradient_table import (
     generate_condense_gradient_table,
 )
+from applications.method_generators.ramp_method import generate_ramp_method
 
 
 class TestMethodGenerators(unittest.TestCase):
-
     def test_generate_ramp_method(self):
         method = SimpleNamespace(
             gradient_table=[
@@ -157,7 +156,6 @@ class TestMethodGenerators(unittest.TestCase):
         assert len(varied_method.method_name) <= 30
 
     def test_generate_varied_gradient_method(self):
-
         # BSM method where the strong eluent is CompositionB
         mock_method_bsm = SimpleNamespace(
             method_name="mock_method_bsm_basic",
@@ -403,9 +401,11 @@ class TestMethodGenerators(unittest.TestCase):
                 method=mock_method_bsm, strong_eluent_delta=100
             )
         except ValueError as e:
-            assert (
-                str(e)
-                == "The composition in the gradient table row is greater than 100 or less than 0. The composition is -10.0. The row is {'Time': 'Initial', 'Flow': '0.3', 'CompositionA': '-10.0', 'CompositionB': '110.0', 'Curve': 'Initial'}"
+            assert str(e) == (
+                "The composition in the gradient table row is greater than 100 or"
+                + "less than 0. The composition is -10.0. The row is"
+                + "{'Time': 'Initial', 'Flow': '0.3', 'CompositionA': '-10.0',"
+                + "'CompositionB': '110.0', 'Curve': 'Initial'}"
             )
         # BSM method where the gradient table is isocratic
         mock_method_bsm = SimpleNamespace(

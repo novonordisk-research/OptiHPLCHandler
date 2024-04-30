@@ -35,7 +35,8 @@ def determine_if_isocratic_method(gradient_table: List[dict]) -> bool:
     Determines if the method is isocratic based on the gradient table.
 
     Args:
-        gradient_table (List[dict]): The gradient table to determine if the method is isocratic.
+        gradient_table (List[dict]): The gradient table to determine if the method is
+        isocratic.
 
     Returns:
         bool: True if the method is isocratic, False otherwise.
@@ -65,7 +66,8 @@ def determine_max_compositon_value(
 
     Args:
         gradient_table (List[dict]): The gradient table to determine the maximum value.
-        composition (str): The name of the composition entry to determine the maximum value.
+        composition (str): The name of the composition entry to determine the maximum
+        value.
 
     Returns:
         float: The maximum value in the gradient table.
@@ -101,10 +103,12 @@ def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
     Determines the strong eluent from a given gradient table.
 
     Args:
-        gradient_table (List[dict]): A list of dictionaries representing the gradient table.
+        gradient_table (List[dict]): A list of dictionaries representing the gradient
+        table.
 
     Returns:
-        Tuple[str, List[str]]: A tuple containing the strong eluent and a list of weak eluents.
+        Tuple[str, List[str]]: A tuple containing the strong eluent and a list of weak
+        eluents.
     """
     # Get the compositions
     compositions = [key for key in gradient_table[0].keys() if "Composition" in key]

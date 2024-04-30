@@ -1,14 +1,14 @@
 import unittest
+
 from applications import (
     determine_if_isocratic_method,
+    determine_last_high_flow_time,
     determine_max_compositon_value,
     determine_strong_eluent,
-    determine_last_high_flow_time,
 )
 
 
 class TestEmpowerTools(unittest.TestCase):
-
     def test_determine_if_isocratic_method(self):
         # Create a sample gradient table
         gradient_table = [
@@ -35,7 +35,7 @@ class TestEmpowerTools(unittest.TestCase):
             },
         ]
         # Assert the method is isocratic
-        assert determine_if_isocratic_method(gradient_table) == True
+        assert determine_if_isocratic_method(gradient_table) is True
 
         # Assess float correctly handled
         gradient_table = [
@@ -62,7 +62,7 @@ class TestEmpowerTools(unittest.TestCase):
             },
         ]
         # Assert the method is isocratic
-        assert determine_if_isocratic_method(gradient_table) == True
+        assert determine_if_isocratic_method(gradient_table) is True
 
         # Create a sample gradient table
         gradient_table = [
@@ -89,7 +89,7 @@ class TestEmpowerTools(unittest.TestCase):
             },
         ]
         # Assert the method is not isocratic
-        assert determine_if_isocratic_method(gradient_table) == False
+        assert determine_if_isocratic_method(gradient_table) is False
 
 
 def test_determine_index_of_max_compositon_value(self):
