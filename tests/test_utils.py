@@ -50,56 +50,56 @@ class TestUtils(unittest.TestCase):
         assert len(append_truncate_method_name(method_name_long, "_copy")) <= 30
 
 
-def test_validate_gradient_table(self):
-    gradient_table = [
-        {"CompositionA": "10.0", "CompositionB": "90.0"},
-        {"CompositionA": "90.0", "CompositionB": "10.0"},
-        {"CompositionA": "10.0", "CompositionB": "90.0"},
-    ]
-    assert validate_gradient_table(gradient_table) is True
+    def test_validate_gradient_table(self):
+        gradient_table = [
+            {"CompositionA": "10.0", "CompositionB": "90.0"},
+            {"CompositionA": "90.0", "CompositionB": "10.0"},
+            {"CompositionA": "10.0", "CompositionB": "90.0"},
+        ]
+        assert validate_gradient_table(gradient_table) is True
 
-    gradient_table = [
-        {"CompositionA": "10.0", "CompositionB": "90.0"},
-        {"CompositionA": "90.0", "CompositionB": "10.0"},
-        {"CompositionA": "10.0", "CompositionB": "80.0"},
-    ]
-    try:
-        validate_gradient_table(gradient_table)
-    except ValueError as e:
-        assert str(e) == (
-            "The sum of the compositions in the gradient table row is not equal to "
-            + "100. The sum is 90.0. The row is {'CompositionA': '10.0', "
-            + "'CompositionB': '80.0'}"
-        )
-    gradient_table = [
-        {
-            "Time": "Initial",
-        },
-        {
-            "Time": "10.0",
-        },
-        {
-            "Time": "11.1",
-        },
-    ]
-    assert validate_gradient_table(gradient_table) is True
+        gradient_table = [
+            {"CompositionA": "10.0", "CompositionB": "90.0"},
+            {"CompositionA": "90.0", "CompositionB": "10.0"},
+            {"CompositionA": "10.0", "CompositionB": "80.0"},
+        ]
+        try:
+            validate_gradient_table(gradient_table)
+        except ValueError as e:
+            assert str(e) == (
+                "The sum of the compositions in the gradient table row is not equal to "
+                + "100. The sum is 90.0. The row is {'CompositionA': '10.0', "
+                + "'CompositionB': '80.0'}"
+            )
+        gradient_table = [
+            {
+                "Time": "Initial",
+            },
+            {
+                "Time": "10.0",
+            },
+            {
+                "Time": "11.1",
+            },
+        ]
+        assert validate_gradient_table(gradient_table) is True
 
-    gradient_table = [
-        {
-            "Time": "Initial",
-        },
-        {
-            "Time": "10.0",
-        },
-        {
-            "Time": "9.1",
-        },
-    ]
+        gradient_table = [
+            {
+                "Time": "Initial",
+            },
+            {
+                "Time": "10.0",
+            },
+            {
+                "Time": "9.1",
+            },
+        ]
 
-    try:
-        validate_gradient_table(gradient_table)
-    except ValueError as e:
-        assert str(e) == (
-            +"The time in the gradient table row is less than the previous row."
-            + "The row is 9.1 and the previous row is 10.0."
-        )
+        try:
+            validate_gradient_table(gradient_table)
+        except ValueError as e:
+            assert str(e) == (
+                +"The time in the gradient table row is less than the previous row."
+                + "The row is 9.1 and the previous row is 10.0."
+            )
