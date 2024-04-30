@@ -4,7 +4,7 @@ import warnings
 from typing import Dict, List, Mapping, Tuple, Union
 from xml.etree import ElementTree as ET
 
-from OptiHPLCHandler.utils.data_types import EmpowerModuleMethodModel as DataModel
+from .utils.data_types import EmpowerModuleMethodModel as DataModel
 
 logger = logging.getLogger(__name__)
 
