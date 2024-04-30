@@ -11,9 +11,7 @@ from .method_generators.add_isocratic_segment import (
 from .method_generators.alter_strong_eluent_pct import (
     generate_altered_strong_eluent_method_pct,
 )
-from .method_generators.alter_temperature import (
-    generate_altered_temperature_method,
-)
+from .method_generators.alter_temperature import generate_altered_temperature_method
 from .method_generators.ramp_method import generate_ramp_method
 
 __all__ = [

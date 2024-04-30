@@ -91,24 +91,17 @@ class TestEmpowerTools(unittest.TestCase):
         # Assert the method is not isocratic
         assert determine_if_isocratic_method(gradient_table) is False
 
-
     def test_determine_index_of_max_compositon_value(self):
         gradient_table = [
-            {"CompositionA": "10.0", "CompositionB": "20.0"},
-            {"CompositionA": "15.0", "CompositionB": "25.0"},
-            {"CompositionA": "5.0", "CompositionB": "15.0"},
+            {"CompositionA": 10.0, "CompositionB": 20.0},
+            {"CompositionA": 15.0, "CompositionB": 25.0},
+            {"CompositionA": 5.0, "CompositionB": 15.0},
         ]
         composition = "CompositionB"
-        assert determine_max_compositon_value(gradient_table, composition) == (
-            1,
-            "25.0",
-        )
+        assert determine_max_compositon_value(gradient_table, composition) == 25.0
 
         composition = "CompositionA"
-        assert determine_max_compositon_value(gradient_table, composition) == (
-            1,
-            "15.0",
-        )
+        assert determine_max_compositon_value(gradient_table, composition) == 15.0
 
         gradient_table = [
             {"CompositionZ": "10.0", "CompositionB": "20.0"},
@@ -118,21 +111,26 @@ class TestEmpowerTools(unittest.TestCase):
         except ValueError as e:
             assert str(e) == "Invalid composition string."
 
-
     def test_determine_strong_eluent(self):
         gradient_table = [
             {"CompositionA": "10.0", "CompositionB": "90.0"},
             {"CompositionA": "90.0", "CompositionB": "10.0"},
             {"CompositionA": "10.0", "CompositionB": "90.0"},
         ]
-        assert determine_strong_eluent(gradient_table) == ("CompositionA", ["CompositionB"])
+        assert determine_strong_eluent(gradient_table) == (
+            "CompositionA",
+            ["CompositionB"],
+        )
 
         gradient_table = [
             {"CompositionB": "10.0", "CompositionA": "90.0"},
             {"CompositionB": "90.0", "CompositionA": "10.0"},
             {"CompositionB": "10.0", "CompositionA": "90.0"},
         ]
-        assert determine_strong_eluent(gradient_table) == ("CompositionB", ["CompositionA"])
+        assert determine_strong_eluent(gradient_table) == (
+            "CompositionB",
+            ["CompositionA"],
+        )
 
         gradient_table = [
             {"CompositionA": "90.0", "CompositionB": "10.0"},
@@ -141,7 +139,6 @@ class TestEmpowerTools(unittest.TestCase):
             determine_strong_eluent(gradient_table)
         except ValueError as e:
             assert str(e) == "Cannot determine strong eluent for isocratic method."
-
 
     def test_determine_last_high_flow_time(self):
         gradient_table = [
