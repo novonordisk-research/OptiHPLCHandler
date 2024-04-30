@@ -43,13 +43,16 @@ def generate_add_isocratic_segment_to_method(
     # obtain the row of the index_of_isocratic_segment
     row_after_isocratic_segment = gradient_table[index_of_isocratic_segment].copy()
 
-    # add to the gradient table a row in position index_of_isocratic_segment +1 with the same composition as the row after the index_of_isocratic_segment but a time of isocratic_duration
+    # add to the gradient table a row in position index_of_isocratic_segment +1 with
+    # the same composition as the row after the index_of_isocratic_segment but a time
+    # of isocratic_duration
     gradient_table.insert(index_of_isocratic_segment + 1, row_after_isocratic_segment)
 
     if "Curve" in gradient_table[index_of_isocratic_segment + 1]:
         gradient_table[index_of_isocratic_segment + 1]["Curve"] = "6"
 
-    # add isocratic duration to all times in the gradient table after the index_of_isocratic_segment
+    # add isocratic duration to all times in the gradient table after the
+    # index_of_isocratic_segment
     for row in gradient_table[index_of_isocratic_segment + 1 :]:
         if row["Time"] == "Initial":
             row["Time"] = "0"

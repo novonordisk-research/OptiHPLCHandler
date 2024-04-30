@@ -1,29 +1,30 @@
-from typing import List, Dict, Union
-from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
-from OptiHPLCHandler.utils.validate_method_name import (
-    make_method_name_string_compatible_with_empower,
+from typing import Dict, List, Union
+
+from empower_implementation.empower_tools import determine_last_high_flow_time
+from method_generators.add_isocratic_segment import (
+    generate_add_isocratic_segment_to_method,
 )
-from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
-from empower_implementation.empower_tools import (
-    determine_last_high_flow_time,
-)
-from method_generators.ramp_method import generate_ramp_method
 from method_generators.alter_strong_eluent_pct import (
     generate_altered_strong_eluent_method_pct,
 )
 from method_generators.alter_temperature import generate_altered_temperature_method
-from method_generators.add_isocratic_segment import (
-    generate_add_isocratic_segment_to_method,
-)
 from method_generators.condense_gradient_table import generate_condense_gradient_table
+from method_generators.ramp_method import generate_ramp_method
 from revert_method import revert_method
+
+from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
+from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
+from OptiHPLCHandler.utils.validate_method_name import (
+    make_method_name_string_compatible_with_empower,
+)
 
 
 def _post_and_revert_instrument_methodset_method(
     handler: EmpowerHandler, method: EmpowerInstrumentMethod, original_method_name: str
 ):
     """
-    Post an instrument method and a method set method to Empower not including the context manager.
+    Post an instrument method and a method set method to Empower not including the
+    context manager.
     """
     # Validate method
     validate_gradient_table(method.gradient_table)
@@ -64,7 +65,6 @@ def generate_basic_robustness_instrument_methods(
     }
 
     with handler:
-
         # Validate input method
         validate_gradient_table(method.gradient_table)
 
@@ -242,7 +242,6 @@ def post_and_run_experiment(
     post: bool = False,
     run: bool = False,
 ) -> None:
-
     print("Logging in to Empower...")
     with handler:
         print("Log in successful.")
@@ -277,7 +276,6 @@ def post_and_run_experiment(
 def generate_basic_robustness_sampleset(
     dict_methods: dict, input_settings: dict = None
 ) -> List[dict]:
-
     # Initialise settings
     if input_settings is None:
         settings = {
@@ -306,7 +304,6 @@ def generate_basic_robustness_sampleset(
     repeat_injections_number = settings["repeat_injections_number"]
 
     for column_position in column_positions:
-
         # Startup
         sample_list.append(
             condition_or_equilibrate_column_sampleset_line(
