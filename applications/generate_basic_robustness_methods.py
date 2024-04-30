@@ -491,7 +491,6 @@ def generate_basic_robustness_sampleset(
 def post_run_basic_robustness_test(
     handler, input_method, plates, system, node, post=True, run=False
 ):
-
     # generate methods
     dict_methods = generate_basic_robustness_instrument_methods(handler, input_method)
 
