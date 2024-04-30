@@ -49,7 +49,6 @@ class TestUtils(unittest.TestCase):
         )
         assert len(append_truncate_method_name(method_name_long, "_copy")) <= 30
 
-
     def test_validate_gradient_table(self):
         gradient_table = [
             {"CompositionA": "10.0", "CompositionB": "90.0"},
@@ -66,11 +65,11 @@ class TestUtils(unittest.TestCase):
         try:
             validate_gradient_table(gradient_table)
         except ValueError as e:
-            assert str(e) == (
-                "The sum of the compositions in the gradient table row is not equal to "
-                + "100. The sum is 90.0. The row is {'CompositionA': '10.0', "
-                + "'CompositionB': '80.0'}"
+            assert (
+                str(e)
+                == "The sum of the compositions in the gradient table row is notequal to 100. The sum is 90.0. The row is {'CompositionA': '10.0', 'CompositionB': '80.0'}"  # noqa: E501
             )
+
         gradient_table = [
             {
                 "Time": "Initial",
@@ -99,7 +98,7 @@ class TestUtils(unittest.TestCase):
         try:
             validate_gradient_table(gradient_table)
         except ValueError as e:
-            assert str(e) == (
-                +"The time in the gradient table row is less than the previous row."
-                + "The row is 9.1 and the previous row is 10.0."
+            assert (
+                str(e)
+                == "The time in the gradient table row is less than the previousrow. The row is 9.1 and the previous rowis 10.0."  # noqa: E501
             )
