@@ -2,7 +2,7 @@ import logging
 import re
 from typing import List, Optional, Union
 
-from OptiHPLCHandler.empower_module_method import (
+from .empower_module_method import (
     ColumnManagerMethod,
     ColumnOvenMethod,
     EmpowerModuleMethod,
@@ -10,7 +10,7 @@ from OptiHPLCHandler.empower_module_method import (
     SolventManagerMethod,
     module_method_factory,
 )
-from OptiHPLCHandler.utils.data_types import EmpowerInstrumentMethodModel as DataModel
+from .utils.data_types import EmpowerInstrumentMethodModel as DataModel
 
 logger = logging.getLogger(__name__)
 
