@@ -132,6 +132,59 @@ class TestEmpowerTools(unittest.TestCase):
             ["CompositionA"],
         )
 
+        # QSM
+        gradient_table = [
+            {
+                "CompositionB": "10.0",
+                "CompositionA": "90.0",
+                "CompositionC": "0",
+                "CompositionD": "0",
+            },
+            {
+                "CompositionB": "90.0",
+                "CompositionA": "10.0",
+                "CompositionC": "0",
+                "CompositionD": "0",
+            },
+            {
+                "CompositionB": "10.0",
+                "CompositionA": "90.0",
+                "CompositionC": "0",
+                "CompositionD": "0",
+            },
+        ]
+
+        assert determine_strong_eluent(gradient_table) == (
+            "CompositionB",
+            ["CompositionA", "CompositionC", "CompositionD"],
+        )
+
+        gradient_table = [
+            {
+                "CompositionB": "8.0",
+                "CompositionA": "90.0",
+                "CompositionC": "1.0",
+                "CompositionD": "1.0",
+            },
+            {
+                "CompositionB": "90.0",
+                "CompositionA": "8.0",
+                "CompositionC": "1.0",
+                "CompositionD": "1.0",
+            },
+            {
+                "CompositionB": "8.0",
+                "CompositionA": "90.0",
+                "CompositionC": "1.0",
+                "CompositionD": "1.0",
+            },
+        ]
+
+        assert determine_strong_eluent(gradient_table) == (
+            "CompositionB",
+            ["CompositionA", "CompositionC", "CompositionD"],
+        )
+
         gradient_table = [
             {"CompositionA": "90.0", "CompositionB": "10.0"},
         ]
