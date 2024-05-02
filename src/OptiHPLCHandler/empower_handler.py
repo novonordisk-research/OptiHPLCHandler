@@ -3,9 +3,9 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, Iterable, List, Mapping, Optional, TypeVar
 
-from .data_types import HplcResult, HPLCSetup
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
+from .utils.data_types import HplcResult, HPLCSetup
 
 Result = TypeVar("Result")
 
