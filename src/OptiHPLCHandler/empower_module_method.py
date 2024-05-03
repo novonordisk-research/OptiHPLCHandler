@@ -245,9 +245,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
                     f"Invalid valve position {position}, "
                     f"must start with one of {self.solvent_lines}"
                 )
-            self[self.valve_tag_prefix + position[0] + self.valve_tag_suffix] = (
-                position[1:]
-            )
+            self[
+                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
+            ] = position[1:]
 
     @property
     def gradient_table(self) -> List[Dict[str, str]]:
