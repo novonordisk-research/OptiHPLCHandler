@@ -165,30 +165,41 @@ class ColumnOvenMethod(EmpowerModuleMethod):
     :meta private:
     """
 
-    TEMPERATURE_KEY: str
+    column_temperature_key: str
 
     @property
     def column_temperature(self) -> str:
         """
         The column temperature. If a float is given, it will be rounded to 1 decimal.
         """
-        return self[self.TEMPERATURE_KEY]
+        return self[self.column_temperature_key]
 
     @column_temperature.setter
     def column_temperature(self, value: Union[str, float]) -> None:
-        self[self.TEMPERATURE_KEY] = self._round(value, decimal_digits=1)
+        self[self.column_temperature_key] = self._round(value, decimal_digits=1)
 
 
 class SampleManagerMethod(ColumnOvenMethod):
     """Class for module methods that control a sample manager."""
 
-    TEMPERATURE_KEY = "ColumnTemperature"
+    column_temperature_key = "ColumnTemperature"
+
+    sample_temperature_key = "SampleTemperature"
+
+    @property
+    def sample_temperature(self) -> str:
+        """The sample temperature."""
+        return self[self.sample_temperature_key]
+
+    @sample_temperature.setter
+    def sample_temperature(self, value: Union[str, float]) -> None:
+        self[self.sample_temperature_key] = self._round(value, decimal_digits=1)
 
 
 class ColumnManagerMethod(ColumnOvenMethod):
     """Class for module methods that control a column manager."""
 
-    TEMPERATURE_KEY = "SetColumnTemperature"
+    column_temperature_key = "SetColumnTemperature"
 
 
 class SolventManagerMethod(EmpowerModuleMethod):
@@ -234,9 +245,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
                     f"Invalid valve position {position}, "
                     f"must start with one of {self.solvent_lines}"
                 )
-            self[
-                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
-            ] = position[1:]
+            self[self.valve_tag_prefix + position[0] + self.valve_tag_suffix] = (
+                position[1:]
+            )
 
     @property
     def gradient_table(self) -> List[Dict[str, str]]:
@@ -337,7 +348,7 @@ def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModule
     recognized, a generic EmpowerModuleMethod will be created.
     """
     try:
-        if method_definition["name"] in ["rAcquityFTN"]:
+        if method_definition["name"] in ["rAcquityFTN", "AcquityFTN", "AcquitySMDI"]:
             logger.debug("Creating SampleManagerMethod")
             return SampleManagerMethod(method_definition)
         if method_definition["name"] in ["AcquityCM", "ACQ-CM"]:

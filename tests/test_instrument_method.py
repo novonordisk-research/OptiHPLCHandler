@@ -74,6 +74,11 @@ class TestInstrumentSetMethod(unittest.TestCase):
         )
         assert len(method.column_oven_method_list) == 2
 
+    def test_sample_manager_method(self):
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(method_definition)
+        assert method.sample_temperature == "20.0"
+
     def test_original_method(self):
         for method_definition in self.example.values():
             method = EmpowerInstrumentMethod(method_definition)
