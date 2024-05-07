@@ -11,6 +11,7 @@ def generate_ramp_method(
     flow_curve: int = 6,
     ramp_type: str = "rampup",
     reduce_column_temperature: bool = False,
+    suffix: Optional[str] = None,
 ) -> EmpowerInstrumentMethod:
     """Generate a ramp-up or ramp-down method from an existing method.
 
@@ -31,7 +32,7 @@ def generate_ramp_method(
         ramp_settings = {
             "suffix": "_ramp",
             "index": 0,
-            "ramp_time": 10,
+            "ramp_time": 1,
         }
     elif ramp_type == "rampdown":
         ramp_settings = {
@@ -44,6 +45,9 @@ def generate_ramp_method(
 
     if ramp_time is None:
         ramp_time = ramp_settings["ramp_time"]
+
+    if suffix is not None:
+        ramp_settings["suffix"] = suffix
 
     # Validate input
     if not isinstance(low_flow_rate, (int, float)):
