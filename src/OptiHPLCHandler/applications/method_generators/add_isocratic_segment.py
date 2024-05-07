@@ -8,7 +8,7 @@ def generate_add_isocratic_segment_to_method(
     method: EmpowerInstrumentMethod,
     isocratic_duration: float,
     index_of_isocratic_segment: int,
-    Suffix: Optional[str] = None,
+    suffix: Optional[str] = None,
 ):
     """
     Add an isocratic segment to an existing gradient method.
