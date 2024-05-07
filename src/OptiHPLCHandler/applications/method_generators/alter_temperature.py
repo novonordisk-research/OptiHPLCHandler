@@ -1,3 +1,5 @@
+from typing import Optional
+
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
@@ -5,6 +7,7 @@ from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_na
 def generate_altered_temperature_method(
     method: EmpowerInstrumentMethod,
     temperature_delta: float = 2.5,
+    suffix: Optional[str] = None,
 ):
     """
     Generates varied temperature methods based on the given method.
@@ -26,7 +29,8 @@ def generate_altered_temperature_method(
     """
 
     # Variables
-    suffix = "_{:.1f}C".format(temperature_delta)
+    if suffix is None:
+        suffix = "_{:.1f}C".format(temperature_delta)
 
     # generate method name
     method.method_name = append_truncate_method_name(method.method_name, suffix)

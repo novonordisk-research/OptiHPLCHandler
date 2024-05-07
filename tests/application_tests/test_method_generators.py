@@ -58,7 +58,7 @@ class TestMethodGenerators(unittest.TestCase):
         method = generate_ramp_method(
             method, low_flow_rate=0.05, flow_curve=6, ramp_type="rampup"
         )
-        print(method.gradient_table)
+
         assert method.gradient_table == [
             {
                 "Time": "Initial",
@@ -68,7 +68,7 @@ class TestMethodGenerators(unittest.TestCase):
                 "Curve": "Initial",
             },
             {
-                "Time": "10",
+                "Time": "1",  # default ramp_time
                 "Flow": "1",
                 "CompositionA": "95",
                 "CompositionB": "5",

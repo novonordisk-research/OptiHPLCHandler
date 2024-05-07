@@ -1,3 +1,5 @@
+from typing import Optional
+
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
@@ -5,13 +7,15 @@ from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_na
 def generate_condense_gradient_table(
     method: EmpowerInstrumentMethod,
     new_method_time: int = 10,
+    suffix: Optional[str] = None,
 ) -> EmpowerInstrumentMethod:
     """
     Condenses the gradient table of a method into a specified number of minutes
     """
 
     # Variables
-    suffix = f"_cond_{new_method_time}m"
+    if suffix is None:
+        suffix = f"_cond_{new_method_time}m"
 
     # Generate method name
     method_name = append_truncate_method_name(method.method_name, suffix)
