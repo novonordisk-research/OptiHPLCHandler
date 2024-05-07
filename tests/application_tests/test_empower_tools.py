@@ -1,6 +1,6 @@
 import unittest
 
-from applications import (
+from OptiHPLCHandler.applications import (
     determine_if_isocratic_method,
     determine_last_high_flow_time,
     determine_max_compositon_value,

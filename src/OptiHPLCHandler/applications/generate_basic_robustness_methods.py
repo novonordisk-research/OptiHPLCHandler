@@ -1,18 +1,25 @@
 from typing import Dict, List, Union
 
-from empower_implementation.empower_tools import determine_last_high_flow_time
-from method_generators.add_isocratic_segment import (
+from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
+from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
+    determine_last_high_flow_time,
+)
+from OptiHPLCHandler.applications.method_generators.add_isocratic_segment import (
     generate_add_isocratic_segment_to_method,
 )
-from method_generators.alter_strong_eluent_pct import (
+from OptiHPLCHandler.applications.method_generators.alter_strong_eluent_pct import (
     generate_altered_strong_eluent_method_pct,
 )
-from method_generators.alter_temperature import generate_altered_temperature_method
-from method_generators.condense_gradient_table import generate_condense_gradient_table
-from method_generators.ramp_method import generate_ramp_method
-from revert_method import revert_method
-
-from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
+from OptiHPLCHandler.applications.method_generators.alter_temperature import (
+    generate_altered_temperature_method,
+)
+from OptiHPLCHandler.applications.method_generators.condense_gradient_table import (
+    generate_condense_gradient_table,
+)
+from OptiHPLCHandler.applications.method_generators.ramp_method import (
+    generate_ramp_method,
+)
+from OptiHPLCHandler.applications.revert_method import revert_method
 from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 from OptiHPLCHandler.utils.validate_method_name import (
     make_method_name_string_compatible_with_empower,
