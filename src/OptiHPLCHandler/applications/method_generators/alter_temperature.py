@@ -1,4 +1,5 @@
 from typing import Optional
+
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
