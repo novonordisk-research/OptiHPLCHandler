@@ -54,6 +54,9 @@ doc = [
   "pylint==3.0.2",
   "sphinx==7.2.6",
 ]
+examples = [
+  "python-dotenv==1.0.1",
+]
 
 
 [project.urls]
