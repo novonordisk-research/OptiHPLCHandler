@@ -6,7 +6,7 @@ from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_na
 
 def generate_ramp_method(
     method: EmpowerInstrumentMethod,
-    ramp_time: Optional[int] = None,
+    ramp_time: Optional[float] = None,
     low_flow_rate: float = 0.05,
     flow_curve: int = 6,
     ramp_type: str = "rampup",
@@ -44,6 +44,16 @@ def generate_ramp_method(
 
     if ramp_time is None:
         ramp_time = ramp_settings["ramp_time"]
+
+    # Validate input
+    if not isinstance(low_flow_rate, (int, float)):
+        raise TypeError("low_flow_rate must be a number")
+    if not isinstance(flow_curve, int):
+        raise TypeError("flow_curve must be an integer")
+    if not isinstance(ramp_time, (int, float)):
+        raise TypeError("ramp_time must be a number")
+    if ramp_type not in ["rampup", "rampdown"]:
+        raise ValueError(f"Unknown ramp type {ramp_type}")
 
     # Variables
     suffix = ramp_settings["suffix"]
