@@ -55,6 +55,10 @@ class EmpowerConnection:
             path to the CA_BUNDLE file or directory with certificates of trusted CAs-
             If true, the built-in list of trusted CAs will be used.
         """
+        if not address:
+            raise ValueError(
+                f"Address was given as '{address}'. Address must be a valid url."
+            )
         self.address = address.rstrip("/")  # Remove trailing slash if present
         self.username = getpass.getuser()
         self.verify = verify
