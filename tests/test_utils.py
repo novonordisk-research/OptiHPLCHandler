@@ -1,10 +1,10 @@
 import unittest
 
-from src.OptiHPLCHandler.utils import (
+from OptiHPLCHandler.utils import (
     append_truncate_method_name,
     make_method_name_string_compatible_with_empower,
 )
-from src.OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
+from OptiHPLCHandler.utils.validate_gradient_table import validate_gradient_table
 
 
 class TestUtils(unittest.TestCase):

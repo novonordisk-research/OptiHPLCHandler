@@ -1,19 +1,21 @@
 import unittest
 from types import SimpleNamespace
 
-from applications.method_generators.add_isocratic_segment import (
+from OptiHPLCHandler.applications.method_generators.add_isocratic_segment import (
     generate_add_isocratic_segment_to_method,
 )
-from applications.method_generators.alter_strong_eluent_pct import (
+from OptiHPLCHandler.applications.method_generators.alter_strong_eluent_pct import (
     generate_altered_strong_eluent_method_pct,
 )
-from applications.method_generators.alter_temperature import (
+from OptiHPLCHandler.applications.method_generators.alter_temperature import (
     generate_altered_temperature_method,
 )
-from applications.method_generators.condense_gradient_table import (
+from OptiHPLCHandler.applications.method_generators.condense_gradient_table import (
     generate_condense_gradient_table,
 )
-from applications.method_generators.ramp_method import generate_ramp_method
+from OptiHPLCHandler.applications.method_generators.ramp_method import (
+    generate_ramp_method,
+)
 
 
 class TestMethodGenerators(unittest.TestCase):

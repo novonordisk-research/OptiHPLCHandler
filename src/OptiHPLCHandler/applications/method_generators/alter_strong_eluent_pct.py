@@ -1,9 +1,9 @@
-from applications.empower_implementation.empower_tools import (
+from OptiHPLCHandler import EmpowerInstrumentMethod
+from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
     determine_if_isocratic_method,
     determine_max_compositon_value,
     determine_strong_eluent,
 )
-from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 
