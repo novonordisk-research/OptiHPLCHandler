@@ -57,6 +57,7 @@ class EmpowerInstrumentMethod:
         self.column_oven_method_list: list[ColumnOvenMethod] = []
         self.module_method_list: list[EmpowerModuleMethod] = []
         self.solvent_handler_method: Optional[SolventManagerMethod] = None
+        self.sample_handler_method: Optional[SampleManagerMethod] = None
 
         if use_sample_manager_oven:
             oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
@@ -83,6 +84,8 @@ class EmpowerInstrumentMethod:
                         "Multiple solvent managers found in instrument method."
                     )
                 self.solvent_handler_method = module_method
+            if isinstance(module_method, SampleManagerMethod):
+                self.sample_handler_method = module_method
 
     @property
     def current_method(self):
@@ -112,6 +115,13 @@ class EmpowerInstrumentMethod:
             raise ValueError("No column oven found in instrument method.")
         for module in self.column_oven_method_list:
             module.column_temperature = temperature
+
+    @property
+    def sample_temperature(self):
+        """The sample temperature for the relevant sample oven(s) if any are present."""
+        if self.sample_handler_method is None:
+            raise ValueError("No sample manager found in instrument method.")
+        return self.sample_handler_method.sample_temperature
 
     @property
     def gradient_table(self) -> List[dict]:
