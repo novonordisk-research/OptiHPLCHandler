@@ -146,16 +146,13 @@ class EmpowerModuleMethod:
             value = float(value)
         except ValueError:
             raise ValueError(f"Could not convert {value} to a float.")
-        rounded_value = f"{value:.{decimal_digits}f}"
-        if float(rounded_value) != value:
-            logger.warning(
-                "Rounding %s to %s, as Empower only accepts %s decimal(s).",
-                value,
-                rounded_value,
-                decimal_digits,
-            )  # No user warning, since it should only be accessed through the
-            # property methods, and it is described in the docstring.
-        return str(float(str(rounded_value)))  # lol
+        rounded_value = round(value, decimal_digits)
+        if rounded_value != float(value):
+            warnings.warn(
+                f"Rounding {value} to {rounded_value}, as Empower only "
+                f"accepts {decimal_digits} decimal(s)."
+            )
+        return str(rounded_value)
 
 
 class ColumnOvenMethod(EmpowerModuleMethod):
