@@ -527,42 +527,7 @@ class testQSMMethod(unittest.TestCase):
         new_method = QSMMethod(module_method.current_method)
         assert new_method.gradient_table == module_method.gradient_table
 
-    def test_floats_and_strings(self):
-        module_method = QSMMethod(self.minimal_definition)
-        module_method.gradient_table = [
-            {
-                "Time": "Initial",
-                "Flow": 1,
-                "CompositionA": 40,
-                "CompositionB": 40,
-                "CompositionC": 10,
-                "CompositionD": 10,
-                "Curve": "Initial",
-            },
-        ]
-        assert float(module_method.gradient_table[0]["Flow"]) == 1.0
-        assert float(module_method.gradient_table[0]["CompositionA"]) == 40.0
-        assert float(module_method.gradient_table[0]["CompositionB"]) == 40.0
-        assert float(module_method.gradient_table[0]["CompositionC"]) == 10.0
-        assert float(module_method.gradient_table[0]["CompositionD"]) == 10.0
-        module_method.gradient_table = [
-            {
-                "Time": "Initial",
-                "Flow": "0.5",
-                "CompositionA": "30.0",
-                "CompositionB": "30.0",
-                "CompositionC": "30.0",
-                "CompositionD": "10.0",
-                "Curve": "Initial",
-            },
-        ]
-        assert module_method.gradient_table[0]["Flow"] == "0.5"
-        assert module_method.gradient_table[0]["CompositionA"] == "30.0"
-        assert module_method.gradient_table[0]["CompositionB"] == "30.0"
-        assert module_method.gradient_table[0]["CompositionC"] == "30.0"
-        assert module_method.gradient_table[0]["CompositionD"] == "10.0"
-
-    def test_rounding_strings(self):
+    def test_rounding_floats(self):
         # Empower gives the wrong numbers if more than 10 decimals are given for
         # parameters in the gradient table. This test checks that the numbers are
         # rounded to 3 decimals before being sent to Empower.
@@ -601,27 +566,27 @@ class testQSMMethod(unittest.TestCase):
         assert module_method.gradient_table[1]["CompositionD"] == "0.667"
         assert "0.3333" not in module_method.current_method
 
-    def test_rounding_floats(self):
+    def test_rounding_strings(self):
         # If values are given as strings, EmpowerHandler should also round them
         module_method = QSMMethod(self.minimal_definition)
         module_method.gradient_table = [
             {
                 "Time": "Initial",
-                "Flow": 0.33333,
-                "CompositionA": 0.66667,
-                "CompositionB": 0,
-                "CompositionC": 0,
-                "CompositionD": 0.33333,
+                "Flow": "0.33333",
+                "CompositionA": "0.66667",
+                "CompositionB": "0",
+                "CompositionC": "0",
+                "CompositionD": "0.33333",
                 "Curve": "Initial",
             },
             {
-                "Time": 0.33333333,  # 8 decimals should give a warning
-                "Flow": 0.33333,
-                "CompositionA": 0.33333,
-                "CompositionB": 0.0,
-                "CompositionC": 0.66667,
-                "CompositionD": 0,
-                "Curve": 6,
+                "Time": "0.33333333",  # 8 decimals should give a warning
+                "Flow": "0.33333",
+                "CompositionA": "0.33333",
+                "CompositionB": "0.0",
+                "CompositionC": "0.66667",
+                "CompositionD": "0",
+                "Curve": "6",
             },
         ]
         assert module_method.gradient_table[0]["Flow"] == "0.333"
@@ -636,6 +601,30 @@ class testQSMMethod(unittest.TestCase):
         assert module_method.gradient_table[1]["CompositionC"] == "0.667"
         assert module_method.gradient_table[1]["CompositionD"] == "0.0"
         assert "0.3333" not in module_method.current_method["nativeXml"]
+
+    def test_round_warning(self):
+        module_method = QSMMethod(self.minimal_definition)
+        with self.assertWarns(UserWarning):
+            module_method.gradient_table = [
+                {
+                    "Time": "Initial",
+                    "Flow": "0.33333",
+                    "CompositionA": "0.66667",
+                    "CompositionB": "0",
+                    "CompositionC": "0",
+                    "CompositionD": "0.33333",
+                    "Curve": "Initial",
+                },
+                {
+                    "Time": "0.33333333",  # 8 decimals should give a warning
+                    "Flow": "0.33333",
+                    "CompositionA": "0.33333",
+                    "CompositionB": "0.0",
+                    "CompositionC": "0.66667",
+                    "CompositionD": "0",
+                    "Curve": "6",
+                },
+            ]
 
     def test_manually_than_gradient_table_changed(self):
         # Checks that manual changes in the gradient table does not proclude the use
