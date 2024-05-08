@@ -140,18 +140,22 @@ class EmpowerModuleMethod:
 
     @staticmethod
     def _round(value: Union[str, float], decimal_digits: int = 3) -> str:
-        if isinstance(value, float):
-            rounded_value = f"{value:.{decimal_digits}f}"
-            if float(rounded_value) != value:
-                logger.warning(
-                    "Rounding %s to %s, as Empower only accepts %s decimal(s).",
-                    value,
-                    rounded_value,
-                    decimal_digits,
-                )  # No user warning, since it should only be accessed through the
-                # property methods, and it is described in the docstring.
-                return rounded_value
-        return str(value)
+        if value == "Initial":
+            return value
+        try:
+            value = float(value)
+        except ValueError:
+            raise ValueError(f"Could not convert {value} to a float.")
+        rounded_value = f"{value:.{decimal_digits}f}"
+        if float(rounded_value) != value:
+            logger.warning(
+                "Rounding %s to %s, as Empower only accepts %s decimal(s).",
+                value,
+                rounded_value,
+                decimal_digits,
+            )  # No user warning, since it should only be accessed through the
+            # property methods, and it is described in the docstring.
+        return str(float(str(rounded_value)))  # lol
 
 
 class ColumnOvenMethod(EmpowerModuleMethod):
@@ -245,9 +249,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
                     f"Invalid valve position {position}, "
                     f"must start with one of {self.solvent_lines}"
                 )
-            self[
-                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
-            ] = position[1:]
+            self[self.valve_tag_prefix + position[0] + self.valve_tag_suffix] = (
+                position[1:]
+            )
 
     @property
     def gradient_table(self) -> List[Dict[str, str]]:

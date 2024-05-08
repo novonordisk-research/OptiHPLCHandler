@@ -101,10 +101,10 @@ class TestInstrumentSetMethod(unittest.TestCase):
         method.column_oven_method_list[0].column_temperature = "50.03"
         assert isinstance(method.current_method, dict)
         assert method.current_method != method_definition["results"][0]
-        assert method.current_method["modules"][-1]["nativeXml"].count("50.03") == 1
+        assert method.current_method["modules"][-1]["nativeXml"].count("50.0") == 1
         assert (
             method.current_method["modules"][-1]["nativeXml"].replace(
-                "50.03", original_column_temperature
+                "50.0", original_column_temperature
             )
             == method_definition["results"][0]["modules"][-1]["nativeXml"]
         )
@@ -144,7 +144,7 @@ class TestColumnTemperature(unittest.TestCase):
     def test_set(self):
         method_definition = self.column_manager_example
         method = EmpowerInstrumentMethod(method_definition)
-        new_temperature = "50.03"
+        new_temperature = "50.0"
         method.column_temperature = new_temperature
         assert method.column_temperature == new_temperature
         assert method.column_oven_method_list[0].column_temperature == new_temperature
@@ -154,8 +154,8 @@ class TestColumnTemperature(unittest.TestCase):
         method_definition["modules"].append(method_definition["modules"][-1])
         method = EmpowerInstrumentMethod(method_definition)
         method.column_oven_method_list[0].column_temperature = "5"
-        method.column_temperature = "50.03"
-        assert method.column_temperature == "50.03"
+        method.column_temperature = "50.0"
+        assert method.column_temperature == "50.0"
 
     def test_set_none(self):
         method_definition = self.column_manager_example["results"][0]
@@ -181,9 +181,9 @@ class TestColumnTemperature(unittest.TestCase):
         method = EmpowerInstrumentMethod(minimal_definition)
         assert method.column_temperature == "45.0"
         method.column_temperature = "50.03"
-        assert method.column_temperature == "50.03"
+        assert method.column_temperature == "50.0"
         assert method.module_method_list[0].column_temperature == "43.0"
-        assert method.module_method_list[1].column_temperature == "50.03"
+        assert method.module_method_list[1].column_temperature == "50.0"
 
     def test_setting_multiple(self):
         minimal_definition = {
@@ -205,9 +205,9 @@ class TestColumnTemperature(unittest.TestCase):
         with self.assertRaises(ValueError):
             method.column_temperature
         method.column_temperature = "50.03"
-        assert method.column_temperature == "50.03"
-        assert method.module_method_list[0].column_temperature == "50.03"
-        assert method.module_method_list[1].column_temperature == "50.03"
+        assert method.column_temperature == "50.0"
+        assert method.module_method_list[0].column_temperature == "50.0"
+        assert method.module_method_list[1].column_temperature == "50.0"
 
 
 class TestSolventManager(unittest.TestCase):
