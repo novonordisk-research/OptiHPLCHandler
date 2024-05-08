@@ -4,7 +4,7 @@ from .empower_instrument_method import EmpowerInstrumentMethod
 from .empower_module_method import EmpowerModuleMethod
 from .utils.data_types import DataField, HPLCSetup, Sample
 
-__version__ = "2.9.0"
+__version__ = "3.0.0"
 
 __all__ = [
     "DataField",
