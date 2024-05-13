@@ -32,7 +32,7 @@ def generate_ramp_method(
         ramp_settings = {
             "suffix": "_ramp",
             "index": 0,
-            "ramp_time": 1,
+            "ramp_time": 3,
         }
     elif ramp_type == "rampdown":
         ramp_settings = {
