@@ -153,7 +153,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             # If the login is not done in a context manager, it is only allowed if
             # `run_without_context` is True, and even there, it psots a warning.
             if self.allow_login_without_context_manager:
-                logger.warning("Logging in without context.")
                 warnings.warn(
                     "You are logging in manually without a context manager. "
                     "This is not recommended.\n"

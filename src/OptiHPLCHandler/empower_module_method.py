@@ -52,12 +52,10 @@ class EmpowerModuleMethod:
         :param new: The string to replace it with.
         """
         if re.search(r"\.\d{8}", new):
-            warning_text = (
+            warnings.warn(
                 f"The value {new} seems to contain a numerical value with more than 7 "
                 "digits after the decimal point. Empower might interpret that wrong."
             )
-            logger.warning(warning_text)
-            warnings.warn(warning_text)
         self._change_list.append((original, new))
 
     def undo(self) -> None:
@@ -126,7 +124,7 @@ class EmpowerModuleMethod:
         for original, new in change_list:
             num_replaced = xml.count(original)
             if num_replaced == 0:
-                logger.warning(
+                warnings.warn(
                     f"Could not find {original} in {method}, no changes made to method."
                 )  # Consider trying to replace `<` with `&lt` and `>` with `&gt;` and
                 # then trying again.
