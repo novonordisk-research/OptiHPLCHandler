@@ -71,10 +71,9 @@ class EmpowerConnection:
                     verify=self.verify,
                 )
             except requests.exceptions.Timeout as e:
-                timeout_string = f"Getting service from {self.address} timed out"
-                print(timeout_string)
-                logger.error(timeout_string)
-                raise requests.exceptions.Timeout(timeout_string) from e
+                raise requests.exceptions.Timeout(
+                    f"Getting service from {self.address} timed out"
+                ) from e
             self.service = response.json()["results"][0]["netServiceName"]
             # If no service is specified, use the first one in the list
         else:
@@ -121,11 +120,9 @@ class EmpowerConnection:
                 verify=self.verify,
             )
         except requests.exceptions.Timeout as e:
-            timeout_string = (
+            raise requests.exceptions.Timeout(
                 f"Login to {self.address} with username = {self.username} timed out"
-            )
-            logger.error(timeout_string)
-            raise requests.exceptions.Timeout(timeout_string) from e
+            ) from e
         self.raise_for_status(response)
         self.token = response.json()["results"][0]["token"]
         self.session_id = response.json()["results"][0]["id"]
@@ -177,10 +174,9 @@ class EmpowerConnection:
                     verify=verify,
                 )
             except requests.exceptions.Timeout as e:
-                timeout_string = f"{method}ing {body} to {endpoint} timed out"
-                print(timeout_string)
-                logger.error(timeout_string)
-                raise requests.exceptions.Timeout(timeout_string) from e
+                raise requests.exceptions.Timeout(
+                    f"{method}ing {body} to {endpoint} timed out"
+                ) from e
 
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
