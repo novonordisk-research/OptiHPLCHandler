@@ -153,7 +153,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             # If the login is not done in a context manager, it is only allowed if
             # `run_without_context` is True, and even there, it psots a warning.
             if self.allow_login_without_context_manager:
-                logger.warning("Logging in without context.")
                 warnings.warn(
                     "You are logging in manually without a context manager. "
                     "This is not recommended.\n"
@@ -323,10 +322,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             for method in method_list
         ]
         if any(len(name_dict) > 1 for name_dict in method_name_dict_list):
-            logger.error("Multiple names found for a method.")
             raise ValueError("Multiple names found for a method.")
         if any(len(name_dict) == 0 for name_dict in method_name_dict_list):
-            logger.error("No name found for a method.")
             raise ValueError("No name found for a method.")
         method_name_list = [
             name_dict[0]["value"] for name_dict in method_name_dict_list
@@ -432,12 +429,10 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 )
                 field["dataType"] = value
         if "dataType" not in field:
-            message = (
+            raise ValueError(
                 "No data type found for field "
                 f"{field['name']} with value {field['value']}."
             )
-            logger.error(message)
-            raise ValueError(message)
 
     def __str__(self):
         return f"EmpowerHandler for project {self.project}, user {self.username}"
