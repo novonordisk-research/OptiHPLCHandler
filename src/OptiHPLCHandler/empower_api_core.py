@@ -67,7 +67,7 @@ class EmpowerConnection:
             try:
                 response = requests.get(
                     self.address + "/authentication/db-service-list",
-                    timeout=10,
+                    timeout=60,
                     verify=self.verify,
                 )
             except requests.exceptions.Timeout as e:
