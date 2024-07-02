@@ -29,7 +29,7 @@
     "access_right": "open",
     "license": "bsd-3-clause",
     "title": "Opti-HPLC-Handler",
-    "description": "Simplified proxy API for interacting with the Waters Empower Web API",
+    "description": "SDK for interacting with the Waters Empower Web API",
     "keywords": [
         "HPLC",
         "UHPLC",
