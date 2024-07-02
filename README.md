@@ -6,7 +6,7 @@
 <a href="https://pepy.tech/project/opti-hplc-handler"><img src="https://img.shields.io/pypi/dm/Opti-HPLC-Handler.svg" alt="PyPI Downloads"></a>
 <a href="https://github.com/novonordisk-research/OptiHPLCHandler"><img src="https://img.shields.io/github/last-commit/novonordisk-research/OptiHPLCHandler.svg" alt="Source code on GitHub"></a>
 
-Simplified proxy API for interacting with the Waters Empower Web API. It aims to make
+Software development kit (SDK) for interacting with the Waters Empower Web API. It aims to make
 putting data into and getting data out of Empower easy, with the aim of automating
 running samples. It will not feature changing data already in Empower.
 
