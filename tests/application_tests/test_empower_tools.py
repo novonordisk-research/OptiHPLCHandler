@@ -1,11 +1,11 @@
 import unittest
 
 from OptiHPLCHandler.applications import (
+    determine_decreasing_weak_eluents,
     determine_if_isocratic_method,
     determine_last_high_flow_time,
     determine_max_compositon_value,
     determine_strong_eluent,
-    determine_decreasing_weak_eluents,
 )
 
 
