@@ -1,10 +1,10 @@
 from .empower_implementation.empower_tools import (
+    determine_decreasing_weak_eluents,
     determine_if_isocratic_method,
     determine_last_high_flow_time,
     determine_max_compositon_value,
     determine_strong_eluent,
     post_instrument_methodset_method,
-    determine_decreasing_weak_eluents,
 )
 from .method_generators.add_isocratic_segment import (
     generate_add_isocratic_segment_to_method,
@@ -25,4 +25,5 @@ __all__ = [
     "generate_ramp_method",
     "generate_add_isocratic_segment_to_method",
     "determine_last_high_flow_time",
+    "determine_decreasing_weak_eluents",
 ]
