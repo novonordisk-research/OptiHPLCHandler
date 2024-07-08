@@ -129,3 +129,23 @@ def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
             list_weak_eluents.append(composition)
 
     return strong_eluent, list_weak_eluents
+
+
+def determine_decreasing_weak_eluents(gradient_table: List[dict]) -> List[str]:
+    """
+    Determine if the weak eluent is decreasing in the gradient table.
+    """
+
+    _, list_weak_eluents = determine_strong_eluent(gradient_table)
+
+    decreasing_weak_eluents = []
+    for weak_eluent in list_weak_eluents:
+        previous_value = None
+        for row in gradient_table:
+            value = row.get(weak_eluent)
+            if value is not None:
+                if previous_value is not None and float(value) < float(previous_value):
+                    decreasing_weak_eluents.append(weak_eluent)
+                    break
+                previous_value = value
+    return decreasing_weak_eluents
