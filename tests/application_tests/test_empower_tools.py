@@ -5,6 +5,7 @@ from OptiHPLCHandler.applications import (
     determine_last_high_flow_time,
     determine_max_compositon_value,
     determine_strong_eluent,
+    determine_decreasing_weak_eluents,
 )
 
 
@@ -201,3 +202,58 @@ class TestEmpowerTools(unittest.TestCase):
             {"Time": 30, "Flow": 0.1},
         ]
         assert determine_last_high_flow_time(gradient_table) == 20
+
+    def test_determine_decreasing_weak_eluents(self):
+        gradient_table = [
+            {
+                "CompositionA": 90.0,
+                "CompositionB": 10.0,
+                "CompositionC": 0.0,
+                "CompositionD": 0.0,
+            },
+            {
+                "CompositionA": 10.0,
+                "CompositionB": 90.0,
+                "CompositionC": 0.0,
+                "CompositionD": 0.0,
+            },
+        ]
+        weak_eluent = determine_decreasing_weak_eluents(gradient_table)
+        self.assertEqual(weak_eluent, ["CompositionA"])
+
+        # Check a third composition that doesnt change is not included
+        gradient_table = [
+            {
+                "CompositionA": 90.0,
+                "CompositionB": 09.0,
+                "CompositionC": 1.0,
+                "CompositionD": 0.0,
+            },
+            {
+                "CompositionA": 09.0,
+                "CompositionB": 90.0,
+                "CompositionC": 1.0,
+                "CompositionD": 0.0,
+            },
+        ]
+        weak_eluent = determine_decreasing_weak_eluents(gradient_table)
+        self.assertEqual(weak_eluent, ["CompositionA"])
+
+        # check a third composition that changes is included
+        gradient_table = [
+            {
+                "CompositionA": 90.0,
+                "CompositionB": 09.0,
+                "CompositionC": 1.0,
+                "CompositionD": 0.0,
+            },
+            {
+                "CompositionA": 10.0,
+                "CompositionB": 90.0,
+                "CompositionC": 0.0,
+                "CompositionD": 0.0,
+            },
+        ]
+
+        weak_eluent = determine_decreasing_weak_eluents(gradient_table)
+        self.assertEqual(weak_eluent, ["CompositionA", "CompositionC"])
