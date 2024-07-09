@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
 
@@ -30,12 +30,12 @@ def post_instrument_methodset_method(
         handler.PostMethodSetMethod(method_set_method)
 
 
-def determine_if_isocratic_method(gradient_table: List[dict]) -> bool:
+def determine_if_isocratic_method(gradient_table: list[dict]) -> bool:
     """
     Determines if the method is isocratic based on the gradient table.
 
     Args:
-        gradient_table (List[dict]): The gradient table to determine if the method is
+        gradient_table (list[dict]): The gradient table to determine if the method is
         isocratic.
 
     Returns:
@@ -59,13 +59,13 @@ def determine_if_isocratic_method(gradient_table: List[dict]) -> bool:
 
 
 def determine_max_compositon_value(
-    gradient_table: List[dict], composition: str
+    gradient_table: list[dict], composition: str
 ) -> float:
     """
     Determines the maximum value in the gradient table.
 
     Args:
-        gradient_table (List[dict]): The gradient table to determine the maximum value.
+        gradient_table (list[dict]): The gradient table to determine the maximum value.
         composition (str): The name of the composition entry to determine the maximum
         value.
 
@@ -77,13 +77,13 @@ def determine_max_compositon_value(
     return max([float(step[composition]) for step in gradient_table])
 
 
-def determine_last_high_flow_time(gradient_table: List[dict]) -> float:
+def determine_last_high_flow_time(gradient_table: list[dict]) -> float:
     """
     Determine the time at which the last high flow rate occurs in a gradient table.
 
     Parameters
     ----------
-    gradient_table : List[dict]
+    gradient_table : list[dict]
 
     Returns
     -------
@@ -98,7 +98,7 @@ def determine_last_high_flow_time(gradient_table: List[dict]) -> float:
     return last_high_flow_time
 
 
-def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
+def determine_strong_eluent(gradient_table: list[dict]) -> Optional[str]:
     """
     Determine the strong eluent in the gradient table. Assuming there is only one
     strong eluent. Deprecated in favor of classify_eluents.
@@ -110,7 +110,7 @@ def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
     return list_strong_eluent[0], [*list_weak_eluents, *list_constant]
 
 
-def determine_decreasing_weak_eluents(gradient_table: List[dict]) -> List[str]:
+def determine_decreasing_weak_eluents(gradient_table: list[dict]) -> list[str]:
     """
     Determine the weak eluents in the gradient table. Deprecated in favor of
     classify_eluents.
@@ -122,8 +122,8 @@ def determine_decreasing_weak_eluents(gradient_table: List[dict]) -> List[str]:
 
 
 def classify_eluents(
-    gradient_table: List[dict],
-) -> dict[List[str], List[str], List[str]]:
+    gradient_table: list[dict],
+) -> dict[str, list[str]]:
     """
     Classify the eluents in the gradient table as strong, weak, or constant composition.
     Strong eluents are the eluting eluents and thus have increasing composition values
