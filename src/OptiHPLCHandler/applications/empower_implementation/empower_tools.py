@@ -99,53 +99,52 @@ def determine_last_high_flow_time(gradient_table: List[dict]) -> float:
 
 
 def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
-    """
-    Determines the strong eluent from a given gradient table.
-
-    Args:
-        gradient_table (List[dict]): A list of dictionaries representing the gradient
-        table.
-
-    Returns:
-        Tuple[str, List[str]]: A tuple containing the strong eluent and a list of weak
-        eluents.
-    """
-    # Get the compositions
-    compositions = [key for key in gradient_table[0].keys() if "Composition" in key]
-
-    # Check if isocratic method
-    if determine_if_isocratic_method(gradient_table):
-        raise ValueError("Cannot determine strong eluent for isocratic method.")
-
-    # find the composition with the maximum value
-    list_weak_eluents = []
-    for composition in compositions:
-        max_value = determine_max_compositon_value(gradient_table, composition)
-
-        # Determine the strong and weak eluents
-        if float(gradient_table[0][composition]) < float(max_value):
-            strong_eluent = composition
-        else:
-            list_weak_eluents.append(composition)
-
-    return strong_eluent, list_weak_eluents
+    classified_eluents_dict = classify_eluents(gradient_table)
+    list_strong_eluent = classified_eluents_dict["strong_eluents"]
+    list_weak_eluents = classified_eluents_dict["weak_eluents"]
+    list_constant = classified_eluents_dict["constant_composition_eluents"]
+    return list_strong_eluent[0], [*list_weak_eluents, *list_constant]
 
 
 def determine_decreasing_weak_eluents(gradient_table: List[dict]) -> List[str]:
+    classified_eluents_dict = classify_eluents(gradient_table)
+    list_weak_eluents = classified_eluents_dict["weak_eluents"]
+
+    return list_weak_eluents
+
+
+def classify_eluents(
+    gradient_table: List[dict],
+) -> dict[List[str], List[str], List[str]]:
     """
-    Determine if the weak eluent is decreasing in the gradient table.
+    Characterise the eluent strength of the gradient table.
     """
 
-    _, list_weak_eluents = determine_strong_eluent(gradient_table)
+    # Get the compositions
+    compositions = [key for key in gradient_table[0].keys() if "Composition" in key]
 
-    decreasing_weak_eluents = []
-    for weak_eluent in list_weak_eluents:
-        previous_value = None
-        for row in gradient_table:
-            value = row.get(weak_eluent)
-            if value is not None:
-                if previous_value is not None and float(value) < float(previous_value):
-                    decreasing_weak_eluents.append(weak_eluent)
-                    break
-                previous_value = value
-    return decreasing_weak_eluents
+    # Determine the eluents
+    list_weak_eluents = []
+    list_strong_eluents = []
+    list_constant_composition_eluents = []
+
+    for composition in compositions:
+        # Get eluents max value in the gradient table
+        max_value = max([float(step[composition]) for step in gradient_table])
+        # Determine if increasing and thus strong
+        if float(gradient_table[0][composition]) < float(max_value):
+            list_strong_eluents.append(composition)
+
+        else:
+            # Determine if constant composition
+            if all([float(step[composition]) == max_value for step in gradient_table]):
+                list_constant_composition_eluents.append(composition)
+            else:
+                # Is decreasing and thus weak
+                list_weak_eluents.append(composition)
+
+    return {
+        "strong_eluents": list_strong_eluents,
+        "weak_eluents": list_weak_eluents,
+        "constant_composition_eluents": list_constant_composition_eluents,
+    }
