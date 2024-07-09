@@ -1,6 +1,7 @@
 import unittest
 
 from OptiHPLCHandler.applications import (
+    classify_eluents,
     determine_decreasing_weak_eluents,
     determine_if_isocratic_method,
     determine_last_high_flow_time,
@@ -118,9 +119,8 @@ class TestEmpowerTools(unittest.TestCase):
             {"CompositionA": "90.0", "CompositionB": "10.0"},
             {"CompositionA": "10.0", "CompositionB": "90.0"},
         ]
-        assert determine_strong_eluent(gradient_table) == (
-            "CompositionA",
-            ["CompositionB"],
+        self.assertEqual(
+            determine_strong_eluent(gradient_table), ("CompositionA", ["CompositionB"])
         )
 
         gradient_table = [
@@ -128,9 +128,8 @@ class TestEmpowerTools(unittest.TestCase):
             {"CompositionB": "90.0", "CompositionA": "10.0"},
             {"CompositionB": "10.0", "CompositionA": "90.0"},
         ]
-        assert determine_strong_eluent(gradient_table) == (
-            "CompositionB",
-            ["CompositionA"],
+        self.assertEqual(
+            determine_strong_eluent(gradient_table), ("CompositionB", ["CompositionA"])
         )
 
         # QSM
@@ -154,10 +153,9 @@ class TestEmpowerTools(unittest.TestCase):
                 "CompositionD": "0",
             },
         ]
-
-        assert determine_strong_eluent(gradient_table) == (
-            "CompositionB",
-            ["CompositionA", "CompositionC", "CompositionD"],
+        self.assertEqual(
+            determine_strong_eluent(gradient_table),
+            ("CompositionB", ["CompositionA", "CompositionC", "CompositionD"]),
         )
 
         gradient_table = [
@@ -181,14 +179,11 @@ class TestEmpowerTools(unittest.TestCase):
             },
         ]
 
-        assert determine_strong_eluent(gradient_table) == (
-            "CompositionB",
-            ["CompositionA", "CompositionC", "CompositionD"],
+        self.assertEqual(
+            determine_strong_eluent(gradient_table),
+            ("CompositionB", ["CompositionA", "CompositionC", "CompositionD"]),
         )
 
-        gradient_table = [
-            {"CompositionA": "90.0", "CompositionB": "10.0"},
-        ]
         try:
             determine_strong_eluent(gradient_table)
         except ValueError as e:
@@ -257,3 +252,113 @@ class TestEmpowerTools(unittest.TestCase):
 
         weak_eluent = determine_decreasing_weak_eluents(gradient_table)
         self.assertEqual(weak_eluent, ["CompositionA", "CompositionC"])
+
+        # 10 to 90 to 10 check
+        gradient_table = [
+            {
+                "CompositionA": 90.0,
+                "CompositionB": 10.0,
+                "CompositionC": 0.0,
+                "CompositionD": 0.0,
+            },
+            {
+                "CompositionA": 10.0,
+                "CompositionB": 90.0,
+                "CompositionC": 0.0,
+                "CompositionD": 0.0,
+            },
+            {
+                "CompositionA": 90.0,
+                "CompositionB": 10.0,
+                "CompositionC": 0.0,
+                "CompositionD": 0.0,
+            },
+        ]
+        weak_eluent = determine_decreasing_weak_eluents(gradient_table)
+        self.assertEqual(weak_eluent, ["CompositionA"])
+
+    def test_classify_eluents(self):
+        # A strong, B weak, C constant, D not defined
+        gradient_table = [
+            {"CompositionA": "10.0", "CompositionB": "90.0", "CompositionC": "0.0"},
+            {"CompositionA": "90.0", "CompositionB": "10.0", "CompositionC": "0.0"},
+            {"CompositionA": "10.0", "CompositionB": "90.0", "CompositionC": "0.0"},
+        ]
+        self.assertEqual(
+            classify_eluents(gradient_table),
+            {
+                "strong_eluents": ["CompositionA"],
+                "weak_eluents": ["CompositionB"],
+                "constant_composition_eluents": ["CompositionC"],
+            },
+        )
+
+        # A strong, B weak, C constant with value and D constant without value
+        gradient_table = [
+            {
+                "CompositionA": "9.0",
+                "CompositionB": "90.0",
+                "CompositionC": "0.0",
+                "CompositionD": "1.0",
+            },
+            {
+                "CompositionA": "90.0",
+                "CompositionB": "9.0",
+                "CompositionC": "0.0",
+                "CompositionD": "1.0",
+            },
+            {
+                "CompositionA": "9.0",
+                "CompositionB": "90.0",
+                "CompositionC": "0.0",
+                "CompositionD": "1.0",
+            },
+        ]
+
+        self.assertEqual(
+            classify_eluents(gradient_table),
+            {
+                "strong_eluents": ["CompositionA"],
+                "weak_eluents": ["CompositionB"],
+                "constant_composition_eluents": ["CompositionC", "CompositionD"],
+            },
+        )
+
+        # B and C are strong, A is weak, D is constant and valueless
+        gradient_table = [
+            {
+                "CompositionA": "90.0",
+                "CompositionB": "5.0",
+                "CompositionC": "5.0",
+                "CompositionD": "0.0",
+            },
+            {
+                "CompositionA": "10.0",
+                "CompositionB": "45.0",
+                "CompositionC": "45.0",
+                "CompositionD": "0.0",
+            },
+        ]
+        self.assertEqual(
+            classify_eluents(gradient_table),
+            {
+                "strong_eluents": ["CompositionB", "CompositionC"],
+                "weak_eluents": ["CompositionA"],
+                "constant_composition_eluents": ["CompositionD"],
+            },
+        )
+        # Isocratic start, A strong, B weak
+        gradient_table = [
+            {"CompositionA": "10.0", "CompositionB": "90.0"},
+            {"CompositionA": "10.0", "CompositionB": "90.0"},
+            {"CompositionA": "90.0", "CompositionB": "10.0"},
+            {"CompositionA": "10.0", "CompositionB": "90.0"},
+        ]
+        self.assertEqual(
+            classify_eluents(gradient_table),
+            {
+                "strong_eluents": ["CompositionA"],
+                "weak_eluents": ["CompositionB"],
+                "constant_composition_eluents": [],
+            },
+        )
