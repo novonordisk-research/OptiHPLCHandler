@@ -1,6 +1,6 @@
 [project]
 name = "Opti_HPLC_Handler"
-version = "3.0.1"
+version = "3.1.0"
 description = "SDK for interacting with the Waters Empower Web API."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -97,7 +97,7 @@ pythonpath = [
 ]
 
 [tool.bumpver]
-current_version = "3.0.1"
+current_version = "3.1.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 tag_message = "{new_version}"
