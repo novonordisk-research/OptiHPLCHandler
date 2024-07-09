@@ -99,6 +99,10 @@ def determine_last_high_flow_time(gradient_table: List[dict]) -> float:
 
 
 def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
+    """
+    Determine the strong eluent in the gradient table. Assuming there is only one
+    strong eluent. Deprecated in favor of classify_eluents.
+    """
     classified_eluents_dict = classify_eluents(gradient_table)
     list_strong_eluent = classified_eluents_dict["strong_eluents"]
     list_weak_eluents = classified_eluents_dict["weak_eluents"]
@@ -107,6 +111,10 @@ def determine_strong_eluent(gradient_table: List[dict]) -> Optional[str]:
 
 
 def determine_decreasing_weak_eluents(gradient_table: List[dict]) -> List[str]:
+    """
+    Determine the weak eluents in the gradient table. Deprecated in favor of
+    classify_eluents.
+    """
     classified_eluents_dict = classify_eluents(gradient_table)
     list_weak_eluents = classified_eluents_dict["weak_eluents"]
 
@@ -117,7 +125,12 @@ def classify_eluents(
     gradient_table: List[dict],
 ) -> dict[List[str], List[str], List[str]]:
     """
-    Characterise the eluent strength of the gradient table.
+    Classify the eluents in the gradient table as strong, weak, or constant composition.
+    Strong eluents are the eluting eluents and thus have increasing composition values
+    over the gradient table.
+    Weak eluents have decreasing composition values over the gradient table.
+    Constant composition eluents have the same composition value over the gradient
+    table.
     """
 
     # Get the compositions
