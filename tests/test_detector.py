@@ -24,6 +24,17 @@ class TestDetector(unittest.TestCase):
         assert numeric_method.empower_channel_name("Channel1") == "Channel1"
         assert numeric_method.empower_channel_name("ChannelB") == "Channel2"
 
+    def test_lamp_enabled(self):
+        method = Detector({"nativeXml": "<Lamp>true</Lamp>"})
+        assert method.lamp_enabled is True
+        method.lamp_enabled = False
+        assert method.lamp_enabled is False
+
+    def test_no_lamp(self):
+        method = Detector({"nativeXml": "<test/>"})
+        with self.assertRaises(AttributeError):
+            method.lamp_enabled
+
 
 class TestFLR(unittest.TestCase):
     def setUp(self) -> None:
@@ -34,6 +45,37 @@ class TestFLR(unittest.TestCase):
     def test_instantiation(self):
         self.assertIsInstance(self.method, FLRMethod)
 
-    def test_channels(self):
+    def test_get_channels(self):
         channel_dict = self.method.channel_dict
-        assert len(channel_dict) == 2
+        assert len(channel_dict) == 4
+        assert channel_dict["Channel1"]["Enable"] is True
+        assert channel_dict["Channel1"]["Type"] == "Single"
+        assert channel_dict["Channel1"]["Excitation"] == "280"
+        assert channel_dict["Channel1"]["Emission"] == "348"
+        assert channel_dict["Channel1"]["Name"] == "AcqFlrChAx280e348"
+
+    def test_set_enable_channels_bool(self):
+        assert self.method.channel_dict["Channel1"]["Enable"] is True
+        self.method.channel_dict = {"Channel1": {"Enable": False}}
+        assert self.method.channel_dict["Channel1"]["Enable"] is False
+
+    def test_set_enable_channels_str(self):
+        assert self.method.channel_dict["Channel1"]["Enable"] is True
+        self.method.channel_dict = {"Channel1": {"Enable": "false"}}
+        assert self.method.channel_dict["Channel1"]["Enable"] is False
+
+    def test_set_wavelenghts_str(self):
+        self.method.channel_dict = {
+            "Channel1": {"Excitation": "400", "Emission": "38"}
+        }
+        assert self.method.channel_dict["Channel1"]["Excitation"] == "400"
+        assert self.method.channel_dict["Channel1"]["Emission"] == "38"
+        assert self.method.channel_dict["Channel1"]["Name"] == "AcqFlrChAx400e38"
+
+    def test_set_wavelenghts_int(self):
+        self.method.channel_dict = {
+            "Channel1": {"Excitation": 400, "Emission": 38}
+        }
+        assert self.method.channel_dict["Channel1"]["Excitation"] == "400"
+        assert self.method.channel_dict["Channel1"]["Emission"] == "38"
+        assert self.method.channel_dict["Channel1"]["Name"] == "AcqFlrChAx400e38"

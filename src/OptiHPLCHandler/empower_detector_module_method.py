@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 def to_bool(bool_string: Union[str, bool]) -> bool:
-    if bool_string == "true" or bool_string == True:
+    if bool_string == "true" or bool_string is True:
         return True
-    elif bool_string == "false" or bool_string == False:
+    elif bool_string == "false" or bool_string is False:
         return False
     else:
         raise ValueError(f"Invalid bool string: {bool_string}")
@@ -50,11 +50,14 @@ class Detector(EmpowerModuleMethod):
 
     @property
     def lamp_enabled(self) -> bool:
-        return self["Lamp"] == "true"
+        try:
+            return self["Lamp"] == "true"
+        except KeyError as me:
+            raise AttributeError(f"Dector method {type(self).__name__} does not have a lamp setting.") from me
 
     @lamp_enabled.setter
     def lamp_enabled(self, value: bool):
-        self["Lamp"] = "true" if value else "false"
+        self["Lamp"] = to_bool(value)
 
 
 class TUVMethod(Detector):
@@ -148,13 +151,36 @@ class FLRMethod(Detector):
             excitiation_wavelength = channel.find("Excitation").text
             emmision_wavelength = channel.find("Emission").text
             name = channel.find("Name").text
-            channel_dict[channel_name] = {
-                "Enabled": enabled,
+            channel_dict[self.simplified_channel_name(channel_name)] = {
+                "Enable": enabled,
+                "Type": "Single",
                 "Name": name,
                 "Excitation": excitiation_wavelength,
                 "Emission": emmision_wavelength,
                 "XML": channel_xml,
             }
+        return channel_dict
+
+    @channel_dict.setter
+    def channel_dict(self, value: dict[str, dict]):
+        for channel_name, channel in value.items():
+            channel_name = self.empower_channel_name(channel_name)
+            old_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
+            old_channel = ET.fromstring(old_xml)
+            if channel_name.startswith("Channel"):
+                for setting_name, setting_value in channel.items():
+                    if setting_name != "XML":
+                        if setting_name == "Enable":
+                            setting_value = to_string(setting_value)
+                        old_channel.find(setting_name).text = str(setting_value)
+                excitation = old_channel.find("Excitation").text
+                emission = old_channel.find("Emission").text
+                name = f"AcqFlrCh{channel_name[-1]}x{excitation}e{emission}"
+                old_channel.find("Name").text = name
+                channel_str = ET.tostring(old_channel).decode()
+                channel_str = channel_str.replace(f"<{channel_name}> ", "")
+                channel_str = channel_str.replace(f" </{channel_name}>", "")
+                self[channel_name] = channel_str
 
 
 class RIMethod(Detector):
