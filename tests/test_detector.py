@@ -28,7 +28,7 @@ class TestDetector(unittest.TestCase):
 class TestFLR(unittest.TestCase):
     def setUp(self) -> None:
         flr_example = load_example_file("FLR_example")
-        flr_example = {"nativeXML": flr_example}
+        flr_example = {"nativeXml": flr_example}
         self.method: FLRMethod = module_method_factory(flr_example)
 
     def test_instantiation(self):
