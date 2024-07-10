@@ -53,7 +53,9 @@ class Detector(EmpowerModuleMethod):
         try:
             return self["Lamp"] == "true"
         except KeyError as me:
-            raise AttributeError(f"Dector method {type(self).__name__} does not have a lamp setting.") from me
+            raise AttributeError(
+                f"Dector method {type(self).__name__} does not have a lamp setting."
+            ) from me
 
     @lamp_enabled.setter
     def lamp_enabled(self, value: bool):
@@ -81,7 +83,7 @@ class TUVMethod(Detector):
             channel_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
             channel = ET.fromstring(channel_xml)
             wavelength = channel.find(self.wavelength_name).text
-            channel_dict[channel_name] = {
+            channel_dict[self.simplified_channel_name(channel_name)] = {
                 self.wavelength_name: wavelength,
                 "Type": "Single",
                 "XML": channel_xml,
@@ -91,14 +93,15 @@ class TUVMethod(Detector):
     @channel_dict.setter
     def channel_dict(self, value: dict[str, dict]):
         for channel_name, channel in value.items():
+            channel_name = self.empower_channel_name(channel_name)
             old_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
             old_channel = ET.fromstring(old_xml)
             for setting_name, setting_value in channel.items():
                 if setting_name != "XML":
                     old_channel.find(setting_name).text = str(setting_value)
             channel_str = ET.tostring(old_channel).decode()
-            channel_str = channel_str.replace(f"<{channel_name}> ", "")
-            channel_str = channel_str.replace(f" </{channel_name}>", "")
+            channel_str = channel_str.replace(f"<{channel_name}>", "")
+            channel_str = channel_str.replace(f"</{channel_name}>", "")
             self[channel_name] = channel_str
 
 
