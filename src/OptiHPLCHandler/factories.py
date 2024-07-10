@@ -9,7 +9,7 @@ from .empower_module_method import (
     QSMMethod,
     SampleManagerMethod,
 )
-from .empower_detector_module_method import FLRMethod, TUVMethod
+from .empower_detector_module_method import FLRMethod, TUVMethod, PDAMethod
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,9 @@ def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModule
         if "AcquityTUV" in module_type or "ACQ-TUV" in module_type:
             logger.debug("Creating TUVMethod")
             return TUVMethod(method_definition)
+        if "AcquityPDA" in module_type or "ACQ-PDA" in module_type:
+            logger.debug("Creating PDAMethod")
+            return PDAMethod(method_definition)
         # Add more cases as they are coded
         else:
             logger.debug(
