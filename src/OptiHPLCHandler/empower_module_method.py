@@ -337,5 +337,3 @@ class QSMMethod(SolventManagerMethod):
     valve_tag_prefix = "SolventSelectionValve"
     valve_tag_suffix = "Position"
     solvent_lines = ["A", "B", "C", "D"]
-
-

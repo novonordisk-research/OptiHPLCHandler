@@ -2,6 +2,7 @@ import logging
 from typing import Mapping
 from xml.etree import ElementTree as ET
 
+from .empower_detector_module_method import FLRMethod, PDAMethod, TUVMethod
 from .empower_module_method import (
     BSMMethod,
     ColumnManagerMethod,
@@ -9,7 +10,6 @@ from .empower_module_method import (
     QSMMethod,
     SampleManagerMethod,
 )
-from .empower_detector_module_method import FLRMethod, TUVMethod, PDAMethod
 
 logger = logging.getLogger(__name__)
 
