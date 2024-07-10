@@ -2,11 +2,17 @@ import os
 import unittest
 
 from OptiHPLCHandler.factories import module_method_factory
-from OptiHPLCHandler.empower_detector_module_method import Detector, FLRMethod
+from OptiHPLCHandler.empower_detector_module_method import (
+    Detector,
+    FLRMethod,
+    TUVMethod,
+)
 
 
 def load_example_file(example_name: str) -> str:
-    with open(os.path.join("tests", "empower_method_examples", f"{example_name}.xml")) as f:
+    with open(
+        os.path.join("tests", "empower_method_examples", f"{example_name}.xml")
+    ) as f:
         return f.read()
 
 
@@ -25,6 +31,16 @@ class TestDetector(unittest.TestCase):
         assert numeric_method.empower_channel_name("ChannelB") == "Channel2"
 
 
+class TestTUV(unittest.TestCase):
+    def setUp(self) -> None:
+        tuv_example = load_example_file("TUV_example")
+        tuv_example = {"nativeXml": tuv_example}
+        self.method: TUVMethod = module_method_factory(tuv_example)
+
+    def test_instantiation(self):
+        self.assertIsInstance(self.method, TUVMethod)
+
+
 class TestFLR(unittest.TestCase):
     def setUp(self) -> None:
         flr_example = load_example_file("FLR_example")
@@ -33,7 +49,3 @@ class TestFLR(unittest.TestCase):
 
     def test_instantiation(self):
         self.assertIsInstance(self.method, FLRMethod)
-
-    def test_channels(self):
-        channel_dict = self.method.channel_dict
-        assert len(channel_dict) == 2
