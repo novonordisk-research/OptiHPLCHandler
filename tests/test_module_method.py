@@ -10,15 +10,16 @@ from OptiHPLCHandler.empower_module_method import (
     EmpowerModuleMethod,
     QSMMethod,
     SampleManagerMethod,
-    module_method_factory,
 )
+from OptiHPLCHandler.factories import module_method_factory
 
 
 def load_example_files() -> dict:
     example = {}
     example_folder = os.path.join("tests", "empower_method_examples")
     example_files = os.listdir(example_folder)
-    for file in example_files:
+    json_file_list = [file for file in example_files if ".json" in file]
+    for file in json_file_list:
         file_path = os.path.join(example_folder, file)
         with open(file_path) as f:
             example[file] = json.load(f)

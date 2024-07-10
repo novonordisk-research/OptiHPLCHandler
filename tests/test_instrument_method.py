@@ -15,7 +15,8 @@ def get_example_file_dict() -> dict:
     example = {}
     example_folder = os.path.join("tests", "empower_method_examples")
     example_files = os.listdir(example_folder)
-    for file in example_files:
+    json_file_list = [file for file in example_files if ".json" in file]
+    for file in json_file_list:
         file_path = os.path.join(example_folder, file)
         with open(file_path) as f:
             example[file] = json.load(f)

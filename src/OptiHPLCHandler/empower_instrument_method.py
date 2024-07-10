@@ -8,8 +8,8 @@ from .empower_module_method import (
     EmpowerModuleMethod,
     SampleManagerMethod,
     SolventManagerMethod,
-    module_method_factory,
 )
+from .factories import module_method_factory
 from .utils.data_types import EmpowerInstrumentMethodModel as DataModel
 
 logger = logging.getLogger(__name__)
