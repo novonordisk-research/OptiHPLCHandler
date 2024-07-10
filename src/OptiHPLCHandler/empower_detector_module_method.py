@@ -30,7 +30,7 @@ class Detector(EmpowerModuleMethod):
     def simplified_channel_name(self, channel_name: str) -> str:
         # Convert "ChannelA" to "Channel1" and "ChannelB" to "Channel2"
         channel_number = ord(channel_name[-1]) - 64
-        # ord converts a character into an integer, so ord("A") = 65, ord("B") = 66, etc.
+        # ord converts a character into an integer, so ord("A") = 65, ord("B") = 66, ...
         if channel_number < 1:
             return channel_name
         return f"Channel{channel_number}"
