@@ -1,12 +1,12 @@
 import os
 import unittest
 
-from OptiHPLCHandler.factories import module_method_factory
 from OptiHPLCHandler.empower_detector_module_method import (
     Detector,
     FLRMethod,
     TUVMethod,
 )
+from OptiHPLCHandler.factories import module_method_factory
 
 
 def load_example_file(example_name: str) -> str:
