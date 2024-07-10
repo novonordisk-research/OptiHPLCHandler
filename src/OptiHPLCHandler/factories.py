@@ -25,7 +25,7 @@ def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModule
         try:
             module_type = method_definition["name"]
         except KeyError:
-            tree = ET.fromstring(method_definition["nativeXML"])
+            tree = ET.fromstring(method_definition["nativeXml"])
             module_type = tree.tag
         if "AcquityFTN" in module_type or "AcquitySMDI" in module_type:
             logger.debug("Creating SampleManagerMethod")
