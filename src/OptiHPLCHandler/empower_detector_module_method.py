@@ -109,7 +109,6 @@ class PDAMethod(Detector):
 
     @property
     def channel_dict(self) -> dict[str, dict]:
-
         # Single wavelength channels
         list_of_channel_names = [f"Channel{num}" for num in range(1, 9)]
         channel_dict = {}
