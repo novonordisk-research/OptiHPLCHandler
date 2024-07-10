@@ -6,6 +6,7 @@ from OptiHPLCHandler.empower_detector_module_method import (
     Detector,
     FLRMethod,
     TUVMethod,
+    PDAMethod,
 )
 
 
@@ -66,6 +67,41 @@ class TestTUV(unittest.TestCase):
 
         self.method.channel_dict = {"Channel1": {"Wavelength": 400}}
         self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength"], "400")
+
+
+class TestPDA(unittest.TestCase):
+    def setUp(self) -> None:
+        pda_example = load_example_file("PDA_example")
+        pda_example = {"nativeXml": pda_example}
+        self.method: PDAMethod = module_method_factory(pda_example)
+
+    def test_instantiation(self):
+        self.assertIsInstance(self.method, PDAMethod)
+
+    def test_get_channels(self):
+        channel_dict = self.method.channel_dict
+        self.assertEqual(len(channel_dict), 9)
+        self.assertEqual(channel_dict["Channel1"]["Enable"], True)
+        self.assertEqual(channel_dict["Channel1"]["Type"], "Single")
+        self.assertEqual(channel_dict["Channel1"]["Wavelength1"], "214")
+
+    def test_set_enable_channels_bool(self):
+        self.assertEqual(self.method.channel_dict["Channel1"]["Enable"], True)
+        self.method.channel_dict = {"Channel1": {"Enable": False}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Enable"], False)
+
+    def test_set_enable_channels_str(self):
+        self.assertEqual(self.method.channel_dict["Channel1"]["Enable"], True)
+        self.method.channel_dict = {"Channel1": {"Enable": "false"}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Enable"], False)
+
+    def test_set_wavelenghts_str(self):
+        self.method.channel_dict = {"Channel1": {"Wavelength1": "400"}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength1"], "400")
+
+    def test_set_wavelenghts_int(self):
+        self.method.channel_dict = {"Channel1": {"Wavelength1": 400}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength1"], "400")
 
 
 class TestFLR(unittest.TestCase):
