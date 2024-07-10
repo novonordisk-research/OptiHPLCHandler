@@ -61,14 +61,6 @@ class TUVMethod(Detector):
     wavelength_name = "Wavelength"
 
     @property
-    def lamp_enabled(self) -> bool:
-        return self["Lamp"] == "true"
-
-    @lamp_enabled.setter
-    def lamp_enabled(self, value: bool):
-        self["Lamp"] = to_string(value)
-
-    @property
     def channel_dict(self) -> dict[str, dict]:
         list_of_channel_names = ["ChannelA", "ChannelB"]
         channel_dict = {}
