@@ -14,16 +14,35 @@ def to_bool(bool_string: Union[str, bool]) -> bool:
 
 
 def to_string(bool_value: Union[str, bool]) -> str:
-    if bool_value == True or bool_value == "true":
+    if bool_value is True or bool_value == "true":
         return "true"
-    elif bool_value == False or bool_value == "false":
+    elif bool_value is False or bool_value == "false":
         return "false"
     else:
         raise ValueError(f"Invalid bool value: {bool_value}")
 
 
 class Detector(EmpowerModuleMethod):
-    pass
+    def simplified_channel_name(self, channel_name: str) -> str:
+        # Convert "ChannelA" to "Channel1" and "ChannelB" to "Channel2"
+        channel_number = ord(channel_name[-1])-64
+        # ord converts a character into an integer, so ord("A") = 65, ord("B") = 66, etc.
+        if channel_number < 1:
+            return channel_name
+        return f"Channel{channel_number}"
+
+    def empower_channel_name(self, channel_name: str) -> str:
+        if ord(channel_name[-1]) < 65:
+            channel_number = int(channel_name[-1])
+        else:
+            channel_number = ord(channel_name[-1])-64
+        try:
+            self["ChannelA"]
+            # If there is a ChannelA, the channels are designated alphabetically
+            return f"Channel{chr(channel_number+64)}"
+        except KeyError:
+            # If there is no ChannelA, the channels are designated numerically
+            return f"Channel{channel_number}"
 
 
 class TUVMethod(Detector):
@@ -125,5 +144,5 @@ class FLRMethod(Detector):
 
 class RIMethod(Detector):
     @property
-    def channel_dict(self) -> list[dict]:
+    def channel_dict(self) -> dict[str, dict]:
         pass
