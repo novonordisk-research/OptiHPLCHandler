@@ -1,9 +1,8 @@
 import logging
-from xml.etree import ElementTree as ET
 from typing import Union
+from xml.etree import ElementTree as ET
 
 from .empower_module_method import EmpowerModuleMethod
-
 
 logger = logging.getLogger(__name__)
 
