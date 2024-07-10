@@ -14,7 +14,9 @@ from .empower_module_method import (
 logger = logging.getLogger(__name__)
 
 
-def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModuleMethod:  # noqa: C901, E501 This method is allowed to be "complex"
+def module_method_factory(  # noqa: C901 This method is allowed to be "complex"
+    method_definition: Mapping[str, str]
+) -> EmpowerModuleMethod:
     """
     Factory function for creating an EmpowerModuleMethod from a method definition. The
     method definition should contain at least a name key, which is used to determine
