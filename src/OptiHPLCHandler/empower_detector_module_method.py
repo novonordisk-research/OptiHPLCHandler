@@ -44,6 +44,14 @@ class Detector(EmpowerModuleMethod):
             # If there is no ChannelA, the channels are designated numerically
             return f"Channel{channel_number}"
 
+    @property
+    def lamp_enabled(self) -> bool:
+        return self["Lamp"] == "true"
+
+    @lamp_enabled.setter
+    def lamp_enabled(self, value: bool):
+        self["Lamp"] = "true" if value else "false"
+
 
 class TUVMethod(Detector):
     wavelength_name = "Wavelength"
@@ -90,14 +98,6 @@ class TUVMethod(Detector):
 
 class PDAMethod(Detector):
     wavelength_name = "Wavelength1"
-
-    @property
-    def lamp_enabled(self) -> bool:
-        return self["Lamp"] == "true"
-
-    @lamp_enabled.setter
-    def lamp_enabled(self, value: bool):
-        self["Lamp"] = "true" if value else "false"
 
     @property
     def channel_dict(self) -> dict[str, dict]:
