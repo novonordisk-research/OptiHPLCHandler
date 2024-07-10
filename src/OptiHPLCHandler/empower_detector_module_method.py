@@ -1,7 +1,11 @@
+import logging
 from xml.etree import ElementTree as ET
 from typing import Union
 
 from .empower_module_method import EmpowerModuleMethod
+
+
+logger = logging.getLogger(__name__)
 
 
 def to_bool(bool_string: Union[str, bool]) -> bool:
@@ -139,7 +143,26 @@ class PDAMethod(Detector):
 class FLRMethod(Detector):
     @property
     def channel_dict(self) -> list[dict]:
-        pass
+        channel_dict = {}
+        channel_name_list = [self.empower_channel_name(f"Channel{num}") for num in range(1, 5)]
+        for channel_name in channel_name_list:
+            try:
+                channel_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
+            except KeyError:
+                logger.debug(f"No channel named {channel_name}")
+                continue
+            channel = ET.fromstring(channel_xml)
+            enabled = to_bool(channel.find("Enable").text)
+            excitiation_wavelength = channel.find("Excitation").text
+            emmision_wavelength = channel.find("Emission").text
+            name = channel.find("Name").text
+            channel_dict[channel_name] = {
+                "Enabled": enabled,
+                "Name": name,
+                "Excitation": excitiation_wavelength,
+                "Emission": emmision_wavelength,
+                "XML": channel_xml,
+            }
 
 
 class RIMethod(Detector):
