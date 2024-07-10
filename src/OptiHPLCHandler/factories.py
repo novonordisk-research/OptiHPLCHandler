@@ -2,7 +2,7 @@ import logging
 from typing import Mapping
 from xml.etree import ElementTree as ET
 
-from .empower_detector_module_method import FLRMethod, TUVMethod
+from .empower_detector_module_method import FLRMethod, PDAMethod, TUVMethod
 from .empower_module_method import (
     BSMMethod,
     ColumnManagerMethod,
@@ -47,6 +47,9 @@ def module_method_factory(  # noqa: C901 This method is allowed to be "complex"
         if "AcquityTUV" in module_type or "ACQ-TUV" in module_type:
             logger.debug("Creating TUVMethod")
             return TUVMethod(method_definition)
+        if "AcquityPDA" in module_type or "ACQ-PDA" in module_type:
+            logger.debug("Creating PDAMethod")
+            return PDAMethod(method_definition)
         # Add more cases as they are coded
         else:
             logger.debug(
