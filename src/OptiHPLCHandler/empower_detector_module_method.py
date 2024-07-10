@@ -1,9 +1,8 @@
 import logging
-from xml.etree import ElementTree as ET
 from typing import Union
+from xml.etree import ElementTree as ET
 
 from .empower_module_method import EmpowerModuleMethod
-
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class Detector(EmpowerModuleMethod):
     def simplified_channel_name(self, channel_name: str) -> str:
         # Convert "ChannelA" to "Channel1" and "ChannelB" to "Channel2"
         channel_number = ord(channel_name[-1]) - 64
-        # ord converts a character into an integer, so ord("A") = 65, ord("B") = 66, etc.
+        # ord converts a character into an integer, so ord("A") = 65, ord("B") = 66, etc
         if channel_number < 1:
             return channel_name
         return f"Channel{channel_number}"
@@ -110,7 +109,6 @@ class PDAMethod(Detector):
 
     @property
     def channel_dict(self) -> dict[str, dict]:
-
         # Single wavelength channels
         list_of_channel_names = [f"Channel{num}" for num in range(1, 9)]
         channel_dict = {}
