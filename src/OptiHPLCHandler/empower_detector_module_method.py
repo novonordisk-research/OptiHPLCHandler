@@ -222,4 +222,4 @@ class FLRMethod(Detector):
 class RIMethod(Detector):
     @property
     def channel_dict(self) -> dict[str, dict]:
-        pass
+        return {"RIChannel": {}}
