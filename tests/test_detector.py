@@ -51,6 +51,22 @@ class TestTUV(unittest.TestCase):
     def test_instantiation(self):
         self.assertIsInstance(self.method, TUVMethod)
 
+    def test_get_channels(self):
+        channel_dict = self.method.channel_dict
+        self.assertEqual(len(channel_dict), 2)
+        self.assertEqual(channel_dict["Channel1"]["Type"], "Single")
+        self.assertEqual(channel_dict["Channel1"]["Wavelength"], "214")
+
+    def test_set_wavelengths(self):
+        self.method.channel_dict = {"Channel1": {"Wavelength": "400"}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength"], "400")
+
+        self.method.channel_dict = {"ChannelA": {"Wavelength": "400"}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength"], "400")
+
+        self.method.channel_dict = {"Channel1": {"Wavelength": 400}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength"], "400")
+
 
 class TestFLR(unittest.TestCase):
     def setUp(self) -> None:
@@ -81,17 +97,13 @@ class TestFLR(unittest.TestCase):
         assert self.method.channel_dict["Channel1"]["Enable"] is False
 
     def test_set_wavelenghts_str(self):
-        self.method.channel_dict = {
-            "Channel1": {"Excitation": "400", "Emission": "38"}
-        }
+        self.method.channel_dict = {"Channel1": {"Excitation": "400", "Emission": "38"}}
         assert self.method.channel_dict["Channel1"]["Excitation"] == "400"
         assert self.method.channel_dict["Channel1"]["Emission"] == "38"
         assert self.method.channel_dict["Channel1"]["Name"] == "AcqFlrChAx400e38"
 
     def test_set_wavelenghts_int(self):
-        self.method.channel_dict = {
-            "Channel1": {"Excitation": 400, "Emission": 38}
-        }
+        self.method.channel_dict = {"Channel1": {"Excitation": 400, "Emission": 38}}
         assert self.method.channel_dict["Channel1"]["Excitation"] == "400"
         assert self.method.channel_dict["Channel1"]["Emission"] == "38"
         assert self.method.channel_dict["Channel1"]["Name"] == "AcqFlrChAx400e38"
