@@ -153,8 +153,8 @@ class PDAMethod(Detector):
                             setting_value = to_string(setting_value)
                         old_channel.find(setting_name).text = str(setting_value)
                 channel_str = ET.tostring(old_channel).decode()
-                channel_str = channel_str.replace(f"<{channel_name}> ", "")
-                channel_str = channel_str.replace(f" </{channel_name}>", "")
+                channel_str = channel_str.replace(f"<{channel_name}>", "")
+                channel_str = channel_str.replace(f"</{channel_name}>", "")
                 self[channel_name] = channel_str
             elif channel_name == "SpectralChannel":
                 for setting_name, setting_value in channel.items():
@@ -163,8 +163,8 @@ class PDAMethod(Detector):
                             setting_value = to_string(setting_value)
                         old_channel.find(setting_name).text = str(setting_value)
                 channel_str = ET.tostring(old_channel).decode()
-                channel_str = channel_str.replace(f"<{channel_name}> ", "")
-                channel_str = channel_str.replace(f" </{channel_name}>", "")
+                channel_str = channel_str.replace(f"<{channel_name}>", "")
+                channel_str = channel_str.replace(f"</{channel_name}>", "")
                 self[channel_name] = channel_str
             else:
                 raise ValueError(f"Invalid channel type: {old_channel.get('Type')}")
