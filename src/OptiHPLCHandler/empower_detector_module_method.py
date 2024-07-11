@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Union
 from xml.etree import ElementTree as ET
 
@@ -16,13 +17,12 @@ def to_bool(bool_string: Union[str, bool]) -> bool:
         raise ValueError(f"Invalid bool string: {bool_string}")
 
 
-def to_string(bool_value: Union[str, bool]) -> str:
-    if bool_value is True or bool_value == "true":
-        return "true"
-    elif bool_value is False or bool_value == "false":
-        return "false"
-    else:
-        raise ValueError(f"Invalid bool value: {bool_value}")
+def xml_compatible(value: Union[str, bool]) -> str:
+    if value is True:
+        value = "true"
+    elif value is False:
+        value = "false"
+    return str(value)
 
 
 class Detector(EmpowerModuleMethod):
@@ -35,6 +35,9 @@ class Detector(EmpowerModuleMethod):
         return f"Channel{channel_number}"
 
     def empower_channel_name(self, channel_name: str) -> str:
+        if not channel_name.startswith("Channel"):
+            # For things like spectral channel
+            return channel_name
         if ord(channel_name[-1]) < 65:
             channel_number = int(channel_name[-1])
         else:
@@ -59,6 +62,18 @@ class Detector(EmpowerModuleMethod):
     @lamp_enabled.setter
     def lamp_enabled(self, value: bool):
         self["Lamp"] = to_bool(value)
+
+    def create_channel_text(self, channel_name: str, change_dict: dict) -> str:
+        channel_name = self.empower_channel_name(channel_name)
+        old_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
+        old_channel = ET.fromstring(old_xml)
+        for setting_name, setting_value in change_dict.items():
+            if setting_name != "XML":
+                old_channel.find(setting_name).text = xml_compatible(setting_value)
+        channel_str = ET.tostring(old_channel).decode()
+        channel_str = channel_str.replace(f"<{channel_name}>", "")
+        channel_str = channel_str.replace(f"</{channel_name}>", "")
+        return channel_str
 
 
 class TUVMethod(Detector):
@@ -92,16 +107,8 @@ class TUVMethod(Detector):
     @channel_dict.setter
     def channel_dict(self, value: dict[str, dict]):
         for channel_name, channel in value.items():
-            channel_name = self.empower_channel_name(channel_name)
-            old_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
-            old_channel = ET.fromstring(old_xml)
-            for setting_name, setting_value in channel.items():
-                if setting_name != "XML":
-                    old_channel.find(setting_name).text = str(setting_value)
-            channel_str = ET.tostring(old_channel).decode()
-            channel_str = channel_str.replace(f"<{channel_name}>", "")
-            channel_str = channel_str.replace(f"</{channel_name}>", "")
-            self[channel_name] = channel_str
+            channel_str = self.create_channel_text(channel_name, channel)
+            self[self.empower_channel_name(channel_name)] = channel_str
 
 
 class PDAMethod(Detector):
@@ -144,30 +151,8 @@ class PDAMethod(Detector):
     @channel_dict.setter
     def channel_dict(self, value: dict[str, dict]):
         for channel_name, channel in value.items():
-            old_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
-            old_channel = ET.fromstring(old_xml)
-            if channel_name.startswith("Channel"):
-                for setting_name, setting_value in channel.items():
-                    if setting_name != "XML":
-                        if setting_name == "Enable":
-                            setting_value = to_string(setting_value)
-                        old_channel.find(setting_name).text = str(setting_value)
-                channel_str = ET.tostring(old_channel).decode()
-                channel_str = channel_str.replace(f"<{channel_name}>", "")
-                channel_str = channel_str.replace(f"</{channel_name}>", "")
-                self[channel_name] = channel_str
-            elif channel_name == "SpectralChannel":
-                for setting_name, setting_value in channel.items():
-                    if setting_name != "XML":
-                        if setting_name == "Enable":
-                            setting_value = to_string(setting_value)
-                        old_channel.find(setting_name).text = str(setting_value)
-                channel_str = ET.tostring(old_channel).decode()
-                channel_str = channel_str.replace(f"<{channel_name}>", "")
-                channel_str = channel_str.replace(f"</{channel_name}>", "")
-                self[channel_name] = channel_str
-            else:
-                raise ValueError(f"Invalid channel type: {old_channel.get('Type')}")
+            channel_str = self.create_channel_text(channel_name, channel)
+            self[self.empower_channel_name(channel_name)] = channel_str
 
 
 class FLRMethod(Detector):
@@ -202,22 +187,19 @@ class FLRMethod(Detector):
     def channel_dict(self, value: dict[str, dict]):
         for channel_name, channel in value.items():
             channel_name = self.empower_channel_name(channel_name)
-            old_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
-            old_channel = ET.fromstring(old_xml)
-            if channel_name.startswith("Channel"):
-                for setting_name, setting_value in channel.items():
-                    if setting_name != "XML":
-                        if setting_name == "Enable":
-                            setting_value = to_string(setting_value)
-                        old_channel.find(setting_name).text = str(setting_value)
-                excitation = old_channel.find("Excitation").text
-                emission = old_channel.find("Emission").text
-                name = f"AcqFlrCh{channel_name[-1]}x{excitation}e{emission}"
-                old_channel.find("Name").text = name
-                channel_str = ET.tostring(old_channel).decode()
-                channel_str = channel_str.replace(f"<{channel_name}> ", "")
-                channel_str = channel_str.replace(f" </{channel_name}>", "")
-                self[channel_name] = channel_str
+            channel_str = self.create_channel_text(channel_name, channel)
+            excitation = re.search(
+                "<Excitation>(\d+)</Excitation>", channel_str  # noqa: W605
+            )[1]
+            emission = re.search(
+                "<Emission>(\d+)</Emission>", channel_str  # noqa: W605
+            )[1]
+            old_name = re.search("<Name>(.*)</Name>", channel_str)[1]
+            new_name = f"AcqFlrCh{channel_name[-1]}x{excitation}e{emission}"
+            channel_str = channel_str.replace(
+                f"<Name>{old_name}</Name>", f"<Name>{new_name}</Name>"
+            )
+            self[channel_name] = channel_str
 
 
 class RIMethod(Detector):
