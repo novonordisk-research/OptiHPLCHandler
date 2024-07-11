@@ -2,6 +2,7 @@ import logging
 import re
 from typing import List, Optional, Union
 
+from .empower_detector_module_method import Detector
 from .empower_module_method import (
     ColumnManagerMethod,
     ColumnOvenMethod,
@@ -54,15 +55,9 @@ class EmpowerInstrumentMethod:
         :param use_sample_manager_oven: If True, both sample manager oven and column
             manager oven will be used. If False, only column manager oven will be used.
         """
-        self.column_oven_method_list: list[ColumnOvenMethod] = []
         self.module_method_list: list[EmpowerModuleMethod] = []
         self.solvent_handler_method: Optional[SolventManagerMethod] = None
         self.sample_handler_method: Optional[SampleManagerMethod] = None
-
-        if use_sample_manager_oven:
-            oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
-        else:
-            oven_type_tuple = (ColumnManagerMethod,)
 
         if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
@@ -76,8 +71,6 @@ class EmpowerInstrumentMethod:
         for module_method_definition in method_definition["modules"]:
             module_method = module_method_factory(module_method_definition)
             self.module_method_list.append(module_method)
-            if isinstance(module_method, oven_type_tuple):
-                self.column_oven_method_list.append(module_method)
             if isinstance(module_method, SolventManagerMethod):
                 if self.solvent_handler_method is not None:
                     raise ValueError(
@@ -86,6 +79,18 @@ class EmpowerInstrumentMethod:
                 self.solvent_handler_method = module_method
             if isinstance(module_method, SampleManagerMethod):
                 self.sample_handler_method = module_method
+        if use_sample_manager_oven:
+            oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
+        else:
+            oven_type_tuple = (ColumnManagerMethod,)
+        self.column_oven_method_list: list[ColumnOvenMethod] = [
+            module
+            for module in self.module_method_list
+            if isinstance(module, oven_type_tuple)
+        ]
+        self.detector_method_list: list[Detector] = [
+            module for module in self.module_method_list if isinstance(module, Detector)
+        ]
 
     @property
     def current_method(self):
