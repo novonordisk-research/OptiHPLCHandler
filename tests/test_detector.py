@@ -95,13 +95,42 @@ class TestPDA(unittest.TestCase):
         self.method.channel_dict = {"Channel1": {"Enable": "false"}}
         self.assertEqual(self.method.channel_dict["Channel1"]["Enable"], False)
 
-    def test_set_wavelenghts_str(self):
+    def test_set_wavelength_str(self):
         self.method.channel_dict = {"Channel1": {"Wavelength1": "400"}}
         self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength1"], "400")
 
-    def test_set_wavelenghts_int(self):
+    def test_set_wavelength_int(self):
         self.method.channel_dict = {"Channel1": {"Wavelength1": 400}}
         self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength1"], "400")
+
+    def test_set_wavelength_twice(self):
+        # Get the initial value
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength1"], "214")
+        # Set the value to 400
+        self.method.channel_dict = {"Channel1": {"Wavelength1": 400}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength1"], "400")
+        # Set the value to 500
+        self.method.channel_dict = {"Channel1": {"Wavelength1": 500}}
+        self.assertEqual(self.method.channel_dict["Channel1"]["Wavelength1"], "500")
+
+    def test_get_spectral_channel(self):
+        channel_dict = self.method.channel_dict
+        self.assertEqual(channel_dict["SpectralChannel"]["StartWavelength"], "210")
+        self.assertEqual(channel_dict["SpectralChannel"]["EndWavelength"], "400")
+        self.assertEqual(channel_dict["SpectralChannel"]["Enable"], False)
+
+    def test_set_spectral_channel(self):
+        self.method.channel_dict = {
+            "SpectralChannel": {
+                "StartWavelength": 200,
+                "EndWavelength": 300,
+                "Enable": True,
+            }
+        }
+        channel_dict = self.method.channel_dict
+        self.assertEqual(channel_dict["SpectralChannel"]["StartWavelength"], "200")
+        self.assertEqual(channel_dict["SpectralChannel"]["EndWavelength"], "300")
+        self.assertEqual(channel_dict["SpectralChannel"]["Enable"], True)
 
 
 class TestFLR(unittest.TestCase):
