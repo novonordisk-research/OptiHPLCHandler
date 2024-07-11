@@ -15,7 +15,8 @@ def get_example_file_dict() -> dict:
     example = {}
     example_folder = os.path.join("tests", "empower_method_examples")
     example_files = os.listdir(example_folder)
-    for file in example_files:
+    json_file_list = [file for file in example_files if ".json" in file]
+    for file in json_file_list:
         file_path = os.path.join(example_folder, file)
         with open(file_path) as f:
             example[file] = json.load(f)
@@ -60,12 +61,18 @@ class TestInstrumentSetMethod(unittest.TestCase):
         assert "ColumnManagerMethod" in description
         assert "SampleManagerMethod" in description
         assert "BSMMethod" in description
+        assert "TUVMethod" in description
 
     def test_column_oven_method_list(self):
         method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
         method = EmpowerInstrumentMethod(method_definition)
         assert len(method.module_method_list) == 4
         assert len(method.column_oven_method_list) == 1
+
+    def test_detector_method_list(self):
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(method_definition)
+        assert len(method.detector_method_list) == 1
 
     def test_initialisation_multiple_oven_types(self):
         method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
