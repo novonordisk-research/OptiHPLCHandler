@@ -206,6 +206,15 @@ class TestModuleMethod(unittest.TestCase):
         assert module_method["a"] != copy["a"]
         assert module_method != copy
 
+    def test_copy_after_changes(self):
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
+        module_method = module_method_factory(minimal_definition)
+        module_method["a"] = "new_value"
+        copy = module_method.copy()
+        assert module_method["a"] == copy["a"]
+        module_method["a"] = "newer_value"
+        assert module_method["a"] != copy["a"]
+
 
 class TestColumnOvens(unittest.TestCase):
     def setUp(self) -> None:
@@ -306,6 +315,8 @@ class TestColumnOvens(unittest.TestCase):
         assert module_method.column_temperature == copy.column_temperature
         module_method.column_temperature = "44.0"
         assert module_method.column_temperature != copy.column_temperature
+        new_copy = module_method.copy()
+        assert module_method.column_temperature == new_copy.column_temperature
 
 
 class testQSMMethod(unittest.TestCase):
