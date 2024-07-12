@@ -189,6 +189,23 @@ class TestModuleMethod(unittest.TestCase):
             warnings.simplefilter("error")
             module_method["a"] = "0.123456"
 
+    def test_copy(self):
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
+        module_method = module_method_factory(minimal_definition)
+        copy = module_method.copy()
+        assert module_method.original_method == copy.original_method
+        assert module_method.current_method == copy.current_method
+        assert module_method["a"] == copy["a"]
+        assert module_method is not copy
+
+    def test_copy_change(self):
+        minimal_definition = {"name": "test", "nativeXml": "<a>value</a>"}
+        module_method = module_method_factory(minimal_definition)
+        copy = module_method.copy()
+        copy["a"] = "new_value"
+        assert module_method["a"] != copy["a"]
+        assert module_method != copy
+
 
 class TestColumnOvens(unittest.TestCase):
     def setUp(self) -> None:
@@ -277,6 +294,18 @@ class TestColumnOvens(unittest.TestCase):
         module_method.column_temperature = 40.06
         assert module_method.column_temperature == "40.1"
         # Rounding, not concatenating
+
+    def test_copy(self):
+        """Test that properties are copied correctly."""
+        minimal_definition = {
+            "name": "ACQ-CM",
+            "nativeXml": "<SetColumnTemperature>43.0</SetColumnTemperature>",
+        }
+        module_method: ColumnOvenMethod = module_method_factory(minimal_definition)
+        copy = module_method.copy()
+        assert module_method.column_temperature == copy.column_temperature
+        module_method.column_temperature = "44.0"
+        assert module_method.column_temperature != copy.column_temperature
 
 
 class testQSMMethod(unittest.TestCase):

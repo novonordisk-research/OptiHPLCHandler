@@ -128,6 +128,12 @@ class EmpowerInstrumentMethod:
             raise ValueError("No sample manager found in instrument method.")
         return self.sample_handler_method.sample_temperature
 
+    @sample_temperature.setter
+    def sample_temperature(self, temperature: float):
+        if self.sample_handler_method is None:
+            raise ValueError("No sample manager found in instrument method.")
+        self.sample_handler_method.sample_temperature = temperature
+
     @property
     def gradient_table(self) -> List[dict]:
         """The gradient table, if a solvent manager module method is present."""
@@ -184,3 +190,18 @@ class EmpowerInstrumentMethod:
             f"{len(self.module_method_list)} module methods of types "
             + (", ".join([type(method).__name__ for method in self.module_method_list]))
         )
+
+    def copy(self):
+        if any(
+            isinstance(module, SampleManagerMethod)
+            for module in self.column_oven_method_list
+        ):
+            use_sample_manager_oven = True
+        else:
+            use_sample_manager_oven = False
+        copy = EmpowerInstrumentMethod(
+            self.original_method, use_sample_manager_oven=use_sample_manager_oven
+        )
+        copy.method_name = self.method_name
+        copy.module_method_list = [module.copy() for module in self.module_method_list]
+        return copy

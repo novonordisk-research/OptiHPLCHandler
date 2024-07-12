@@ -23,7 +23,7 @@ def get_example_file_dict() -> dict:
     return example
 
 
-class TestInstrumentSetMethod(unittest.TestCase):
+class TestInstrumentMethod(unittest.TestCase):
     def setUp(self) -> None:
         self.example = get_example_file_dict()
         self.minimal_definition = {
@@ -86,6 +86,13 @@ class TestInstrumentSetMethod(unittest.TestCase):
         method = EmpowerInstrumentMethod(method_definition)
         assert method.sample_temperature == "20.0"
 
+    def test_sample_temperature_setter(self):
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(method_definition)
+        method.sample_temperature = "50.0"
+        assert method.sample_temperature == "50.0"
+        assert method.sample_handler_method.sample_temperature == "50.0"
+
     def test_original_method(self):
         for method_definition in self.example.values():
             method = EmpowerInstrumentMethod(method_definition)
@@ -116,6 +123,69 @@ class TestInstrumentSetMethod(unittest.TestCase):
             == method_definition["results"][0]["modules"][-1]["nativeXml"]
         )
         assert method.original_method == method_definition["results"][0]
+
+    def test_copy(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        copy = method.copy()
+        assert method is not copy
+        assert method.method_name == copy.method_name
+        assert method.original_method == copy.original_method
+        assert method.current_method == copy.current_method
+        assert method.valve_position == copy.valve_position
+        assert method.column_temperature == copy.column_temperature
+        assert method.gradient_table == copy.gradient_table
+        assert method.sample_temperature == copy.sample_temperature
+
+    def test_copy_not_changed(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        copy = method.copy()
+        method.method_name = "new_name"
+        assert method.method_name != copy.method_name
+        copy.method_name = "new_name"
+        assert method.method_name == copy.method_name
+        method.valve_position = "A2"
+        assert method.valve_position != copy.valve_position
+        assert method.original_method == copy.original_method
+        copy.valve_position = "A2"
+        assert method.valve_position == copy.valve_position
+        method.column_temperature = "50.0"
+        assert method.column_temperature != copy.column_temperature
+        copy.column_temperature = "50.0"
+        assert method.column_temperature == copy.column_temperature
+        gradient_table = method.gradient_table
+        gradient_table[0]["Flow"] = "0.1"
+        method.gradient_table = gradient_table
+        assert method.gradient_table != copy.gradient_table
+        method.sample_temperature = "50.0"
+        assert method.sample_temperature != copy.sample_temperature
+        copy.sample_temperature = "50.0"
+        assert method.sample_temperature == copy.sample_temperature
+
+    def test_copy_sample_manager_column_oven(self):
+        """
+        Test that the copy method works when the sample manager column oven is used.
+
+        We need to test this explicitly since we infer the use of the sample manager
+        from the presence of the column oven.
+        """
+        method = EmpowerInstrumentMethod(
+            self.example["response-BSM-TUV-CM-Acq.json"],
+            use_sample_manager_oven=True,
+        )
+        two_oven_copy = method.copy()
+        assert len(method.column_oven_method_list) == len(
+            two_oven_copy.column_oven_method_list
+        )
+        one_oven_method = EmpowerInstrumentMethod(
+            self.example["response-BSM-TUV-CM-Acq.json"]
+        )
+        assert len(one_oven_method.column_oven_method_list) != len(
+            two_oven_copy.column_oven_method_list
+        )
+        one_oven_copy = one_oven_method.copy()
+        assert len(one_oven_copy.column_oven_method_list) != len(
+            two_oven_copy.column_oven_method_list
+        )
 
 
 class TestColumnTemperature(unittest.TestCase):
