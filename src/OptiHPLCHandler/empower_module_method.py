@@ -152,6 +152,12 @@ class EmpowerModuleMethod:
             )
         return str(rounded_value)
 
+    def copy(self):
+        """Return a copy of the EmpowerModuleMethod."""
+        copy = type(self)(self.original_method)
+        copy._change_list = self._change_list.copy()
+        return copy
+
 
 class ColumnOvenMethod(EmpowerModuleMethod):
     """
@@ -244,9 +250,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
                     f"Invalid valve position {position}, "
                     f"must start with one of {self.solvent_lines}"
                 )
-            self[
-                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
-            ] = position[1:]
+            self[self.valve_tag_prefix + position[0] + self.valve_tag_suffix] = (
+                position[1:]
+            )
 
     @property
     def gradient_table(self) -> List[Dict[str, str]]:
