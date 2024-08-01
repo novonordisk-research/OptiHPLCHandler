@@ -152,6 +152,12 @@ class EmpowerModuleMethod:
             )
         return str(rounded_value)
 
+    def copy(self):
+        """Return a copy of the EmpowerModuleMethod."""
+        copy = type(self)(self.original_method)
+        copy._change_list = self._change_list.copy()
+        return copy
+
 
 class ColumnOvenMethod(EmpowerModuleMethod):
     """
