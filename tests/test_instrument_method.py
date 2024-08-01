@@ -352,6 +352,13 @@ class TestSolventManager(unittest.TestCase):
         with self.assertRaises(ValueError):
             method.gradient_table = [{"Flow": "0.1"}]
 
+    def test_copy(self):
+        gradient_table = self.method.gradient_table
+        gradient_table[0]["Flow"] = "0.1"
+        self.method.gradient_table = gradient_table
+        copy = self.method.copy()
+        assert self.method.gradient_table == copy.gradient_table
+
 
 class TestValvePosition(unittest.TestCase):
     def setUp(self) -> None:
