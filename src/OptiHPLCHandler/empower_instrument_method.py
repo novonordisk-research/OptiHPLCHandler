@@ -56,8 +56,6 @@ class EmpowerInstrumentMethod:
             manager oven will be used. If False, only column manager oven will be used.
         """
         self.module_method_list: list[EmpowerModuleMethod] = []
-        self.solvent_handler_method: Optional[SolventManagerMethod] = None
-        self.sample_handler_method: Optional[SampleManagerMethod] = None
 
         if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
@@ -71,25 +69,54 @@ class EmpowerInstrumentMethod:
         for module_method_definition in method_definition["modules"]:
             module_method = module_method_factory(module_method_definition)
             self.module_method_list.append(module_method)
-            if isinstance(module_method, SolventManagerMethod):
-                if self.solvent_handler_method is not None:
-                    raise ValueError(
-                        "Multiple solvent managers found in instrument method."
-                    )
-                self.solvent_handler_method = module_method
-            if isinstance(module_method, SampleManagerMethod):
-                self.sample_handler_method = module_method
-        if use_sample_manager_oven:
+        self.use_sample_manager_oven = use_sample_manager_oven
+
+    @property
+    def detector_method_list(self) -> List[Detector]:
+        """A list of detector module methods in the instrument method."""
+        return [
+            module for module in self.module_method_list if isinstance(module, Detector)
+        ]
+
+    @property
+    def sample_handler_method(self) -> Optional[SampleManagerMethod]:
+        """The sample manager module method."""
+        sample_handler_method = [
+            module
+            for module in self.module_method_list
+            if isinstance(module, SampleManagerMethod)
+        ]
+        if len(sample_handler_method) == 0:
+            return None
+        if len(sample_handler_method) > 1:
+            raise ValueError("Multiple sample managers found in instrument method.")
+        return sample_handler_method[0]
+
+    @property
+    def solvent_handler_method(self) -> Optional[SolventManagerMethod]:
+        """The sample manager module method."""
+        solvent_handler_method = [
+            module
+            for module in self.module_method_list
+            if isinstance(module, SolventManagerMethod)
+        ]
+        if len(solvent_handler_method) == 0:
+            return None
+        if len(solvent_handler_method) > 1:
+            raise ValueError("Multiple solvent managers found in instrument method.")
+        return solvent_handler_method[0]
+
+    @property
+    def column_oven_method_list(self) -> List[ColumnOvenMethod]:
+        """A list of column ovens in the instrument method."""
+        if self.use_sample_manager_oven:
             oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
         else:
             oven_type_tuple = (ColumnManagerMethod,)
-        self.column_oven_method_list: list[ColumnOvenMethod] = [
+        return [
             module
             for module in self.module_method_list
             if isinstance(module, oven_type_tuple)
-        ]
-        self.detector_method_list: list[Detector] = [
-            module for module in self.module_method_list if isinstance(module, Detector)
         ]
 
     @property
