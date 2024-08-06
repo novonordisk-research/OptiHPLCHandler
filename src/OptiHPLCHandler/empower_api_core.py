@@ -41,6 +41,7 @@ class EmpowerConnection:
         project: Optional[str] = None,
         service: Optional[str] = None,
         verify: Union[bool, str] = True,
+        api_version: str = "1.0",
     ) -> None:
         """
         Initialize the EmpowerConnection.
@@ -54,6 +55,7 @@ class EmpowerConnection:
             is done when connecting via HTTPS. If it is a string, it should be the
             path to the CA_BUNDLE file or directory with certificates of trusted CAs-
             If true, the built-in list of trusted CAs will be used.
+        :param api_version: The version of the API to use. Default is "1.0".
         """
         if not address:
             raise ValueError(
@@ -62,11 +64,13 @@ class EmpowerConnection:
         self.address = address.rstrip("/")  # Remove trailing slash if present
         self.username = getpass.getuser()
         self.verify = verify
+        self.api_version = api_version
         if service is None:
             logger.debug("No service specified, getting service from Empower")
             try:
                 response = requests.get(
                     self.address + "/authentication/db-service-list",
+                    headers={"api-version": self.api_version},
                     timeout=60,
                     verify=self.verify,
                 )
@@ -115,6 +119,7 @@ class EmpowerConnection:
         try:
             response = requests.post(
                 self.address + "/authentication/login",
+                headers={"api-version": self.api_version},
                 json=body,
                 timeout=600,
                 verify=self.verify,
@@ -136,7 +141,7 @@ class EmpowerConnection:
         logger.debug("Logging out of Empower")
         response = requests.delete(
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
-            headers=self.authorization_header,
+            headers=self.header,
             timeout=self.default_post_timeout,
             verify=self.verify,
         )
@@ -183,13 +188,13 @@ class EmpowerConnection:
         # Add slash between address and endpoint
         logger.debug("%sing %s to %s", method, body, address)
         response = _request_with_timeout(
-            method, address, self.authorization_header, body, timeout, self.verify
+            method, address, self.header, body, timeout, self.verify
         )
         if response.status_code == 401:
             logger.debug("Token expired, logging in again")
             self.login()
             response = _request_with_timeout(
-                method, address, self.authorization_header, body, timeout, self.verify
+                method, address, self.header, body, timeout, self.verify
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
@@ -274,9 +279,9 @@ class EmpowerConnection:
         return password
 
     @property
-    def authorization_header(self):
+    def header(self):
         """Get the authorization header to use for requests."""
-        return {"Authorization": "Bearer " + self.token}
+        return {"Authorization": "Bearer " + self.token, "api-version": self.api_version}
 
     def __del__(self):
         if self.session_id is not None:
