@@ -1,14 +1,17 @@
-import plotly.graph_objects as go
 import numpy as np
+import plotly.graph_objects as go
 
 
-def plot_gradient_table(x, y) -> go.Figure:
+def plot_gradient_table(x, y, fill=True) -> go.Figure:
     """
     Plots a gradient table. Doesn't take into account curve.
     """
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="Flow", fill="tozeroy"))
+    if fill:
+        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="Flow", fill="tozeroy"))
+    else:
+        fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="Flow"))
 
     return fig
 
@@ -60,6 +63,9 @@ def generate_coordinates(
     gradient_table = replace_initial_str(gradient_table)
     x = []
     y = []
+
+    previous_time = None
+    previous_y = None
     for row in gradient_table:
         curve = row["Curve"]
         time = row["Time"]
