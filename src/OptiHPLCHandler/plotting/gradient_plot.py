@@ -82,20 +82,16 @@ def generate_coordinates(
             # numerically calculated gradient
             initial_condition = previous_y
             final_condition = current_y
-            end_gradient_time_interval = time
             x_curve_to_add = np.linspace(
                 previous_time + 0.01, time - 0.01, int((time - previous_time) / 0.1)
             )
+            normalised_curve = (
+                np.linspace(0, 1, len(x_curve_to_add)) ** curve_dict[curve]
+            )  # Constructing the shape, with y values between 0 and 1
             y_curve_to_add = [
-                initial_condition
-                + (final_condition - initial_condition)
-                * (
-                    (time - previous_time)
-                    / (end_gradient_time_interval - previous_time)
-                )
-                ** curve_dict[curve]
-                for time in x_curve_to_add
-            ]
+                y * (final_condition - initial_condition) + initial_condition
+                for y in normalised_curve
+            ]  # Scaling to the actual y values
             x.extend(x_curve_to_add)
             y.extend(y_curve_to_add)
 
