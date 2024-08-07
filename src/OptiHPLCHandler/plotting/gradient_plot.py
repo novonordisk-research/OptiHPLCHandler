@@ -21,22 +21,16 @@ def standardise_gradient_table_types(gradient_table: list[dict]) -> list[dict]:
         for key, value in row.items():
             if key == "Time":
                 if value == "Initial":
-                    continue
-                row[key] = float(value)
+                    row[key] = 0.0
+                else:
+                    row[key] = float(value)
             elif key == "Curve":
                 if value == "Initial":
-                    continue
-                row[key] = int(value)
+                    row[key] = 0
+                else:
+                    row[key] = int(value)
             else:
                 row[key] = float(value)
-    return gradient_table
-
-
-def replace_initial_str(gradient_table: list[dict]) -> list[dict]:
-    for row in gradient_table:
-        for key, value in row.items():
-            if value == "Initial":
-                row[key] = 0
     return gradient_table
 
 
@@ -60,7 +54,6 @@ def generate_coordinates(
     }
 
     gradient_table = standardise_gradient_table_types(gradient_table)
-    gradient_table = replace_initial_str(gradient_table)
     x = []
     y = []
 
