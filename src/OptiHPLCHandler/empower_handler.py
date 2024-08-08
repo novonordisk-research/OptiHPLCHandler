@@ -316,7 +316,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             method_type += "Method"
         method_list = self.connection.get(
             endpoint="project/methods?methodTypes=" + method_type
-        )[0]
+        ).result
         method_name_dict_list = [
             [name_dict for name_dict in method["fields"] if name_dict["name"] == "Name"]
             for method in method_list
@@ -344,7 +344,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         response = self.connection.get(
             endpoint=f"project/methods/instrument-method?name={method_name}"
         )
-        return EmpowerInstrumentMethod(response[0][0], use_sample_manager_oven)
+        if self.connection.api_version == "1.0":
+            return EmpowerInstrumentMethod(response.result[0], use_sample_manager_oven)
+        return EmpowerInstrumentMethod(response.result, use_sample_manager_oven)
 
     def PostInstrumentMethod(self, method: EmpowerInstrumentMethod) -> None:
         """
@@ -363,7 +365,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         response = self.connection.get(
             endpoint=f"project/methods/method-set?name={method_name}"
         )
-        return response[0][0]
+        if self.connection.api_version == "1.0":
+            return response.result[0]
+        return response.result
 
     def PostMethodSetMethod(self, method: Mapping[str, Any]) -> None:
         """
