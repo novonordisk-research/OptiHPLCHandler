@@ -1,13 +1,18 @@
 import getpass
 import logging
 import warnings
-from typing import Optional, Tuple, Union
+from typing import NamedTuple, Optional, Union
 
 import keyring
 import requests
 from keyring.errors import NoKeyringError
 
 logger = logging.getLogger(__name__)
+
+
+class EmpowerResponse(NamedTuple):
+    result: Optional[dict]
+    message: Optional[str]
 
 
 class EmpowerConnection:
@@ -156,7 +161,7 @@ class EmpowerConnection:
 
     def _requests_wrapper(
         self, method: str, endpoint: str, body: Optional[dict], timeout
-    ) -> Tuple[Optional[dict], Optional[str]]:
+    ) -> EmpowerResponse:
         """
         Wrapper for requests.
 
@@ -198,15 +203,13 @@ class EmpowerConnection:
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
-        return (
-            response.json().get("results", None),
-            response.json().get("message", None),
+        return EmpowerResponse(
+            result=response.json().get(self.result_key, None),
+            message=response.json().get("message", None),
         )  # Safely getting the results and message from the response, if they don't
         # exist, return None
 
-    def get(
-        self, endpoint: str, timeout: Optional[int] = None
-    ) -> Tuple[Optional[dict], Optional[str]]:
+    def get(self, endpoint: str, timeout: Optional[int] = None) -> EmpowerResponse:
         """
         Get data from Empower.
 
@@ -233,7 +236,7 @@ class EmpowerConnection:
 
     def post(
         self, endpoint: str, body: dict, timeout: Optional[int] = None
-    ) -> Tuple[Optional[dict], Optional[str]]:
+    ) -> EmpowerResponse:
         """
         Post data to Empower.
 
