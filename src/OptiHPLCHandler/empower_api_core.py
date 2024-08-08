@@ -83,7 +83,7 @@ class EmpowerConnection:
                 raise requests.exceptions.Timeout(
                     f"Getting service from {self.address} timed out"
                 ) from e
-            self.service = response.json()["results"][0]["netServiceName"]
+            self.service = response.json()[self.result_key][0]["netServiceName"]
             # If no service is specified, use the first one in the list
         else:
             self.service = service
@@ -92,6 +92,15 @@ class EmpowerConnection:
         self.token = None
         self.default_get_timeout = 20
         self.default_post_timeout = 40
+
+    @property
+    def result_key(self):
+        """Get the key to use for getting results from the response."""
+        if self.api_version == "1.0":
+            # The key for the results in the response is different in version 1.0 of
+            # the API
+            return "results"
+        return "data"
 
     def login(
         self, username: Optional[str] = None, password: Optional[str] = None
@@ -134,8 +143,12 @@ class EmpowerConnection:
                 f"Login to {self.address} with username = {self.username} timed out"
             ) from e
         self.raise_for_status(response)
-        self.token = response.json()["results"][0]["token"]
-        self.session_id = response.json()["results"][0]["id"]
+        if self.api_version == "1.0":
+            self.token = response.json()[self.result_key][0]["token"]
+            self.session_id = response.json()[self.result_key][0]["id"]
+        else:
+            self.token = response.json()[self.result_key]["token"]
+            self.session_id = response.json()[self.result_key]["id"]
         logger.debug("Login successful, keeping token")
 
     def logout(self) -> None:
@@ -284,7 +297,10 @@ class EmpowerConnection:
     @property
     def header(self):
         """Get the authorization header to use for requests."""
-        return {"Authorization": "Bearer " + self.token, "api-version": self.api_version}
+        return {
+            "Authorization": "Bearer " + self.token,
+            "api-version": self.api_version,
+        }
 
     def __del__(self):
         if self.session_id is not None:
