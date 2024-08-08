@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod, EmpowerModuleMethod
+from OptiHPLCHandler.empower_api_core import EmpowerResponse
 
 
 class TestEmpowerHandler(unittest.TestCase):
@@ -80,7 +81,9 @@ class TestEmpowerHandler(unittest.TestCase):
         ) == "test_sample_set_name"  # Check that the correct sample set name is given
 
     def test_get_node_name_list(self):
-        self.handler.connection.get.return_value = (["test_node_name_1"], None)
+        self.handler.connection.get.return_value = EmpowerResponse(
+            ["test_node_name_1"], None
+        )
         node_name_list = self.handler.GetNodeNames()
         assert node_name_list == ["test_node_name_1"]
         assert (
@@ -262,7 +265,7 @@ class TestGetMethods(unittest.TestCase):
         )
 
     def test_get_method_list(self):
-        self.handler.connection.get.return_value = (
+        self.handler.connection.get.return_value = EmpowerResponse(
             [
                 {
                     "fields": [
@@ -288,7 +291,7 @@ class TestGetMethods(unittest.TestCase):
         )  # Check that the correct parameters are passed to the request
 
     def test_method_with_no_name(self):
-        self.handler.connection.get.return_value = (
+        self.handler.connection.get.return_value = EmpowerResponse(
             [
                 {
                     "fields": [
@@ -309,7 +312,7 @@ class TestGetMethods(unittest.TestCase):
             self.handler.GetMethodList()
 
     def test_method_with_two_names(self):
-        self.handler.connection.get.return_value = (
+        self.handler.connection.get.return_value = EmpowerResponse(
             [
                 {
                     "fields": [
@@ -330,7 +333,9 @@ class TestGetMethods(unittest.TestCase):
             self.handler.GetMethodList()
 
     def test_get_sample_set_method_list(self):
-        self.handler.connection.get.return_value = (["test_samplesetmethod_1"], None)
+        self.handler.connection.get.return_value = EmpowerResponse(
+            ["test_samplesetmethod_1"], None
+        )
         samplesetmethod_list = self.handler.GetSampleSetMethods()
         assert samplesetmethod_list == ["test_samplesetmethod_1"]
         assert (
@@ -366,7 +371,7 @@ class TestGetPlateTypes(unittest.TestCase):
         )
 
     def test_get_plate_type_names(self):
-        self.handler.connection.get.return_value = (
+        self.handler.connection.get.return_value = EmpowerResponse(
             [
                 "test_plate_type_name_1",
                 "test_plate_type_name_2",
@@ -577,11 +582,12 @@ class TestStatus(unittest.TestCase):
         )
 
     def test_get(self):
-        self.handler.connection.get.return_value = (
+        self.handler.connection.get.return_value = EmpowerResponse(
             [
                 {"name": "FirstKey", "value": "FirstValue"},
                 {"name": "SecondKey", "value": "SecondValue"},
             ],
+            None,
         )
         result = self.handler.GetStatus(node="test_node", system="test_system")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
