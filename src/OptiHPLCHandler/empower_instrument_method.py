@@ -2,14 +2,15 @@ import logging
 import re
 from typing import List, Optional, Union
 
+from .empower_detector_module_method import Detector
 from .empower_module_method import (
     ColumnManagerMethod,
     ColumnOvenMethod,
     EmpowerModuleMethod,
     SampleManagerMethod,
     SolventManagerMethod,
-    module_method_factory,
 )
+from .factories import module_method_factory
 from .utils.data_types import EmpowerInstrumentMethodModel as DataModel
 
 logger = logging.getLogger(__name__)
@@ -54,15 +55,7 @@ class EmpowerInstrumentMethod:
         :param use_sample_manager_oven: If True, both sample manager oven and column
             manager oven will be used. If False, only column manager oven will be used.
         """
-        self.column_oven_method_list: list[ColumnOvenMethod] = []
         self.module_method_list: list[EmpowerModuleMethod] = []
-        self.solvent_handler_method: Optional[SolventManagerMethod] = None
-        self.sample_handler_method: Optional[SampleManagerMethod] = None
-
-        if use_sample_manager_oven:
-            oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
-        else:
-            oven_type_tuple = (ColumnManagerMethod,)
 
         if isinstance(method_definition, dict) and "results" in method_definition:
             # If the entire response from Empower is passed, extract the results
@@ -76,16 +69,55 @@ class EmpowerInstrumentMethod:
         for module_method_definition in method_definition["modules"]:
             module_method = module_method_factory(module_method_definition)
             self.module_method_list.append(module_method)
-            if isinstance(module_method, oven_type_tuple):
-                self.column_oven_method_list.append(module_method)
-            if isinstance(module_method, SolventManagerMethod):
-                if self.solvent_handler_method is not None:
-                    raise ValueError(
-                        "Multiple solvent managers found in instrument method."
-                    )
-                self.solvent_handler_method = module_method
-            if isinstance(module_method, SampleManagerMethod):
-                self.sample_handler_method = module_method
+        self.use_sample_manager_oven = use_sample_manager_oven
+
+    @property
+    def detector_method_list(self) -> List[Detector]:
+        """A list of detector module methods in the instrument method."""
+        return [
+            module for module in self.module_method_list if isinstance(module, Detector)
+        ]
+
+    @property
+    def sample_handler_method(self) -> Optional[SampleManagerMethod]:
+        """The sample manager module method."""
+        sample_handler_method = [
+            module
+            for module in self.module_method_list
+            if isinstance(module, SampleManagerMethod)
+        ]
+        if len(sample_handler_method) == 0:
+            return None
+        if len(sample_handler_method) > 1:
+            raise ValueError("Multiple sample managers found in instrument method.")
+        return sample_handler_method[0]
+
+    @property
+    def solvent_handler_method(self) -> Optional[SolventManagerMethod]:
+        """The sample manager module method."""
+        solvent_handler_method = [
+            module
+            for module in self.module_method_list
+            if isinstance(module, SolventManagerMethod)
+        ]
+        if len(solvent_handler_method) == 0:
+            return None
+        if len(solvent_handler_method) > 1:
+            raise ValueError("Multiple solvent managers found in instrument method.")
+        return solvent_handler_method[0]
+
+    @property
+    def column_oven_method_list(self) -> List[ColumnOvenMethod]:
+        """A list of column ovens in the instrument method."""
+        if self.use_sample_manager_oven:
+            oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
+        else:
+            oven_type_tuple = (ColumnManagerMethod,)
+        return [
+            module
+            for module in self.module_method_list
+            if isinstance(module, oven_type_tuple)
+        ]
 
     @property
     def current_method(self):
@@ -122,6 +154,12 @@ class EmpowerInstrumentMethod:
         if self.sample_handler_method is None:
             raise ValueError("No sample manager found in instrument method.")
         return self.sample_handler_method.sample_temperature
+
+    @sample_temperature.setter
+    def sample_temperature(self, temperature: float):
+        if self.sample_handler_method is None:
+            raise ValueError("No sample manager found in instrument method.")
+        self.sample_handler_method.sample_temperature = temperature
 
     @property
     def gradient_table(self) -> List[dict]:
@@ -179,3 +217,18 @@ class EmpowerInstrumentMethod:
             f"{len(self.module_method_list)} module methods of types "
             + (", ".join([type(method).__name__ for method in self.module_method_list]))
         )
+
+    def copy(self):
+        if any(
+            isinstance(module, SampleManagerMethod)
+            for module in self.column_oven_method_list
+        ):
+            use_sample_manager_oven = True
+        else:
+            use_sample_manager_oven = False
+        copy = EmpowerInstrumentMethod(
+            self.original_method, use_sample_manager_oven=use_sample_manager_oven
+        )
+        copy.method_name = self.method_name
+        copy.module_method_list = [module.copy() for module in self.module_method_list]
+        return copy

@@ -1,9 +1,9 @@
 [project]
 name = "Opti_HPLC_Handler"
-version = "3.0.1"
+version = "3.3.0"
 description = "SDK for interacting with the Waters Empower Web API."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {file = "LICENSE"}
 authors = [
   { name="Søren Furbo", email="srfu@novonordisk.com" },
@@ -15,10 +15,10 @@ classifiers = [
   "License :: OSI Approved :: BSD License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
@@ -97,7 +97,7 @@ pythonpath = [
 ]
 
 [tool.bumpver]
-current_version = "3.0.1"
+current_version = "3.3.0"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 tag_message = "{new_version}"

@@ -173,7 +173,7 @@ class EmpowerConnection:
         logger.debug("Logout successful")
 
     def _requests_wrapper(
-        self, method: str, endpoint: str, body: Optional[dict], timeout
+        self, method: str, endpoint: str, body: Optional[dict], timeout: int
     ) -> EmpowerResponse:
         """
         Wrapper for requests.
@@ -186,11 +186,20 @@ class EmpowerConnection:
         :return: The results and message from the response.
         """
 
-        def _request_with_timeout(method, endpoint, header, body, timeout, verify):
+        def _request_with_timeout(
+            method: str,
+            endpoint: str,
+            params: dict,
+            header: dict,
+            body: dict,
+            timeout: int,
+            verify: Union[bool, str],
+        ) -> requests.Response:
             try:
                 return requests.request(
                     method,
                     endpoint,
+                    params=params,
                     json=body,
                     headers=header,
                     timeout=timeout,
@@ -201,18 +210,43 @@ class EmpowerConnection:
                     f"{method}ing {body} to {endpoint} timed out"
                 ) from e
 
+        if self.api_version != "1.0":
+            raise ValueError("Only API version 1.0 is supported")
+            # Update the ["results"] when refreshing token to make it work.
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
         logger.debug("%sing %s to %s", method, body, address)
         response = _request_with_timeout(
-            method, address, self.header, body, timeout, self.verify
+            method=method,
+            endpoint=address,
+            header=self.header,
+            body=body,
+            timeout=timeout,
+            verify=self.verify,
+            params={},
         )
         if response.status_code == 401:
-            logger.debug("Token expired, logging in again")
-            self.login()
+            logger.debug("Token expired, refreshing token and %sing again", method)
+            refresh_response = _request_with_timeout(
+                method="get",
+                endpoint=self.address + "/authentication/refresh-token",
+                header=self.header,
+                body=None,
+                timeout=self.default_get_timeout,
+                verify=self.verify,
+                params={"sessionInfoID": self.session_id},
+            )
+            self.raise_for_status(refresh_response)
+            self.token = refresh_response.json()["results"][0]["token"]
             response = _request_with_timeout(
-                method, address, self.header, body, timeout, self.verify
+                method=method,
+                endpoint=address,
+                header=self.header,
+                body=body,
+                timeout=timeout,
+                verify=self.verify,
+                params={},
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)

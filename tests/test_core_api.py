@@ -158,7 +158,8 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_getpass.return_value = self.mock_password
         self.connection.get("test_url")
         assert mock_requests.method_calls[1].args == (
-            "https://test_address/authentication/login",
+            "get",
+            "https://test_address/authentication/refresh-token",
         )
         # The second call should be to log in
 
@@ -198,7 +199,8 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_getpass.return_value = self.mock_password
         self.connection.post("test_url", body="test_body")
         assert mock_requests.method_calls[1].args == (
-            "https://test_address/authentication/login",
+            "get",
+            "https://test_address/authentication/refresh-token",
         )
         # The second call should be to log in
 
