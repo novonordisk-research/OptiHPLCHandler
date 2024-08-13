@@ -210,10 +210,6 @@ class EmpowerConnection:
                     f"{method}ing {body} to {endpoint} timed out"
                 ) from e
 
-        if self.api_version != "1.0":
-            raise ValueError("Only API version 1.0 is supported")
-            # Make sure to verify how refresh token works in the new API version before
-            # removing this check
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
