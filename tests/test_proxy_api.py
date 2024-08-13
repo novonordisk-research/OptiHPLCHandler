@@ -91,7 +91,9 @@ class TestEmpowerHandler(unittest.TestCase):
         )
 
     def test_get_system_name_list(self):
-        self.handler.connection.get.return_value = (["test_system_name_1"], None)
+        self.handler.connection.get.return_value = EmpowerResponse(
+            ["test_system_name_1"], None
+        )
         system_name_list = self.handler.GetSystemNames("test_node_name")
         assert system_name_list == ["test_system_name_1"]
         assert (
@@ -498,13 +500,33 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             address="https://test_address/",
         )
 
-    def test_get_method(self):
+    def test_get_method_api_version_one(self):
         minimal_module = {
             "name": "test",
             "nativeXml": "test_name",
         }
-        self.handler.connection.get.return_value = (
+        self.handler.connection.api_version = "1.0"
+        self.handler.connection.get.return_value = EmpowerResponse(
             [{"methodName": "test_method", "modules": [minimal_module]}],
+            None,
+        )
+        method = self.handler.GetInstrumentMethod("test_method_name")
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/methods/instrument-method?name=test_method_name"
+        )
+        assert isinstance(method, EmpowerInstrumentMethod)
+        assert len(method.module_method_list) == 1
+        assert isinstance(method.module_method_list[0], EmpowerModuleMethod)
+        assert method.module_method_list[0].original_method == minimal_module
+
+    def test_get_method_api_version_two(self):
+        minimal_module = {
+            "name": "test",
+            "nativeXml": "test_name",
+        }
+        self.handler.connection.api_version = "2.0"
+        self.handler.connection.get.return_value = EmpowerResponse(
+            {"methodName": "test_method", "modules": [minimal_module]},
             None,
         )
         method = self.handler.GetInstrumentMethod("test_method_name")
@@ -525,10 +547,11 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             ),
         }
 
-        self.handler.connection.get.return_value = (
-            [{"methodName": "test_method", "modules": [minimal_module]}],
+        self.handler.connection.get.return_value = EmpowerResponse(
+            {"methodName": "test_method", "modules": [minimal_module]},
             None,
         )
+        self.handler.connection.api_version = "2.0"
         method = self.handler.GetInstrumentMethod("test_method_name")
         method.module_method_list[0].replace("test_value1", "new_value")
         method.module_method_list[0]["test_tag2"] = "newer_value"
@@ -550,11 +573,24 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
             address="https://test_address/",
         )
 
-    def test_get(self):
-        self.handler.connection.get.return_value = (
+    def test_get_api_version_one(self):
+        self.handler.connection.get.return_value = EmpowerResponse(
             [{"name": "test_method_return_name"}],
             None,
         )
+        self.handler.connection.api_version = "1.0"
+        method = self.handler.GetMethodSetMethod("test_method_name")
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/methods/method-set?name=test_method_name"
+        )
+        assert method["name"] == "test_method_return_name"
+
+    def test_get_api_version_two(self):
+        self.handler.connection.get.return_value = EmpowerResponse(
+            {"name": "test_method_return_name"},
+            None,
+        )
+        self.handler.connection.api_version = "2.0"
         method = self.handler.GetMethodSetMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
             "project/methods/method-set?name=test_method_name"
