@@ -313,3 +313,35 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.json.return_value = {"message": "test_message"}
         response = self.connection.get("test_url")
         assert response == (None, "test_message")
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_version_one(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "results": [{"token": "test_token", "id": "test_id"}]
+        }
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        self.connection = EmpowerConnection(
+            project="test_project",
+            address="https://test_address/",
+            service="test_service",
+        )
+        assert self.connection.api_version == "1.0"
+        self.connection.login(username="test_username", password="test_password")
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_version_two(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": {"token": "test_token", "id": "test_id"}
+        }
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        self.connection = EmpowerConnection(
+            project="test_project",
+            address="https://test_address/",
+            service="test_service",
+        )
+        self.connection.api_version = "2.0"
+        self.connection.login(username="test_username", password="test_password")
