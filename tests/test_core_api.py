@@ -147,10 +147,11 @@ class TestEmpowerConnection(unittest.TestCase):
 
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_relogin_get(self, mock_requests, mock_getpass):
+    def test_refresh_get_api_version_one(self, mock_requests, mock_getpass):
         # Verify that the handler logs in again if the token is invalid on get.
+        self.connection.api_version = "1.0"
         mock_response = MagicMock()
-        mock_response.json.return_value = {"results": [{"token": "test_token"}]}
+        mock_response.json.return_value = {"results": [{"token": "test_token_refresh"}]}
         mock_response.status_code = 401
         mock_requests.request.return_value = mock_response
         mock_response = MagicMock()
@@ -163,6 +164,28 @@ class TestEmpowerConnection(unittest.TestCase):
             "https://test_address/authentication/refresh-token",
         )
         # The second call should be to log in
+        assert self.connection.token == "test_token_refresh"
+
+    @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_refresh_get_api_version_two(self, mock_requests, mock_getpass):
+        # Verify that the handler logs in again if the token is invalid on get.
+        self.connection.api_version = "2.0"
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"results": {"token": "test_token_refresh"}}
+        mock_response.status_code = 401
+        mock_requests.request.return_value = mock_response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_requests.post.return_value = mock_response
+        mock_getpass.return_value = self.mock_password
+        self.connection.get("test_url")
+        assert mock_requests.method_calls[1].args == (
+            "get",
+            "https://test_address/authentication/refresh-token",
+        )
+        # The second call should be to log in
+        assert self.connection.token == "test_token_refresh"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_post(self, mock_requests):
@@ -187,23 +210,41 @@ class TestEmpowerConnection(unittest.TestCase):
         self.connection.post("test_url", body="test_body")
         assert mock_requests.request.return_value.raise_for_status.called
 
-    @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
-    def test_relogin_post(self, mock_requests, mock_getpass):
+    def test_refresh_post_spi_version_one(self, mock_requests):
         # Verify that the handler logs in again if the token is invalid on put.
+        self.connection.api_version = "1.0"
         mock_response = MagicMock()
         mock_response.json.return_value = {
-            "results": [{"token": "test_token", "id": "test_id"}]
+            "results": [{"token": "test_token_refresh", "id": "test_id"}]
         }
         mock_response.status_code = 401
         mock_requests.request.return_value = mock_response
-        mock_getpass.return_value = self.mock_password
         self.connection.post("test_url", body="test_body")
         assert mock_requests.method_calls[1].args == (
             "get",
             "https://test_address/authentication/refresh-token",
         )
-        # The second call should be to log in
+        # The second call should be to refresh token
+        assert self.connection.token == "test_token_refresh"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_refresh_post_spi_version_two(self, mock_requests):
+        # Verify that the handler logs in again if the token is invalid on put.
+        self.connection.api_version = "2.0"
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": {"token": "test_token_refresh", "id": "test_id"}
+        }
+        mock_response.status_code = 401
+        mock_requests.request.return_value = mock_response
+        self.connection.post("test_url", body="test_body")
+        assert mock_requests.method_calls[1].args == (
+            "get",
+            "https://test_address/authentication/refresh-token",
+        )
+        # The second call should be to refresh token
+        assert self.connection.token == "test_token_refresh"
 
     @patch("OptiHPLCHandler.empower_api_core.getpass.getpass")
     @patch("OptiHPLCHandler.empower_api_core.requests")
