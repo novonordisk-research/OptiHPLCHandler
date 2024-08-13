@@ -15,14 +15,15 @@ def get_example_file_dict() -> dict:
     example = {}
     example_folder = os.path.join("tests", "empower_method_examples")
     example_files = os.listdir(example_folder)
-    for file in example_files:
+    json_file_list = [file for file in example_files if ".json" in file]
+    for file in json_file_list:
         file_path = os.path.join(example_folder, file)
         with open(file_path) as f:
             example[file] = json.load(f)
     return example
 
 
-class TestInstrumentSetMethod(unittest.TestCase):
+class TestInstrumentMethod(unittest.TestCase):
     def setUp(self) -> None:
         self.example = get_example_file_dict()
         self.minimal_definition = {
@@ -60,12 +61,18 @@ class TestInstrumentSetMethod(unittest.TestCase):
         assert "ColumnManagerMethod" in description
         assert "SampleManagerMethod" in description
         assert "BSMMethod" in description
+        assert "TUVMethod" in description
 
     def test_column_oven_method_list(self):
         method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
         method = EmpowerInstrumentMethod(method_definition)
         assert len(method.module_method_list) == 4
         assert len(method.column_oven_method_list) == 1
+
+    def test_detector_method_list(self):
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(method_definition)
+        assert len(method.detector_method_list) == 1
 
     def test_initialisation_multiple_oven_types(self):
         method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
@@ -78,6 +85,13 @@ class TestInstrumentSetMethod(unittest.TestCase):
         method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
         method = EmpowerInstrumentMethod(method_definition)
         assert method.sample_temperature == "20.0"
+
+    def test_sample_temperature_setter(self):
+        method_definition = self.example["response-BSM-TUV-CM-Acq.json"]
+        method = EmpowerInstrumentMethod(method_definition)
+        method.sample_temperature = "50.0"
+        assert method.sample_temperature == "50.0"
+        assert method.sample_handler_method.sample_temperature == "50.0"
 
     def test_original_method(self):
         for method_definition in self.example.values():
@@ -109,6 +123,69 @@ class TestInstrumentSetMethod(unittest.TestCase):
             == method_definition["results"][0]["modules"][-1]["nativeXml"]
         )
         assert method.original_method == method_definition["results"][0]
+
+    def test_copy(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        copy = method.copy()
+        assert method is not copy
+        assert method.method_name == copy.method_name
+        assert method.original_method == copy.original_method
+        assert method.current_method == copy.current_method
+        assert method.valve_position == copy.valve_position
+        assert method.column_temperature == copy.column_temperature
+        assert method.gradient_table == copy.gradient_table
+        assert method.sample_temperature == copy.sample_temperature
+
+    def test_copy_not_changed(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        copy = method.copy()
+        method.method_name = "new_name"
+        assert method.method_name != copy.method_name
+        copy.method_name = "new_name"
+        assert method.method_name == copy.method_name
+        method.valve_position = "A2"
+        assert method.valve_position != copy.valve_position
+        assert method.original_method == copy.original_method
+        copy.valve_position = "A2"
+        assert method.valve_position == copy.valve_position
+        method.column_temperature = "50.0"
+        assert method.column_temperature != copy.column_temperature
+        copy.column_temperature = "50.0"
+        assert method.column_temperature == copy.column_temperature
+        gradient_table = method.gradient_table
+        gradient_table[0]["Flow"] = "0.1"
+        method.gradient_table = gradient_table
+        assert method.gradient_table != copy.gradient_table
+        method.sample_temperature = "50.0"
+        assert method.sample_temperature != copy.sample_temperature
+        copy.sample_temperature = "50.0"
+        assert method.sample_temperature == copy.sample_temperature
+
+    def test_copy_sample_manager_column_oven(self):
+        """
+        Test that the copy method works when the sample manager column oven is used.
+
+        We need to test this explicitly since we infer the use of the sample manager
+        from the presence of the column oven.
+        """
+        method = EmpowerInstrumentMethod(
+            self.example["response-BSM-TUV-CM-Acq.json"],
+            use_sample_manager_oven=True,
+        )
+        two_oven_copy = method.copy()
+        assert len(method.column_oven_method_list) == len(
+            two_oven_copy.column_oven_method_list
+        )
+        one_oven_method = EmpowerInstrumentMethod(
+            self.example["response-BSM-TUV-CM-Acq.json"]
+        )
+        assert len(one_oven_method.column_oven_method_list) != len(
+            two_oven_copy.column_oven_method_list
+        )
+        one_oven_copy = one_oven_method.copy()
+        assert len(one_oven_copy.column_oven_method_list) != len(
+            two_oven_copy.column_oven_method_list
+        )
 
 
 class TestColumnTemperature(unittest.TestCase):
@@ -209,6 +286,15 @@ class TestColumnTemperature(unittest.TestCase):
         assert method.module_method_list[0].column_temperature == "50.0"
         assert method.module_method_list[1].column_temperature == "50.0"
 
+    def test_copy(self):
+        method = EmpowerInstrumentMethod(self.column_manager_example)
+        copy = method.copy()
+        assert method.column_temperature == copy.column_temperature
+        method.column_temperature = "50.0"
+        assert method.column_temperature != copy.column_temperature
+        copy = method.copy()
+        assert method.column_temperature == copy.column_temperature
+
 
 class TestSolventManager(unittest.TestCase):
     def setUp(self) -> None:
@@ -226,11 +312,12 @@ class TestSolventManager(unittest.TestCase):
         method = EmpowerInstrumentMethod(method_definition)
         assert method.solvent_handler_method is None
 
-    def test_init_multiple(self):
+    def test_multiple(self):
         method_definition = self.bsm_example["results"][0]
         method_definition["modules"].append(method_definition["modules"][1])
+        method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
-            EmpowerInstrumentMethod(method_definition)
+            method.solvent_handler_method
 
     def test_get_gradient_table(self):
         gradient_table = self.method.gradient_table
@@ -264,6 +351,13 @@ class TestSolventManager(unittest.TestCase):
         method = EmpowerInstrumentMethod(method_definition)
         with self.assertRaises(ValueError):
             method.gradient_table = [{"Flow": "0.1"}]
+
+    def test_copy(self):
+        gradient_table = self.method.gradient_table
+        gradient_table[0]["Flow"] = "0.1"
+        self.method.gradient_table = gradient_table
+        copy = self.method.copy()
+        assert self.method.gradient_table == copy.gradient_table
 
 
 class TestValvePosition(unittest.TestCase):
@@ -344,3 +438,51 @@ class TestValvePosition(unittest.TestCase):
         self.method.method_name = "new_name"
         assert self.method.method_name == "new_name"
         assert self.method.current_method["methodName"] == "new_name"
+
+    def test_copy(self):
+        copy = self.method.copy()
+        assert self.method.valve_position == copy.valve_position
+        self.method.valve_position = "A2"
+        assert self.method.valve_position != copy.valve_position
+        copy = self.method.copy()
+        assert self.method.valve_position == copy.valve_position
+
+
+class TestSampleTemperature(unittest.TestCase):
+    def setUp(self) -> None:
+        self.example = get_example_file_dict()
+        self.bsm_example = self.example["response-BSM-PDA-Acq.json"]
+        self.method = EmpowerInstrumentMethod(self.bsm_example)
+
+    def test_get(self):
+        assert self.method.sample_temperature == "20.0"
+
+    def test_get_none(self):
+        method_definition = self.bsm_example["results"][0]
+        method_definition["modules"] = [method_definition["modules"][1]]
+        method = EmpowerInstrumentMethod(method_definition)
+        with self.assertRaises(ValueError):
+            method.sample_temperature
+
+    def test_set(self):
+        self.method.sample_temperature = "50.0"
+        assert self.method.sample_temperature == "50.0"
+        assert (
+            "<SampleTemperature>50.0</SampleTemperature>"
+            in self.method.current_method["modules"][0]["nativeXml"]
+        )
+
+    def test_set_none(self):
+        method_definition = self.bsm_example["results"][0]
+        method_definition["modules"] = [method_definition["modules"][1]]
+        method = EmpowerInstrumentMethod(method_definition)
+        with self.assertRaises(ValueError):
+            method.sample_temperature = "50.03"
+
+    def test_copy(self):
+        copy = self.method.copy()
+        assert self.method.sample_temperature == copy.sample_temperature
+        self.method.sample_temperature = "50.0"
+        assert self.method.sample_temperature != copy.sample_temperature
+        copy = self.method.copy()
+        assert self.method.sample_temperature == copy.sample_temperature

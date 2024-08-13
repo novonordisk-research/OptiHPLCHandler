@@ -152,6 +152,12 @@ class EmpowerModuleMethod:
             )
         return str(rounded_value)
 
+    def copy(self):
+        """Return a copy of the EmpowerModuleMethod."""
+        copy = type(self)(self.original_method)
+        copy._change_list = self._change_list.copy()
+        return copy
+
 
 class ColumnOvenMethod(EmpowerModuleMethod):
     """
@@ -337,38 +343,3 @@ class QSMMethod(SolventManagerMethod):
     valve_tag_prefix = "SolventSelectionValve"
     valve_tag_suffix = "Position"
     solvent_lines = ["A", "B", "C", "D"]
-
-
-def module_method_factory(method_definition: Mapping[str, str]) -> EmpowerModuleMethod:
-    """
-    Factory function for creating an EmpowerModuleMethod from a method definition. The
-    method definition should contain at least a name key, which is used to determine
-    which subclass should be created. If the name key is not present or the name is not
-    recognized, a generic EmpowerModuleMethod will be created.
-    """
-    try:
-        if method_definition["name"] in ["rAcquityFTN", "AcquityFTN", "AcquitySMDI"]:
-            logger.debug("Creating SampleManagerMethod")
-            return SampleManagerMethod(method_definition)
-        if method_definition["name"] in ["AcquityCM", "ACQ-CM"]:
-            logger.debug("Creating ColumnManagerMethod")
-            return ColumnManagerMethod(method_definition)
-        if method_definition["name"] in ["AcquityBSM", "ACQ-BSM", "rAcquityBSM"]:
-            logger.debug("Creating BSMMethod")
-            return BSMMethod(method_definition)
-        if method_definition["name"] in ["AcquityQSM", "ACQ-QSM", "rAcquityQSM"]:
-            logger.debug("Creating QSMMethod")
-            return QSMMethod(method_definition)
-        # Add more cases as they are coded
-        else:
-            logger.debug(
-                "Unknown module method: %s, creating a generic EmpowerModuleMethod",
-                method_definition["name"],
-            )  # The error is always caught, so we use the debug level here.
-            raise ValueError(f"Unknown module method: {method_definition['name']}")
-    except (KeyError, ValueError) as e:
-        if isinstance(e, KeyError):
-            # If the name key is not present, we don't know what to do with it, but we
-            # can still create a generic EmpowerModuleMethod and just return that.
-            logger.debug("KeyError: %s, creating a generic EmpowerModuleMethod", e)
-        return EmpowerModuleMethod(method_definition)
