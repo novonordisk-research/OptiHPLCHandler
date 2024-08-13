@@ -84,15 +84,11 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
-            project=project,
-            address=address,
-            service=service,
+            project=project, address=address, service=service, username=username
         )
         self.allow_login_without_context_manager = allow_login_without_context_manager
         self.auto_login = auto_login
         self._has_context = False
-        if username:
-            self.username = username
 
     def __enter__(self):
         """Start the context manager."""
