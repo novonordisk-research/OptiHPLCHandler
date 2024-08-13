@@ -212,7 +212,8 @@ class EmpowerConnection:
 
         if self.api_version != "1.0":
             raise ValueError("Only API version 1.0 is supported")
-            # Update the ["results"] when refreshing token to make it work.
+            # Make sure to verify how refresh token works in the new API version before
+            # removing this check
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
@@ -238,7 +239,10 @@ class EmpowerConnection:
                 params={"sessionInfoID": self.session_id},
             )
             self.raise_for_status(refresh_response)
-            self.token = refresh_response.json()["results"][0]["token"]
+            if self.api_version == "1.0":
+                self.token = refresh_response.json()[self.result_key][0]["token"]
+            else:
+                self.token = refresh_response.json()[self.result_key]["token"]
             response = _request_with_timeout(
                 method=method,
                 endpoint=address,
