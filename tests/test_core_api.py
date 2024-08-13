@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import requests
 
 from OptiHPLCHandler import EmpowerConnection
+from OptiHPLCHandler.empower_api_core import EmpowerResponse
 
 
 class TestEmpowerConnection(unittest.TestCase):
@@ -324,6 +325,12 @@ class TestEmpowerConnection(unittest.TestCase):
         }
         mock_response.status_code = 200
         mock_requests.post.return_value = mock_response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "results": [{"test_key": "test_value"}],
+            "message": "test_message",
+        }
+        mock_requests.request.return_value = mock_response
         self.connection = EmpowerConnection(
             project="test_project",
             address="https://test_address/",
@@ -331,6 +338,10 @@ class TestEmpowerConnection(unittest.TestCase):
         )
         assert self.connection.api_version == "1.0"
         self.connection.login(username="test_username", password="test_password")
+        response = self.connection.post("test_url", body={})
+        assert isinstance(response, EmpowerResponse)
+        assert response.result[0]["test_key"] == "test_value"
+        assert response.message == "test_message"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_version_two(self, mock_requests):
@@ -338,8 +349,13 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.json.return_value = {
             "data": {"token": "test_token", "id": "test_id"}
         }
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": [{"test_key": "test_value"}],
+            "message": "test_message",
+        }
         mock_response.status_code = 200
-        mock_requests.post.return_value = mock_response
+        mock_requests.request.return_value = mock_response
         self.connection = EmpowerConnection(
             project="test_project",
             address="https://test_address/",
@@ -347,3 +363,7 @@ class TestEmpowerConnection(unittest.TestCase):
         )
         self.connection.api_version = "2.0"
         self.connection.login(username="test_username", password="test_password")
+        response = self.connection.post("test_url", body={})
+        assert isinstance(response, EmpowerResponse)
+        assert response.result[0]["test_key"] == "test_value"
+        assert response.message == "test_message"
