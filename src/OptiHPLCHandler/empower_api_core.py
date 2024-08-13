@@ -38,6 +38,7 @@ class EmpowerConnection:
     def __init__(
         self,
         address: str,
+        username: Optional[str] = None,
         project: Optional[str] = None,
         service: Optional[str] = None,
         verify: Union[bool, str] = True,
@@ -47,6 +48,8 @@ class EmpowerConnection:
         Initialize the EmpowerConnection.
 
         :param address: The address of the Empower server.
+        :param username: The username to use for logging in. If None, the username of
+            the user running the script is used.
         :param project: The project to use for logging in. If None, the default project
             is used.
         :param service: The service to use for logging in. If None, the first service in
@@ -62,7 +65,10 @@ class EmpowerConnection:
                 f"Address was given as '{address}'. Address must be a valid url."
             )
         self.address = address.rstrip("/")  # Remove trailing slash if present
-        self.username = getpass.getuser()
+        if username is None:
+            self.username = getpass.getuser()
+        else:
+            self.username = username
         self.verify = verify
         self.api_version = api_version
         if service is None:

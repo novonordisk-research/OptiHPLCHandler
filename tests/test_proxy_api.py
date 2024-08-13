@@ -456,7 +456,7 @@ class TestUsername(unittest.TestCase):
             address="https://test_address/",
             username="test_username",
         )
-        assert mock_response.username == "test_username"
+        assert mock_connection.call_args[1]["username"] == "test_username"
 
     def test_function(self):
         self.handler.PostExperiment(
