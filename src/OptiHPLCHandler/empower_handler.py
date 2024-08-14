@@ -92,9 +92,9 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
     def __enter__(self):
         """Start the context manager."""
-        if self.auto_login:
-            self.login(has_context=True)
         self._has_context = True
+        if self.auto_login:
+            self.login()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -131,7 +131,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        has_context: bool = False,
     ):
         """
         Log into Empower.
@@ -145,7 +144,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             login is called with a different username, the default username is changed
             to the given username.
         """
-        if not has_context:
+        if not self._has_context:
             # If the login is not done in a context manager, it is only allowed if
             # `run_without_context` is True, and even there, it psots a warning.
             if self.allow_login_without_context_manager:
