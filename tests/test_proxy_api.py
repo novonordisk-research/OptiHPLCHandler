@@ -5,6 +5,10 @@ from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod, EmpowerModu
 from OptiHPLCHandler.empower_api_core import EmpowerResponse
 
 
+def create_empower_response(content):
+    return EmpowerResponse(content, "", True, False)
+
+
 class TestEmpowerHandler(unittest.TestCase):
     @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
     def setUp(self, mock_connection) -> None:
@@ -81,8 +85,8 @@ class TestEmpowerHandler(unittest.TestCase):
         ) == "test_sample_set_name"  # Check that the correct sample set name is given
 
     def test_get_node_name_list(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
-            ["test_node_name_1"], None
+        self.handler.connection.get.return_value = create_empower_response(
+            ["test_node_name_1"]
         )
         node_name_list = self.handler.GetNodeNames()
         assert node_name_list == ["test_node_name_1"]
@@ -91,8 +95,8 @@ class TestEmpowerHandler(unittest.TestCase):
         )
 
     def test_get_system_name_list(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
-            ["test_system_name_1"], None
+        self.handler.connection.get.return_value = create_empower_response(
+            ["test_system_name_1"]
         )
         system_name_list = self.handler.GetSystemNames("test_node_name")
         assert system_name_list == ["test_system_name_1"]
@@ -267,7 +271,7 @@ class TestGetMethods(unittest.TestCase):
         )
 
     def test_get_method_list(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             [
                 {
                     "fields": [
@@ -281,8 +285,7 @@ class TestGetMethods(unittest.TestCase):
                         {"name": "irrelevant_field", "value": "irrelevant_value"},
                     ]
                 },
-            ],
-            None,
+            ]
         )
 
         method_list = self.handler.GetMethodList()
@@ -293,7 +296,7 @@ class TestGetMethods(unittest.TestCase):
         )  # Check that the correct parameters are passed to the request
 
     def test_method_with_no_name(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             [
                 {
                     "fields": [
@@ -308,13 +311,12 @@ class TestGetMethods(unittest.TestCase):
                     ]  # No fields with name "Name" should give an error
                 },
             ],
-            None,
         )
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
     def test_method_with_two_names(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             [
                 {
                     "fields": [
@@ -329,14 +331,13 @@ class TestGetMethods(unittest.TestCase):
                     ]
                 },
             ],
-            None,
         )
         with self.assertRaises(ValueError):
             self.handler.GetMethodList()
 
     def test_get_sample_set_method_list(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
-            ["test_samplesetmethod_1"], None
+        self.handler.connection.get.return_value = create_empower_response(
+            ["test_samplesetmethod_1"]
         )
         samplesetmethod_list = self.handler.GetSampleSetMethods()
         assert samplesetmethod_list == ["test_samplesetmethod_1"]
@@ -373,12 +374,11 @@ class TestGetPlateTypes(unittest.TestCase):
         )
 
     def test_get_plate_type_names(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             [
                 "test_plate_type_name_1",
                 "test_plate_type_name_2",
             ],
-            None,
         )
         plate_type_names = self.handler.GetPlateTypeNames()
         assert plate_type_names == [
@@ -506,9 +506,8 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             "nativeXml": "test_name",
         }
         self.handler.connection.api_version = "1.0"
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             [{"methodName": "test_method", "modules": [minimal_module]}],
-            None,
         )
         method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
@@ -525,9 +524,8 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             "nativeXml": "test_name",
         }
         self.handler.connection.api_version = "2.0"
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             {"methodName": "test_method", "modules": [minimal_module]},
-            None,
         )
         method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
@@ -547,9 +545,8 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
             ),
         }
 
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             {"methodName": "test_method", "modules": [minimal_module]},
-            None,
         )
         self.handler.connection.api_version = "2.0"
         method = self.handler.GetInstrumentMethod("test_method_name")
@@ -574,9 +571,8 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         )
 
     def test_get_api_version_one(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             [{"name": "test_method_return_name"}],
-            None,
         )
         self.handler.connection.api_version = "1.0"
         method = self.handler.GetMethodSetMethod("test_method_name")
@@ -586,9 +582,8 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         assert method["name"] == "test_method_return_name"
 
     def test_get_api_version_two(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             {"name": "test_method_return_name"},
-            None,
         )
         self.handler.connection.api_version = "2.0"
         method = self.handler.GetMethodSetMethod("test_method_name")
@@ -618,12 +613,11 @@ class TestStatus(unittest.TestCase):
         )
 
     def test_get(self):
-        self.handler.connection.get.return_value = EmpowerResponse(
+        self.handler.connection.get.return_value = create_empower_response(
             [
                 {"name": "FirstKey", "value": "FirstValue"},
                 {"name": "SecondKey", "value": "SecondValue"},
             ],
-            None,
         )
         result = self.handler.GetStatus(node="test_node", system="test_system")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
