@@ -316,7 +316,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             method_type += "Method"
         method_list = self.connection.get(
             endpoint="project/methods?methodTypes=" + method_type
-        ).result
+        ).content
         method_name_dict_list = [
             [name_dict for name_dict in method["fields"] if name_dict["name"] == "Name"]
             for method in method_list
@@ -345,8 +345,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             endpoint=f"project/methods/instrument-method?name={method_name}"
         )
         if self.connection.api_version == "1.0":
-            return EmpowerInstrumentMethod(response.result[0], use_sample_manager_oven)
-        return EmpowerInstrumentMethod(response.result, use_sample_manager_oven)
+            return EmpowerInstrumentMethod(response.content[0], use_sample_manager_oven)
+        return EmpowerInstrumentMethod(response.content, use_sample_manager_oven)
 
     def PostInstrumentMethod(self, method: EmpowerInstrumentMethod) -> None:
         """
@@ -366,8 +366,8 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             endpoint=f"project/methods/method-set?name={method_name}"
         )
         if self.connection.api_version == "1.0":
-            return response.result[0]
-        return response.result
+            return response.content[0]
+        return response.content
 
     def PostMethodSetMethod(self, method: Mapping[str, Any]) -> None:
         """
@@ -383,7 +383,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
 
     def GetNodeNames(self) -> List[str]:
         """Get the list of node names."""
-        return self.connection.get(endpoint="acquisition/nodes").result
+        return self.connection.get(endpoint="acquisition/nodes").content
 
     def GetSystemNames(self, node: str) -> List[str]:
         """
@@ -392,13 +392,13 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         :param node: Name of the node to get the systems from.
         """
         endpoint = f"acquisition/chromatographic-systems?nodeName={node}"
-        return self.connection.get(endpoint=endpoint).result
+        return self.connection.get(endpoint=endpoint).content
 
     def GetSampleSetMethods(self) -> List[str]:
         """Get the list of sample set methods in project."""
         return self.connection.get(
             endpoint="project/methods/sample-set-method-list"
-        ).result
+        ).content
 
     def GetPlateTypeNames(self, filter_string: Optional[str] = None) -> List[str]:
         """
@@ -410,14 +410,14 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         endpoint = "configuration/plate-types-list"
         if filter_string:
             endpoint += f"?stringFilter={filter_string}"
-        return self.connection.get(endpoint=endpoint).result
+        return self.connection.get(endpoint=endpoint).content
 
     def GetStatus(self, node: str, system: str):
         endpoint = (
             "acquisition/chromatographic-system-status"
             f"?nodeName={node}&systemName={system}"
         )
-        result_list = self.connection.get(endpoint=endpoint, timeout=120).result
+        result_list = self.connection.get(endpoint=endpoint, timeout=120).content
         return {entry["name"]: entry["value"] for entry in result_list}
 
     def _set_data_type(self, field: Mapping[str, Any]):

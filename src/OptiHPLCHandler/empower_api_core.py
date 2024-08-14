@@ -11,8 +11,21 @@ logger = logging.getLogger(__name__)
 
 
 class EmpowerResponse(NamedTuple):
-    result: Optional[dict]
-    message: Optional[str]
+    """
+    Named tuple for the response from Empower.
+
+    :ivar content: The content of the response. If no content was received, it is an
+        empty dict.
+    :ivar message: The message from the response. If no message was received, it is an
+        empty string.
+    :ivar content_from_api: Whether the content was received from the API.
+    :ivar message_from_api: Whether the message was received from the API.
+    """
+
+    content: Union[dict, list]
+    message: str
+    content_from_api: bool
+    message_from_api: bool
 
 
 class EmpowerConnection:
@@ -83,7 +96,7 @@ class EmpowerConnection:
                 raise requests.exceptions.Timeout(
                     f"Getting service from {self.address} timed out"
                 ) from e
-            self.service = response.json()[self.result_key][0]["netServiceName"]
+            self.service = response.json()[self.content_key][0]["netServiceName"]
             # If no service is specified, use the first one in the list
         else:
             self.service = service
@@ -94,7 +107,7 @@ class EmpowerConnection:
         self.default_post_timeout = 40
 
     @property
-    def result_key(self):
+    def content_key(self):
         """Get the key to use for getting results from the response."""
         if self.api_version == "1.0":
             # The key for the results in the response is different in version 1.0 of
@@ -144,11 +157,11 @@ class EmpowerConnection:
             ) from e
         self.raise_for_status(response)
         if self.api_version == "1.0":
-            self.token = response.json()[self.result_key][0]["token"]
-            self.session_id = response.json()[self.result_key][0]["id"]
+            self.token = response.json()[self.content_key][0]["token"]
+            self.session_id = response.json()[self.content_key][0]["id"]
         else:
-            self.token = response.json()[self.result_key]["token"]
-            self.session_id = response.json()[self.result_key]["id"]
+            self.token = response.json()[self.content_key]["token"]
+            self.session_id = response.json()[self.content_key]["id"]
         logger.debug("Login successful, keeping token")
 
     def logout(self) -> None:
@@ -236,9 +249,9 @@ class EmpowerConnection:
             )
             self.raise_for_status(refresh_response)
             if self.api_version == "1.0":
-                self.token = refresh_response.json()[self.result_key][0]["token"]
+                self.token = refresh_response.json()[self.content_key][0]["token"]
             else:
-                self.token = refresh_response.json()[self.result_key]["token"]
+                self.token = refresh_response.json()[self.content_key]["token"]
             response = _request_with_timeout(
                 method=method,
                 endpoint=address,
@@ -250,11 +263,24 @@ class EmpowerConnection:
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
+        if self.content_key in response.json():
+            content = response.json()[self.content_key]
+            content_from_api = True
+        else:
+            content = {}
+            content_from_api = False
+        if "message" in response.json():
+            message = response.json()["message"]
+            message_from_api = True
+        else:
+            message = ""
+            message_from_api = False
         return EmpowerResponse(
-            result=response.json().get(self.result_key, None),
-            message=response.json().get("message", None),
-        )  # Safely getting the results and message from the response, if they don't
-        # exist, return None
+            content=content,
+            content_from_api=content_from_api,
+            message=message,
+            message_from_api=message_from_api,
+        )
 
     def get(self, endpoint: str, timeout: Optional[int] = None) -> EmpowerResponse:
         """

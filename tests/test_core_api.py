@@ -124,7 +124,7 @@ class TestEmpowerConnection(unittest.TestCase):
             "message": "test_message",
         }
         mock_requests.request.return_value = mock_response
-        result_list = self.connection.get("test_url")[0]
+        result_list = self.connection.get("test_url").content
         message = self.connection.get("test_url")[1]
         # Testing that the get method is called with the correct url
         assert mock_requests.request.call_args[0][0] == "get"
@@ -350,13 +350,43 @@ class TestEmpowerConnection(unittest.TestCase):
         mock_response.json.return_value = {}
         mock_requests.request.return_value = mock_response
         response = self.connection.get("test_url")
-        assert response == (None, None)
+        assert response.content == {}
+        assert response.message == ""
         mock_response.json.return_value = {"results": []}
         response = self.connection.get("test_url")
-        assert response == ([], None)
+        assert response.content == []
+        assert response.message == ""
         mock_response.json.return_value = {"message": "test_message"}
         response = self.connection.get("test_url")
-        assert response == (None, "test_message")
+        assert response.content == {}
+        assert response.message == "test_message"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_empower_response(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {}
+        mock_requests.request.return_value = mock_response
+        response = self.connection.get("test_url")
+
+        assert isinstance(response, EmpowerResponse)
+        assert response.content == {}
+        assert response.message == ""
+        assert response.content_from_api is False
+        assert response.message_from_api is False
+
+        mock_response.json.return_value = {"results": []}
+        response = self.connection.get("test_url")
+        assert response.content == []
+        assert response.message == ""
+        assert response.content_from_api is True
+        assert response.message_from_api is False
+
+        mock_response.json.return_value = {"message": "test_message"}
+        response = self.connection.get("test_url")
+        assert response.content == {}
+        assert response.message == "test_message"
+        assert response.content_from_api is False
+        assert response.message_from_api is True
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_version_one(self, mock_requests):
@@ -381,7 +411,7 @@ class TestEmpowerConnection(unittest.TestCase):
         self.connection.login(username="test_username", password="test_password")
         response = self.connection.post("test_url", body={})
         assert isinstance(response, EmpowerResponse)
-        assert response.result[0]["test_key"] == "test_value"
+        assert response.content[0]["test_key"] == "test_value"
         assert response.message == "test_message"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
@@ -406,5 +436,5 @@ class TestEmpowerConnection(unittest.TestCase):
         self.connection.login(username="test_username", password="test_password")
         response = self.connection.post("test_url", body={})
         assert isinstance(response, EmpowerResponse)
-        assert response.result[0]["test_key"] == "test_value"
+        assert response.content[0]["test_key"] == "test_value"
         assert response.message == "test_message"
