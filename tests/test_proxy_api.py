@@ -96,6 +96,20 @@ class TestEmpowerHandler(unittest.TestCase):
             == self.handler.connection.get.call_args[1]["endpoint"]
         )
 
+    def test_get_empower_projects(self):
+        self.handler.connection.get.return_value = (
+            [
+                {"projectName": "2021", "shortName": "2021"},
+                {"projectName": "2021\\LI0539", "shortName": "LI0539"},
+            ],
+            "N/A",
+        )
+
+        empower_projects_list = self.handler.GetEmpowerProjects()
+        assert isinstance(empower_projects_list, list)
+        assert empower_projects_list[0] == "2021"
+        assert empower_projects_list[1] == "2021\\LI0539"
+
     def test_project_setter(self):
         self.handler.project = "test_project"
         assert self.handler.connection.project == "test_project"
@@ -589,3 +603,7 @@ class TestStatus(unittest.TestCase):
             "?nodeName=test_node&systemName=test_system"
         )
         assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
