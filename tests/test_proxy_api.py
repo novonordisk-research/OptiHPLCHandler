@@ -444,6 +444,11 @@ class TestLogin(unittest.TestCase):
             pass
         assert self.handler.connection.login.call_count == 0
 
+    def test_context_no_autologin(self):
+        self.handler.auto_login = False
+        with self.handler:
+            self.handler.login()
+
 
 class TestUsername(unittest.TestCase):
     # We need to patch the EmpowerConnection class, because it is used in the
