@@ -107,8 +107,11 @@ class TestEmpowerHandler(unittest.TestCase):
 
         empower_projects_list = self.handler.GetEmpowerProjects()
         assert isinstance(empower_projects_list, list)
-        assert empower_projects_list[0] == "2021"
-        assert empower_projects_list[1] == "2021\\LI0539"
+        assert isinstance(empower_projects_list[0], dict)
+        assert "projectName" in empower_projects_list[0]
+        assert "shortName" in empower_projects_list[0]
+        assert empower_projects_list[0]["projectName"] == "2021"
+        assert empower_projects_list[0]["shortName"] == "2021"
 
     def test_project_setter(self):
         self.handler.project = "test_project"
