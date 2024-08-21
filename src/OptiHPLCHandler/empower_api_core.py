@@ -94,7 +94,7 @@ class EmpowerConnection:
             try:
                 response = requests.get(
                     self.address + "/authentication/db-service-list",
-                    headers={"api-version": self.api_version},
+                    headers=self.header,
                     timeout=60,
                     verify=self.verify,
                 )
@@ -152,7 +152,7 @@ class EmpowerConnection:
         try:
             response = requests.post(
                 self.address + "/authentication/login",
-                headers={"api-version": self.api_version},
+                headers=self.header,
                 json=body,
                 timeout=600,
                 verify=self.verify,
@@ -362,11 +362,11 @@ class EmpowerConnection:
 
     @property
     def header(self):
-        """Get the authorization header to use for requests."""
-        return {
-            "Authorization": "Bearer " + self.token,
-            "api-version": self.api_version,
-        }
+        "The HTTP header to use. Contains the API version and the token if available"
+        header = {"api-version": self.api_version}
+        if self.token is not None:
+            header["Authorization"] = "Bearer " + self.token
+        return header
 
     def __del__(self):
         if self.session_id is not None:
