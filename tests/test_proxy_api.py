@@ -105,6 +105,20 @@ class TestEmpowerHandler(unittest.TestCase):
             == self.handler.connection.get.call_args[1]["endpoint"]
         )
 
+    def test_get_empower_projects(self):
+        self.handler.connection.get.return_value = (
+            [
+                {"projectName": "2021", "shortName": "2021"},
+                {"projectName": "2021\\LI0539", "shortName": "LI0539"},
+            ],
+            "N/A",
+        )
+
+        empower_projects_list = self.handler.GetEmpowerProjects()
+        assert isinstance(empower_projects_list, list)
+        assert empower_projects_list[0] == "2021"
+        assert empower_projects_list[1] == "2021\\LI0539"
+
     def test_project_setter(self):
         self.handler.project = "test_project"
         assert self.handler.connection.project == "test_project"
@@ -437,6 +451,11 @@ class TestLogin(unittest.TestCase):
             pass
         assert self.handler.connection.login.call_count == 0
 
+    def test_context_no_autologin(self):
+        self.handler.auto_login = False
+        with self.handler:
+            self.handler.login()
+
 
 class TestUsername(unittest.TestCase):
     # We need to patch the EmpowerConnection class, because it is used in the
@@ -463,7 +482,7 @@ class TestUsername(unittest.TestCase):
             address="https://test_address/",
             username="test_username",
         )
-        assert mock_response.username == "test_username"
+        assert mock_connection.call_args[1]["username"] == "test_username"
 
     def test_function(self):
         self.handler.PostExperiment(
@@ -625,3 +644,7 @@ class TestStatus(unittest.TestCase):
             "?nodeName=test_node&systemName=test_system"
         )
         assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
