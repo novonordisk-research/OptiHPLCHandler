@@ -93,7 +93,9 @@ class OptiDict(dict):
         self.mutable = mutable
 
     def __setitem__(self, __key: Any, __value: Any) -> None:
-        if self.mutable:
+        if getattr(self, "mutable", True):
+            # un-pickling does not call __init__, so mutable is not set when unpickling
+            # Therefore, we need to allow for mutable not being set
             return super().__setitem__(__key, __value)
         raise TypeError("Object is immutable")
 
