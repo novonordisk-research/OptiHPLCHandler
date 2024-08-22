@@ -87,6 +87,7 @@ class EmpowerConnection:
             self.username = getpass.getuser()
         else:
             self.username = username
+        self.token = None
         self.verify = verify
         self.api_version = api_version
         if service is None:
@@ -108,7 +109,6 @@ class EmpowerConnection:
             self.service = service
         self.project = project
         self.session_id = None
-        self.token = None
         self.default_get_timeout = 20
         self.default_post_timeout = 40
 
