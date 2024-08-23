@@ -99,16 +99,21 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_get_empower_projects(self):
         self.handler.connection.get.return_value = (
             [
-                {"projectName": "2021", "shortName": "2021"},
-                {"projectName": "2021\\LI0539", "shortName": "LI0539"},
+                {"projectName": "2023\\RP0649", "shortName": "RP0649"},
+                {"projectName": "2023\\RP0650", "shortName": "RP0650"},
             ],
             "N/A",
         )
 
         empower_projects_list = self.handler.GetEmpowerProjects()
         assert isinstance(empower_projects_list, list)
-        assert empower_projects_list[0] == "2021"
-        assert empower_projects_list[1] == "2021\\LI0539"
+        assert isinstance(empower_projects_list[0], dict)
+        assert "projectName" in empower_projects_list[0]
+        assert "shortName" in empower_projects_list[0]
+        assert empower_projects_list[0]["projectName"] == "2023\\RP0649"
+        assert empower_projects_list[0]["shortName"] == "RP0649"
+        assert empower_projects_list[1]["projectName"] == "2023\\RP0650"
+        assert empower_projects_list[1]["shortName"] == "RP0650"
 
     def test_project_setter(self):
         self.handler.project = "test_project"

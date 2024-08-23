@@ -172,14 +172,14 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """Get the status of the HPLC."""
         raise NotImplementedError
 
-    def GetEmpowerProjects(self) -> list:
+    def GetEmpowerProjects(self) -> list[Dict[str, str]]:
         """
         Assuming that the user has logged in in one project for example
         project = Mobile, this method fetches all available projectName that
         the user has access to and returns them as a list.
         """
         project_list = self.connection.get("/authentication/project-list")[0]
-        return [item["projectName"] for item in project_list]
+        return project_list
 
     def PostExperiment(
         self,
