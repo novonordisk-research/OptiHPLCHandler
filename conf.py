@@ -15,7 +15,7 @@ copyright = (
     "2023, Søren Furbo, Samual Burnage, Erik Trygg, Jacob Kofoed, Søren Bertelsen"
 )
 author = "Søren Furbo, Samual Burnage, Erik Trygg, Jacob Kofoed, Søren Bertelsen"
-release = "3.4.2"
+release = "3.4.3"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
