@@ -84,21 +84,17 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
-            project=project,
-            address=address,
-            service=service,
+            project=project, address=address, service=service, username=username
         )
         self.allow_login_without_context_manager = allow_login_without_context_manager
         self.auto_login = auto_login
         self._has_context = False
-        if username:
-            self.username = username
 
     def __enter__(self):
         """Start the context manager."""
-        if self.auto_login:
-            self.login(has_context=True)
         self._has_context = True
+        if self.auto_login:
+            self.login()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -135,7 +131,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        has_context: bool = False,
     ):
         """
         Log into Empower.
@@ -149,7 +144,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             login is called with a different username, the default username is changed
             to the given username.
         """
-        if not has_context:
+        if not self._has_context:
             # If the login is not done in a context manager, it is only allowed if
             # `run_without_context` is True, and even there, it psots a warning.
             if self.allow_login_without_context_manager:
@@ -176,6 +171,15 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def Status(self) -> List[HplcResult]:
         """Get the status of the HPLC."""
         raise NotImplementedError
+
+    def GetEmpowerProjects(self) -> list[Dict[str, str]]:
+        """
+        Assuming that the user has logged in in one project for example
+        project = Mobile, this method fetches all available projectName that
+        the user has access to and returns them as a list.
+        """
+        project_list = self.connection.get("/authentication/project-list")[0]
+        return project_list
 
     def PostExperiment(
         self,
