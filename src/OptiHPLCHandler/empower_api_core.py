@@ -38,14 +38,18 @@ class EmpowerConnection:
     def __init__(
         self,
         address: str,
+        username: Optional[str] = None,
         project: Optional[str] = None,
         service: Optional[str] = None,
         verify: Union[bool, str] = True,
+        api_version: str = "1.0",
     ) -> None:
         """
         Initialize the EmpowerConnection.
 
         :param address: The address of the Empower server.
+        :param username: The username to use for logging in. If None, the username of
+            the user running the script is used.
         :param project: The project to use for logging in. If None, the default project
             is used.
         :param service: The service to use for logging in. If None, the first service in
@@ -54,19 +58,25 @@ class EmpowerConnection:
             is done when connecting via HTTPS. If it is a string, it should be the
             path to the CA_BUNDLE file or directory with certificates of trusted CAs-
             If true, the built-in list of trusted CAs will be used.
+        :param api_version: The version of the API to use. Default is "1.0".
         """
         if not address:
             raise ValueError(
                 f"Address was given as '{address}'. Address must be a valid url."
             )
         self.address = address.rstrip("/")  # Remove trailing slash if present
-        self.username = getpass.getuser()
+        if username is None:
+            self.username = getpass.getuser()
+        else:
+            self.username = username
         self.verify = verify
+        self.api_version = api_version
         if service is None:
             logger.debug("No service specified, getting service from Empower")
             try:
                 response = requests.get(
                     self.address + "/authentication/db-service-list",
+                    headers={"api-version": self.api_version},
                     timeout=60,
                     verify=self.verify,
                 )
@@ -115,6 +125,7 @@ class EmpowerConnection:
         try:
             response = requests.post(
                 self.address + "/authentication/login",
+                headers={"api-version": self.api_version},
                 json=body,
                 timeout=600,
                 verify=self.verify,
@@ -136,7 +147,7 @@ class EmpowerConnection:
         logger.debug("Logging out of Empower")
         response = requests.delete(
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
-            headers=self.authorization_header,
+            headers=self.header,
             timeout=self.default_post_timeout,
             verify=self.verify,
         )
@@ -150,7 +161,7 @@ class EmpowerConnection:
         logger.debug("Logout successful")
 
     def _requests_wrapper(
-        self, method: str, endpoint: str, body: Optional[dict], timeout
+        self, method: str, endpoint: str, body: Optional[dict], timeout: int
     ) -> Tuple[Optional[dict], Optional[str]]:
         """
         Wrapper for requests.
@@ -163,11 +174,20 @@ class EmpowerConnection:
         :return: The results and message from the response.
         """
 
-        def _request_with_timeout(method, endpoint, header, body, timeout, verify):
+        def _request_with_timeout(
+            method: str,
+            endpoint: str,
+            params: dict,
+            header: dict,
+            body: dict,
+            timeout: int,
+            verify: Union[bool, str],
+        ) -> requests.Response:
             try:
                 return requests.request(
                     method,
                     endpoint,
+                    params=params,
                     json=body,
                     headers=header,
                     timeout=timeout,
@@ -178,18 +198,43 @@ class EmpowerConnection:
                     f"{method}ing {body} to {endpoint} timed out"
                 ) from e
 
+        if self.api_version != "1.0":
+            raise ValueError("Only API version 1.0 is supported")
+            # Update the ["results"] when refreshing token to make it work.
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
         logger.debug("%sing %s to %s", method, body, address)
         response = _request_with_timeout(
-            method, address, self.authorization_header, body, timeout, self.verify
+            method=method,
+            endpoint=address,
+            header=self.header,
+            body=body,
+            timeout=timeout,
+            verify=self.verify,
+            params={},
         )
         if response.status_code == 401:
-            logger.debug("Token expired, logging in again")
-            self.login()
+            logger.debug("Token expired, refreshing token and %sing again", method)
+            refresh_response = _request_with_timeout(
+                method="get",
+                endpoint=self.address + "/authentication/refresh-token",
+                header=self.header,
+                body=None,
+                timeout=self.default_get_timeout,
+                verify=self.verify,
+                params={"sessionInfoID": self.session_id},
+            )
+            self.raise_for_status(refresh_response)
+            self.token = refresh_response.json()["results"][0]["token"]
             response = _request_with_timeout(
-                method, address, self.authorization_header, body, timeout, self.verify
+                method=method,
+                endpoint=address,
+                header=self.header,
+                body=body,
+                timeout=timeout,
+                verify=self.verify,
+                params={},
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
@@ -274,9 +319,12 @@ class EmpowerConnection:
         return password
 
     @property
-    def authorization_header(self):
+    def header(self):
         """Get the authorization header to use for requests."""
-        return {"Authorization": "Bearer " + self.token}
+        return {
+            "Authorization": "Bearer " + self.token,
+            "api-version": self.api_version,
+        }
 
     def __del__(self):
         if self.session_id is not None:

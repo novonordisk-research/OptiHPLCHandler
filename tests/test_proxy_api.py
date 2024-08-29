@@ -96,6 +96,25 @@ class TestEmpowerHandler(unittest.TestCase):
             == self.handler.connection.get.call_args[1]["endpoint"]
         )
 
+    def test_get_empower_projects(self):
+        self.handler.connection.get.return_value = (
+            [
+                {"projectName": "2023\\RP0649", "shortName": "RP0649"},
+                {"projectName": "2023\\RP0650", "shortName": "RP0650"},
+            ],
+            "N/A",
+        )
+
+        empower_projects_list = self.handler.GetEmpowerProjects()
+        assert isinstance(empower_projects_list, list)
+        assert isinstance(empower_projects_list[0], dict)
+        assert "projectName" in empower_projects_list[0]
+        assert "shortName" in empower_projects_list[0]
+        assert empower_projects_list[0]["projectName"] == "2023\\RP0649"
+        assert empower_projects_list[0]["shortName"] == "RP0649"
+        assert empower_projects_list[1]["projectName"] == "2023\\RP0650"
+        assert empower_projects_list[1]["shortName"] == "RP0650"
+
     def test_project_setter(self):
         self.handler.project = "test_project"
         assert self.handler.connection.project == "test_project"
@@ -430,6 +449,11 @@ class TestLogin(unittest.TestCase):
             pass
         assert self.handler.connection.login.call_count == 0
 
+    def test_context_no_autologin(self):
+        self.handler.auto_login = False
+        with self.handler:
+            self.handler.login()
+
 
 class TestUsername(unittest.TestCase):
     # We need to patch the EmpowerConnection class, because it is used in the
@@ -456,7 +480,7 @@ class TestUsername(unittest.TestCase):
             address="https://test_address/",
             username="test_username",
         )
-        assert mock_response.username == "test_username"
+        assert mock_connection.call_args[1]["username"] == "test_username"
 
     def test_function(self):
         self.handler.PostExperiment(
@@ -589,3 +613,7 @@ class TestStatus(unittest.TestCase):
             "?nodeName=test_node&systemName=test_system"
         )
         assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
