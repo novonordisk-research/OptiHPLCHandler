@@ -288,7 +288,7 @@ class EmpowerConnection:
         :return: The results and message from the response.
         """
         if not timeout:
-            timeout = self.default_get_timeout
+            timeout = self.default_post_timeout
         else:
             logger.debug("Timeout changed from default value to %s", timeout)
             print(
