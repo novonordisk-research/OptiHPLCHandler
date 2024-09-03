@@ -267,6 +267,34 @@ class TestSampleList(unittest.TestCase):
                 in self.handler.connection.post.call_args[1]["body"]["plates"]
             )
 
+    def test_components(self):
+        component_dict = {"test_component_name_1": 1, "test_component_name_2": 2}
+        sample_list = [
+            {
+                "Method": "test_method_1",
+                "SamplePos": "test_sample_pos_1",
+                "SampleName": "test_sample_name_1",
+                "InjectionVolume": 1,
+                "Components": component_dict,
+            },
+        ]
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=sample_list,
+            plates={},
+            audit_trail_message="test_audit_trail_message",
+        )
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ]
+        components = sample_set_lines[0]["components"]
+        assert components[0]["id"] != components[1]["id"]
+        for i, (name, concentration) in enumerate(component_dict.items()):
+            name_dict = {"name": "Component", "value": name}
+            assert name_dict in components[i]["fields"]
+            concentration_dict = {"name": "Value", "value": concentration}
+            assert concentration_dict in components[i]["fields"]
+
 
 class TestGetMethods(unittest.TestCase):
     # We need to patch the EmpowerConnection class, because it is used in the
