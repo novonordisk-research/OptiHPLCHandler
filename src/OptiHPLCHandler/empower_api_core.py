@@ -204,7 +204,9 @@ class EmpowerConnection:
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
-        logger.debug("%sing %s to %s", method, body, address)
+        logger.debug(
+            "%sing header %s and body %s to %s", method, self.header, body, address
+        )
         response = _request_with_timeout(
             method=method,
             endpoint=address,
