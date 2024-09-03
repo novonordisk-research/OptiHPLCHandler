@@ -184,7 +184,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
     def PostExperiment(
         self,
         sample_set_method_name: str,
-        sample_list: Iterable[Mapping[str, Any]],
+        sample_list: Iterable[dict[str, Any]],
         plates: Dict[str, str],
         audit_trail_message: Optional[str] = None,
     ):
@@ -199,6 +199,10 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                     and position on the plate.
                 - SampleName: Name of the sample.
                 - InjectionVolume: Volume of the sample to inject in micro liters.
+
+            If the key "Components" is present, it should be a dict, with the keys being
+            the names of the components, and the values being the concentration of the
+            component in the sample.
 
             Any other keys will be added as fields to the sample, including custom
             fields.
@@ -233,6 +237,28 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
                 "Adding sampleset line number %s to sample list",
                 num,
             )
+            component_list = []
+            component_dict = sample.pop("Components", {})
+            # The key "Components" is treated differently, as Empower needs the
+            # components separately, not as a field.
+            for i, (component_name, component_value) in enumerate(
+                component_dict.items()
+            ):
+                component_list.append(
+                    {
+                        "id": i,
+                        "fields": [
+                            {
+                                "name": "Component",
+                                "value": component_name,
+                            },
+                            {
+                                "name": "Value",
+                                "value": component_value,
+                            },
+                        ],
+                    }
+                )
             alias_dict = {
                 "Method": "MethodSetOrReportMethod",
                 "SamplePos": "Vial",
@@ -245,7 +271,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
             for field in field_list:
                 self._set_data_type(field)
             empower_sample_list.append(
-                {"components": [], "id": num, "fields": field_list}
+                {"components": component_list, "id": num, "fields": field_list}
             )
         sampleset_object["sampleSetLines"] = empower_sample_list
         endpoint = "project/methods/sample-set-method"
