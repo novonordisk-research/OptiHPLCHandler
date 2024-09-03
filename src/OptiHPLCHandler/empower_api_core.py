@@ -204,8 +204,10 @@ class EmpowerConnection:
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
+        log_header = self.header.copy()
+        log_header.pop("Authorization", None)  # Remove the token from the log
         logger.debug(
-            "%sing header %s and body %s to %s", method, self.header, body, address
+            "%sing header %s and body %s to %s", method, log_header, body, address
         )
         response = _request_with_timeout(
             method=method,
@@ -321,7 +323,7 @@ class EmpowerConnection:
         return password
 
     @property
-    def header(self):
+    def header(self) -> dict[str, str]:
         """Get the authorization header to use for requests."""
         return {
             "Authorization": "Bearer " + self.token,
