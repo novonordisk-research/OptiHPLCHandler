@@ -108,16 +108,21 @@ class TestEmpowerHandler(unittest.TestCase):
     def test_get_empower_projects(self):
         self.handler.connection.get.return_value = (
             [
-                {"projectName": "2021", "shortName": "2021"},
-                {"projectName": "2021\\LI0539", "shortName": "LI0539"},
+                {"projectName": "2023\\RP0649", "shortName": "RP0649"},
+                {"projectName": "2023\\RP0650", "shortName": "RP0650"},
             ],
             "N/A",
         )
 
         empower_projects_list = self.handler.GetEmpowerProjects()
         assert isinstance(empower_projects_list, list)
-        assert empower_projects_list[0] == "2021"
-        assert empower_projects_list[1] == "2021\\LI0539"
+        assert isinstance(empower_projects_list[0], dict)
+        assert "projectName" in empower_projects_list[0]
+        assert "shortName" in empower_projects_list[0]
+        assert empower_projects_list[0]["projectName"] == "2023\\RP0649"
+        assert empower_projects_list[0]["shortName"] == "RP0649"
+        assert empower_projects_list[1]["projectName"] == "2023\\RP0650"
+        assert empower_projects_list[1]["shortName"] == "RP0650"
 
     def test_project_setter(self):
         self.handler.project = "test_project"
@@ -270,6 +275,67 @@ class TestSampleList(unittest.TestCase):
                 plate_definiton
                 in self.handler.connection.post.call_args[1]["body"]["plates"]
             )
+
+    def test_components(self):
+        component_dict = {"test_component_name_1": 1, "test_component_name_2": 2}
+        sample_list = [
+            {
+                "Method": "test_method_1",
+                "SamplePos": "test_sample_pos_1",
+                "SampleName": "test_sample_name_1",
+                "InjectionVolume": 1,
+                "Components": component_dict,
+            },
+        ]
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=sample_list,
+            plates={},
+            audit_trail_message="test_audit_trail_message",
+        )
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ]
+        components = sample_set_lines[0]["components"]
+        assert components[0]["id"] != components[1]["id"]
+        for i, (name, concentration) in enumerate(component_dict.items()):
+            name_dict = {"name": "Component", "value": name}
+            assert name_dict in components[i]["fields"]
+            concentration_dict = {"name": "Value", "value": concentration}
+            assert concentration_dict in components[i]["fields"]
+
+    def test_component_key(self):
+        component_dict = {"test_component_name_1": 1}
+        sample_list = [
+            {
+                "Method": "test_method_1",
+                "SamplePos": "test_sample_pos_1",
+                "SampleName": "test_sample_name_1",
+                "InjectionVolume": 1,
+                "Components": "test_custom_field_value",
+                "StandardComponents": component_dict,
+            },
+        ]
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=sample_list,
+            plates={},
+            audit_trail_message="test_audit_trail_message",
+            component_key="StandardComponents",
+        )
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ]
+        components = sample_set_lines[0]["components"]
+        assert {"name": "Component", "value": "test_component_name_1"} in components[0][
+            "fields"
+        ]
+        assert {"name": "Value", "value": 1} in components[0]["fields"]
+        assert {
+            "name": "Components",
+            "value": "test_custom_field_value",
+            "dataType": "String",
+        } in sample_set_lines[0]["fields"]
 
 
 class TestGetMethods(unittest.TestCase):
