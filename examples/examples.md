@@ -55,3 +55,17 @@ Here outlines a series of method generators that takes an input instrument metho
 ## Example: [Using method generation, makes a basic robustness sample set for an defined input method](example_robustness.ipynb)
 
 Here outlines the use of the above method generators, making a sample set method to test the robustness of the method.
+
+## Example: [Column Eluent Screening Experiment](example_column_eluent_screening.ipynb)
+
+Here outlines an example of how one could conduct a column eluent screening experiment. 
+
+- Based on template method, generates a matrix of instrument methods
+- Populates a sample set method
+
+## Example: [Stability Study Experiment](example_stability_study.ipynb)
+
+Here outlines an example of how one could conduct a stability study. With a sample incubated at different temperatures and taken out of incubation at different timepoints.
+
+- Based on template method, alters method to make sure gradient table and valves are set to correct lines.
+- Populates a sample set method

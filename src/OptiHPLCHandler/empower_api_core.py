@@ -232,7 +232,11 @@ class EmpowerConnection:
         endpoint = endpoint.lstrip("/")  # Remove leading slash if present
         address = self.address + "/" + endpoint
         # Add slash between address and endpoint
-        logger.debug("%sing %s to %s", method, body, address)
+        log_header = self.header.copy()
+        log_header.pop("Authorization", None)  # Remove the token from the log
+        logger.debug(
+            "%sing header %s and body %s to %s", method, log_header, body, address
+        )
         response = _request_with_timeout(
             method=method,
             endpoint=address,
@@ -326,7 +330,7 @@ class EmpowerConnection:
         :return: The results and message from the response.
         """
         if not timeout:
-            timeout = self.default_get_timeout
+            timeout = self.default_post_timeout
         else:
             logger.debug("Timeout changed from default value to %s", timeout)
             print(
