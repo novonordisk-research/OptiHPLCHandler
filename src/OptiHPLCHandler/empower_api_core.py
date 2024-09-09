@@ -1,5 +1,6 @@
 import getpass
 import logging
+import time
 import warnings
 from typing import NamedTuple, Optional, Union
 
@@ -175,7 +176,11 @@ class EmpowerConnection:
         if self.session_id is None:
             logger.debug("No session ID, no need to log out")
             return
-        logger.debug("Logging out of Empower")
+        logger.debug(
+            "Logging out of Empower session with session ID %s with header %s",
+            self.session_id,
+            self.header,
+        )
         response = requests.delete(
             self.address + "/authentication/logout?sessionInfoID=" + self.session_id,
             headers=self.header,
@@ -188,7 +193,9 @@ class EmpowerConnection:
             )
         else:
             self.raise_for_status(response)
+            time.sleep(5)  # Wait for Empower to log out. Otherwise, the API can crash.
         self.session_id = None
+        self.token = None
         logger.debug("Logout successful")
 
     def _requests_wrapper(
