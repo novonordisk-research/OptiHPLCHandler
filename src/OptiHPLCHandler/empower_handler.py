@@ -1,11 +1,9 @@
 import logging
 import warnings
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Iterable, List, Mapping, Optional, TypeVar
+from typing import Any, Dict, Iterable, List, Mapping, Optional, TypeVar
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
-from .utils.data_types import HplcResult, HPLCSetup
 
 Result = TypeVar("Result")
 
@@ -14,35 +12,7 @@ Setup = TypeVar("Setup")
 logger = logging.getLogger(__name__)
 
 
-class StatefulInstrumentHandler(ABC, Generic[Result, Setup]):
-    def __init__(self):
-        pass
-
-    @property
-    @abstractmethod
-    def Status(self) -> List[Result]:
-        """Get the status of the instrument."""
-
-    @abstractmethod
-    def PostExperiment(self, experiment: Any):
-        """
-        Post the experiment to the instrument.
-        """
-
-    @abstractmethod
-    def RunExperiment(self, experiment: Any) -> Result:
-        """
-        Run the experiment on the instrument.
-
-        This will run an experiment that already exists .
-        """
-
-    @abstractmethod
-    def GetSetup(self) -> List[Setup]:
-        """Get the setup of the instrument."""
-
-
-class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
+class EmpowerHandler:
     """
     Handler for Empower. It allows you to post experiments to Empower and run them. It
     also allows you to get the information necessary to create an experiment, that is,
@@ -167,11 +137,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         logger.debug("Logging out of Empower")
         self.connection.logout()
 
-    @property
-    def Status(self) -> List[HplcResult]:
-        """Get the status of the HPLC."""
-        raise NotImplementedError
-
     def GetEmpowerProjects(self) -> list[Dict[str, str]]:
         """
         Assuming that the user has logged in in one project for example
@@ -292,7 +257,7 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         node: str,
         system: str,  # TODO: Allow for none, in that case, use the only entry
         sample_set_name: Optional[str] = None,
-    ) -> HplcResult:
+    ) -> None:
         """
         Run the experiment on an instrument.
 
@@ -320,25 +285,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         self.connection.post(
             endpoint="acquisition/run-sample-set-method", body=parameters, timeout=60
         )
-
-    def AddMethod(
-        self,
-        template_method: str,
-        new_method: str,
-        changes: Mapping[str, Any],
-        audit_trail_message: str,
-    ) -> None:
-        """
-        Add a new method based on the template method.
-
-        :param template_method: Name of the template method to use.
-        :param new_method: Name of the new method to create.
-        :param changes: Dictionary of changes to make to the template method. The keys
-            should be the names of the fields to change, the values should be the new
-            values of the fields.
-        :param audit_trail_message: Message to add to the audit trail of the method.
-        """
-        raise NotImplementedError
 
     def GetMethodList(self, method_type: str = "MethodSetMethod") -> List[str]:
         """
@@ -407,10 +353,6 @@ class EmpowerHandler(StatefulInstrumentHandler[HplcResult, HPLCSetup]):
         :param method: The method set method to post."""
         endpoint = "project/methods/method-set"
         self.connection.post(endpoint=endpoint, body=method)
-
-    def GetSetup(self) -> List[HPLCSetup]:
-        """Get the list of HPLC setups."""
-        raise NotImplementedError
 
     def GetNodeNames(self) -> List[str]:
         """Get the list of node names."""
