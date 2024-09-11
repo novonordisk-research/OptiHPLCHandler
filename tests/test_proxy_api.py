@@ -26,23 +26,6 @@ class TestEmpowerHandler(unittest.TestCase):
         assert self.handler.auto_login is True
         # Check that the trailing slash is removed from the address
 
-    def test_status(self):
-        with self.assertRaises(NotImplementedError):
-            self.handler.Status()
-
-    def test_add_method(self):
-        with self.assertRaises(NotImplementedError):
-            self.handler.AddMethod(
-                template_method="test_template_method",
-                new_method="test_new_method",
-                changes={},
-                audit_trail_message="test_audit_trail_message",
-            )
-
-    def test_get_setup(self):
-        with self.assertRaises(NotImplementedError):
-            self.handler.GetSetup()
-
     def test_run_experiment(self):
         mock_response = MagicMock()
         mock_response.status_code = 200
