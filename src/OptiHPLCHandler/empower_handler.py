@@ -1,13 +1,11 @@
 import logging
 import warnings
-from typing import Any, Dict, Iterable, List, Mapping, Optional, TypeVar
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
+from .utils.default_data import BUILTIN_ALLOWED_VALUES, SYNONYMS
 
-Result = TypeVar("Result")
-
-Setup = TypeVar("Setup")
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +22,9 @@ class EmpowerHandler:
     :ivar project: Name of the project to connect to.
     :ivar address: Address of the Empower server.
     :ivar username: Username to use to connect to Empower.
+    :ivar synonym_dict: Dictionary with the synonyms for the fields in SampleSetLine.
+        The keys are the synonyms, the values are the actual field names that the API
+        accepts.
     """
 
     def __init__(
@@ -43,14 +44,15 @@ class EmpowerHandler:
         :param address: Address of the Empower server.
         :param service: Name of the service to use to connect to Empower. If not given,
             the first service in the list of services will be used.
+        :param username: Username to use to connect to Empower. If not given, the name
+            of the user running the script will be used.
         :param allow_login_without_context_manager: If `False` (default), an error will
             be raised when logging in without a context manager. If True, logging in
             without a context manager will merely raise a warning. This is not
             recommended, as it can lead to forgetting logging out.
-        :param auto_login: If True (default), the handler will log in automatically when
-            you start a context manager. If `False`, you will have to call `login`
-            manually. If you are to provide the password, you need to set this to
-            `False`.
+        :param auto_login: If `True` (default), the handler will log in automatically
+            when you start a context manager. If `False`, you will have to call
+            `login()` manually. This will allow you to give the password manually.
         """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
@@ -59,6 +61,8 @@ class EmpowerHandler:
         self.allow_login_without_context_manager = allow_login_without_context_manager
         self.auto_login = auto_login
         self._has_context = False
+        self._samplesetline_enum_dict = dict(BUILTIN_ALLOWED_VALUES)
+        self.synonym_dict = dict(SYNONYMS)
 
     def __enter__(self):
         """Start the context manager."""
@@ -131,6 +135,21 @@ class EmpowerHandler:
                     "`with EmpowerHandler(...) as handler:...`"
                 )
         self.connection.login(password=password, username=username)
+        # Setting the synonyms and enumerated fields.
+        # Consider making this optional to save time if you know which enumerated
+        # fields you are going to use.
+        fields = self.connection.get("/project/fields?fieldType=SampleSetLine")[0]
+        for field in fields:
+            self.synonym_dict[field["displayName"]] = field["name"]
+        enum_field_name_list = [
+            field["name"] for field in fields if field["type"] == "Enumerator"
+        ]
+        for field_name in enum_field_name_list:
+            self.SetAllowedSamplesetLineFieldValues(
+                field_name=field_name, allowed_values=tuple(), overwrite=False
+            )
+            # Setting it to an empty tuple means that no validation is done if the
+            # allowed values are not already set.
 
     def logout(self) -> None:
         """Log out of Empower."""
@@ -185,30 +204,23 @@ class EmpowerHandler:
             method.
         """
         logger.debug("Posting experiment to Empower")
-        plate_list = []
-        for plate_pos, plate_name in plates.items():
-            plate_list.append(
-                {
-                    "plateTypeName": plate_name,
-                    "plateLayoutPosition": plate_pos,
-                }
-            )
+        plate_list = [
+            {"plateTypeName": plate_name, "plateLayoutPosition": plate_pos}
+            for plate_pos, plate_name in plates.items()
+        ]
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
         for num, sample in enumerate(sample_list):
             if "Function" not in sample:
-                sample["Function"] = {"member": "Inject Samples"}
-                field_list = [
-                    {"name": "Processing", "value": {"member": "Normal"}},
-                ]
-            else:
-                field_list = []
+                sample["Function"] = "Inject Samples"
+                if "Processing" not in sample:
+                    sample["Processing"] = "Normal"
             logger.debug(
                 "Adding sampleset line number %s to sample list",
                 num,
             )
             component_list = []
-            component_dict = sample.pop(component_key, {})
+            component_dict: dict[str, Union[str, float]] = sample.pop(component_key, {})
             # The key "Components" is treated differently, as Empower needs the
             # components separately, not as a field.
             for i, (component_name, component_value) in enumerate(
@@ -229,17 +241,35 @@ class EmpowerHandler:
                         ],
                     }
                 )
-            alias_dict = {
-                "Method": "MethodSetOrReportMethod",
-                "SamplePos": "Vial",
-                "InjectionVolume": "InjVol",
-            }  # Key are "human readable" names, values are the names used in Empower.
+            field_list = []
             for key, value in sample.items():
-                key = alias_dict.get(key, key)
+                key = self.synonym_dict.get(key, key)
+                # If you have logged in, the synonyms should be set, so this should not
+                # be necessary, but we want to be able to use the handler by logging in
+                # elsewhere.
+                if key in self._samplesetline_enum_dict:
+                    if isinstance(value, dict):
+                        # If the value is a dict, it is already in the correct format.
+                        # We will unpack it for the check, and then pack it again.
+                        warnings.warn(
+                            "You are using a dict as a value for an enumerated field. "
+                            "This is deprecated and will be removed, "
+                            "please use the value directly.",
+                            DeprecationWarning,
+                        )
+                        value = value["member"]
+                    if (
+                        len(self._samplesetline_enum_dict[key])
+                        != 0  # Empty tuple means no validation
+                        and value not in self._samplesetline_enum_dict[key]
+                    ):
+                        raise ValueError(
+                            f"Value {value} not in enumerated values for field {key}. "
+                            f"Available values: {self._samplesetline_enum_dict[key]}"
+                        )
+                    value = {"member": value}
                 logger.debug("Adding field %s with value %s to sample.", key, value)
-                field_list.append({"name": key, "value": value})
-            for field in field_list:
-                self._set_data_type(field)
+                field_list.append(self._set_data_type({"name": key, "value": value}))
             empower_sample_list.append(
                 {"components": component_list, "id": num, "fields": field_list}
             )
@@ -391,6 +421,56 @@ class EmpowerHandler:
         result_list = self.connection.get(endpoint=endpoint, timeout=120)[0]
         return {entry["name"]: entry["value"] for entry in result_list}
 
+    def SetAllowedSamplesetLineFieldValues(
+        self,
+        field_name: str,
+        allowed_values: Optional[List[str]] = None,
+        overwrite: bool = True,
+    ) -> List[str]:
+        """
+        Set the list of allowed values for a field in SampleSetLine.
+
+        :param field_name: Name of the field to set the allowed values for. Can be
+            either the actual field name or an excepted synonym, like the Empower
+            display name.
+        :param allowed_values: List of values to set as enumerated values for the field.
+            If None (default), the list of enumerated values will be retrieved from the
+            API. To turn off validation for a field, set the values to an empty tuple.
+        :param overwrite: If True (default), the allowed values for the field will be
+            overwritten, even if they are already set. If False, the values will only
+            be set if they are not already set.
+
+        :return: List of allowed values for the field after the operation.
+        """
+        field_name = self.synonym_dict.get(field_name, field_name)
+        if field_name not in self._samplesetline_enum_dict:
+            logger.debug("Field %s not in enum_dict, adding it.", field_name)
+        elif not overwrite:
+            logger.debug(
+                "Allowed values for field %s already set (%s). "
+                "These will not be overwritten.",
+                field_name,
+                self._samplesetline_enum_dict[field_name],
+            )
+            return self._samplesetline_enum_dict[field_name]
+        elif self._samplesetline_enum_dict[field_name] != tuple():
+            logger.debug(
+                "Allowed values for field %s already set (%s). "
+                "These will be overwritten with %s.",
+                field_name,
+                self._samplesetline_enum_dict[field_name],
+                allowed_values,
+            )
+        if allowed_values is None:
+            fields = self.connection.get(
+                "/project/field-enumerated-values"
+                "?fieldType=SampleSetLine"
+                f"&field={field_name}"
+            )[0]
+            allowed_values = [field["member"] for field in fields]
+        self._samplesetline_enum_dict[field_name] = allowed_values
+        return allowed_values
+
     def _set_data_type(self, field: Mapping[str, Any]):
         """Find and set the data type of the field, based on the type of `value`"""
         data_type_dict = {
@@ -410,6 +490,7 @@ class EmpowerHandler:
                 "No data type found for field "
                 f"{field['name']} with value {field['value']}."
             )
+        return field
 
     def __str__(self):
         return f"EmpowerHandler for project {self.project}, user {self.username}"
