@@ -659,5 +659,41 @@ class TestStatus(unittest.TestCase):
         assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
 
 
+class TestLogout(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+
+    def test_autologout_in_context_handler(self):
+        with self.handler:
+            pass
+        assert self.handler.connection.logout.call_count == 1
+
+    def test_logout(self):
+        self.handler.logout()
+        assert self.handler.connection.logout.call_count == 1
+
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def test_logout_all_sessions(self, mock_connection):
+        username = "test_username"
+        mock_connection.return_value.get.return_value = (
+            [
+                {"user": username, "id": "test_session_1"},
+                {"user": username, "id": "test_session_2"},
+                {"user": "another_user", "id": "test_session_3"},
+                {"user": "another_user", "id": "test_session_4"},
+            ],
+        )
+        mock_connection.return_value.username = username
+        EmpowerHandler.LogoutAllSessions(
+            address="https://test_address/", password="test_password"
+        )
+        assert mock_connection.return_value.logout.call_count == 3
+        # Three times, two for the list, one for the handler made to log out
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
