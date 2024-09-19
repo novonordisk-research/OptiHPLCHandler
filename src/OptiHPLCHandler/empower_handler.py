@@ -6,7 +6,6 @@ from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
 from .utils.default_data import BUILTIN_ALLOWED_VALUES, SYNONYMS
 
-
 logger = logging.getLogger(__name__)
 
 
