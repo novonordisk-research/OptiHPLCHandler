@@ -420,6 +420,14 @@ class EmpowerHandler:
                 for session in session_list
                 if session["user"] == handler.username
             ]
+            # Only keeping the session IDs of the current user.
+            session_list = [
+                session
+                for session in session_list
+                if session["id"] != handler.connection.session_id
+            ]
+            # Removing the session in handler, so we don't log out of that before we are
+            # done. It is logged out when we exit the context manager.
             connection = EmpowerConnection(
                 address=address,
                 username=handler.username,
