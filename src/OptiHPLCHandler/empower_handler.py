@@ -137,9 +137,9 @@ class EmpowerHandler:
         # Setting the synonyms and enumerated fields.
         # Consider making this optional to save time if you know which enumerated
         # fields you are going to use.
-        self.set_synonyms_and_enumerated_fields()
+        self.SetSynonymsAndEnumeratedFields()
 
-    def set_synonyms_and_enumerated_fields(self) -> None:
+    def SetSynonymsAndEnumeratedFields(self) -> None:
         """
         Set the synonyms and enumerated fields for SampleSetLines for the handler.
 
