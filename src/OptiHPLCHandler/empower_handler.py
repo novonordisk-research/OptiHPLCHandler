@@ -28,8 +28,8 @@ class EmpowerHandler:
 
     def __init__(
         self,
-        project: str,
         address: str,
+        project: Optional[str] = None,
         service: str = None,
         username: Optional[str] = None,
         allow_login_without_context_manager: bool = False,
@@ -39,8 +39,8 @@ class EmpowerHandler:
         """
         Create a handler for Empower.
 
-        :param project: Name of the project to connect to.
         :param address: Address of the Empower server.
+        :param project: Name of the project to connect to.
         :param service: Name of the service to use to connect to Empower. If not given,
             the first service in the list of services will be used.
         :param allow_login_without_context_manager: If `False` (default), an error will
@@ -390,6 +390,56 @@ class EmpowerHandler:
         )
         result_list = self.connection.get(endpoint=endpoint, timeout=120)[0]
         return {entry["name"]: entry["value"] for entry in result_list}
+
+    @classmethod
+    def LogoutAllSessions(
+        cls,
+        address: str,
+        password: str,
+        service: Optional[str] = None,
+        username: Optional[str] = None,
+    ):
+        """
+        Logout all sessions of the user.
+
+        :param project: Name of the project to connect to.
+        :param address: Address of the Empower server.
+        :param password: Password to use to connect to Empower.
+        :param service: Name of the service to use to connect to Empower. If not given,
+            the first service in the list of services will be used.
+        :param username: Username to use to connect to Empower.
+        """
+        handler = cls(address, service, username, auto_login=False)
+        with handler:
+            handler.login(password=password)
+            session_list = handler.connection.get(
+                endpoint="authentication/session-infoes", timeout=120
+            )[0]
+            session_list = [
+                session
+                for session in session_list
+                if session["user"] == handler.username
+            ]
+            # Only keeping the session IDs of the current user.
+            session_list = [
+                session
+                for session in session_list
+                if session["id"] != handler.connection.session_id
+            ]
+            # Removing the session in handler, so we don't log out of that before we are
+            # done. It is logged out when we exit the context manager.
+            connection = EmpowerConnection(
+                address=address,
+                username=handler.username,
+                service=handler.connection.service,
+            )
+            for session in session_list:
+                connection.token = handler.connection.token
+                # The token doesn't have to be from the same session, so we can use the
+                # token from the handler.
+                connection.session_id = session["id"]
+                logger.debug("Logging out of session %s", session["id"])
+                connection.logout()
 
     def _set_data_type(self, field: Mapping[str, Any]):
         """Find and set the data type of the field, based on the type of `value`"""
