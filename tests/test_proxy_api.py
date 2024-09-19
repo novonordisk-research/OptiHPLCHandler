@@ -808,5 +808,62 @@ class TestSampleSetLineFields(unittest.TestCase):
             )
 
 
+class TestLogout(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+        self.username = "test_username"
+
+        def mock_get(endpoint, *args, **kwargs):
+            if "session-infoes" in endpoint:
+                return (
+                    [
+                        {"user": self.username, "id": "test_session_1"},
+                        {"user": self.username, "id": "test_session_2"},
+                        {"user": "another_user", "id": "test_session_3"},
+                        {"user": "another_user", "id": "test_session_4"},
+                    ],
+                )
+            else:
+                return ([],)
+
+        self.mock_get = mock_get
+
+    def test_autologout_in_context_handler(self):
+        with self.handler:
+            pass
+        assert self.handler.connection.logout.call_count == 1
+
+    def test_logout(self):
+        self.handler.logout()
+        assert self.handler.connection.logout.call_count == 1
+
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def test_logout_all_sessions(self, mock_connection):
+        mock_connection.return_value.get = self.mock_get
+        mock_connection.return_value.username = self.username
+        EmpowerHandler.LogoutAllSessions(
+            address="https://test_address/", password="test_password"
+        )
+        assert mock_connection.return_value.logout.call_count == 3
+        # Three times, two for the list, one for the handler made to log out
+
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def test_logout_order(self, mock_connection):
+        "Tests that the session we use to log out is the last one to be logged out"
+        mock_connection.return_value.get = self.mock_get
+        mock_connection.return_value.username = self.username
+        mock_connection.return_value.session_id = "test_session_1"
+        EmpowerHandler.LogoutAllSessions(
+            address="https://test_address/", password="test_password"
+        )
+        assert mock_connection.return_value.logout.call_count == 2
+        # Only two times, since the session we used to log out is removed from the list
+        # of sessions to explicitly log out from.
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
