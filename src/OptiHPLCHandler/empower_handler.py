@@ -138,6 +138,18 @@ class EmpowerHandler:
         # Setting the synonyms and enumerated fields.
         # Consider making this optional to save time if you know which enumerated
         # fields you are going to use.
+        self.set_synonyms_and_enumerated_fields()
+
+    def set_synonyms_and_enumerated_fields(self) -> None:
+        """
+        Set the synonyms and enumerated fields for SampleSetLines for the handler.
+
+        The synonymes and enumerated fields are added to the ones that are already in
+        the handler. Enumerated fileds are set to not be validated, as it takes a long
+        time to get the values from the API. If you want to validate the values, you can
+        set the values manually with `SetAllowedSamplesetLineFieldValues` by not giving
+        the `allowed_values` parameter.
+        """
         fields = self.connection.get("/project/fields?fieldType=SampleSetLine")[0]
         for field in fields:
             self.synonym_dict[field["displayName"]] = field["name"]
