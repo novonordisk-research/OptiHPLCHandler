@@ -694,6 +694,27 @@ class TestLogout(unittest.TestCase):
         assert mock_connection.return_value.logout.call_count == 3
         # Three times, two for the list, one for the handler made to log out
 
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def test_logout_order(self, mock_connection):
+        "Tests that the session we use to log out is the last one to be logged out"
+        username = "test_username"
+        mock_connection.return_value.get.return_value = (
+            [
+                {"user": username, "id": "test_session_1"},
+                {"user": username, "id": "test_session_2"},
+                {"user": "another_user", "id": "test_session_3"},
+                {"user": "another_user", "id": "test_session_4"},
+            ],
+        )
+        mock_connection.return_value.username = username
+        mock_connection.return_value.session_id = "test_session_1"
+        EmpowerHandler.LogoutAllSessions(
+            address="https://test_address/", password="test_password"
+        )
+        assert mock_connection.return_value.logout.call_count == 2
+        # Only two times, since the session we used to log out is removed from the list
+        # of sessions to explicitly log out from.
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
