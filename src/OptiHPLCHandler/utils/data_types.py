@@ -1,5 +1,32 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+
+
+@dataclass
+class Sample:
+    name: str
+    sample_position: str
+    injection_volume: float
+
+
+@dataclass
+class ColumnOptions:
+    name: str
+    equilibration_time: float
+    cleaning_time: float
+
+    def __init__(
+        self,
+        length: float = 150,
+        diameter: float = 2.1,
+        porosity: float = 0.5,
+        name: str = "",
+    ):
+        self.name = name
+
+        # find equilibration time and cleaning time from column length, diameter, and porosity # noqa E501
+        # assign
 
 
 class SampleType(Enum):
