@@ -1,18 +1,4 @@
-from enum import Enum
 from typing import Any
-
-
-class SampleType(Enum):
-    """Class for sample type"""
-
-    UNKNOWN = "Unknown"
-    STANDARD = "Standard"
-    BROADSTANDARD = "Broad Standard"
-    BROADUNKNOWN = "Broad Unknown"
-    NARROWSTANDARD = "Narrow Standard"
-    NARROWUNKNOWN = "Narrow Unknown"
-    CONTROL = "Control"
-    RFINTERNALSTANDARD = "RF Internal Standard"
 
 
 class OptiDict(dict):
