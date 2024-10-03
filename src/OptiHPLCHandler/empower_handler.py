@@ -409,7 +409,9 @@ class EmpowerHandler:
             the first service in the list of services will be used.
         :param username: Username to use to connect to Empower.
         """
-        handler = cls(address, service, username, auto_login=False)
+        handler = cls(
+            address=address, service=service, username=username, auto_login=False
+        )
         with handler:
             handler.login(password=password)
             session_list = handler.connection.get(
