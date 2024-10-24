@@ -62,6 +62,26 @@ class TestEmpowerHandler(unittest.TestCase):
             self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
         ) == "test_sample_set_name"  # Check that the correct sample set name is given
 
+    def test_explicit_run_mode(self):
+        self.handler.RunExperiment(
+            sample_set_method="test_sample_set_method",
+            node="test_node",
+            system="test_hplc",
+            run_mode="RunAndReport",
+        )
+        assert (self.handler.connection.post.call_args[1]["body"]["runMode"]) == (
+            "RunAndReport"
+        )
+
+    def test_invalid_run_mode(self):
+        with self.assertRaises(ValueError):
+            self.handler.RunExperiment(
+                sample_set_method="test_sample_set_method",
+                node="test_node",
+                system="test_hplc",
+                run_mode="InvalidRunMode",
+            )
+
     def test_get_node_name_list(self):
         self.handler.connection.get.return_value = (["test_node_name_1"], None)
         node_name_list = self.handler.GetNodeNames()

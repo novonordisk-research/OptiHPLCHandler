@@ -257,6 +257,7 @@ class EmpowerHandler:
         node: str,
         system: str,  # TODO: Allow for none, in that case, use the only entry
         sample_set_name: Optional[str] = None,
+        run_mode: str = "RunOnly",
     ) -> None:
         """
         Run the experiment on an instrument.
@@ -266,13 +267,15 @@ class EmpowerHandler:
         :param system: Name of the chromatographic system to run the experiment on.
         :param sample_set_name: Name of the sample set to run. If not given, the name
             of the sample set method will be used.
+        :param run_mode: The run mode. Must be one of "RunOnly", "RunAndProcess", or
+            "RunAndReport".
         """
         parameters = {
             "sampleSetMethodName": sample_set_method,
             "sampleSetName": sample_set_name,
             "shutDownMethodName": "",
             "processingPrinter": "",
-            "runMode": "RunOnly",
+            "runMode": run_mode,
             "suitabilityMode": "ContinueOnFault",
             "waitForUser": False,
             "reRun": False,
