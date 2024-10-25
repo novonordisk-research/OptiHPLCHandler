@@ -199,8 +199,8 @@ def condition_or_equilibrate_column_sampleset_line(
         raise ValueError("Function must be 'Condition Column' or 'Equilibrate'")
 
     dict_output = {
-        "Function": {"member": function},
-        "ColumnPosition": {"member": column_position},
+        "Function": function,
+        "ColumnPosition": column_position,
     }
     dict_output["Method"], dict_output["RunTime"] = get_name_and_run_time(
         dict_methods_method
@@ -220,7 +220,7 @@ def injection_sampleset_line(
     injection_volume: int,
 ) -> dict:
     dict_output = {
-        "ColumnPosition": {"member": column_position},
+        "ColumnPosition": column_position,
         "SamplePos": vial_position,
         "InjectionVolume": injection_volume,
         "SampleName": sample_name,

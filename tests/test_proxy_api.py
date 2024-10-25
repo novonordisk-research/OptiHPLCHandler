@@ -538,7 +538,7 @@ class TestUsername(unittest.TestCase):
             sample_set_method_name="",
             sample_list=[
                 {"SampleName": ""},
-                {"SampleName": "", "Function": {"member": "test"}},
+                {"SampleName": "", "Function": "Purge Inj"},
             ],
             plates={},
         )
@@ -553,7 +553,7 @@ class TestUsername(unittest.TestCase):
             for field_list in field_list_list
         ]
         assert function_dict_list[0]["value"] == {"member": "Inject Samples"}
-        assert function_dict_list[1]["value"] == {"member": "test"}
+        assert function_dict_list[1]["value"] == {"member": "Purge Inj"}
 
 
 class TestInstrumentMethodInteraction(unittest.TestCase):
@@ -695,6 +695,155 @@ class TestStatus(unittest.TestCase):
         assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
 
 
+class TestSampleSetLineFields(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+            allow_login_without_context_manager=True,
+        )
+        self.handler.connection.get.return_value = (
+            [
+                {
+                    "name": "NameField",
+                    "type": "Name",
+                    "displayName": "Name Field Display Name",
+                },
+                {
+                    "name": "EnumField",
+                    "type": "Enumerator",
+                    "displayName": "Enum Field Display Name",
+                },
+            ],
+        )
+        self.handler.login()
+
+    def test_called_on_login(self):
+        self.assertEqual(
+            self.handler.connection.get.call_args[0][0],
+            "/project/fields?fieldType=SampleSetLine",
+        )
+
+    def test_synonym(self):
+        self.assertIn("Name Field Display Name", self.handler.synonym_dict)
+        self.assertEqual(
+            self.handler.synonym_dict["Name Field Display Name"], "NameField"
+        )
+        self.assertIn("Enum Field Display Name", self.handler.synonym_dict)
+        self.assertEqual(
+            self.handler.synonym_dict["Enum Field Display Name"], "EnumField"
+        )
+
+    def test_enum(self):
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=[{"EnumField": "Value1"}],
+            plates={},
+        )
+        posted_sampleset_fields = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ][0]["fields"]
+        self.assertIn(
+            {
+                "name": "EnumField",
+                "value": {"member": "Value1"},
+                "dataType": "Enumerator",
+            },
+            posted_sampleset_fields,
+        )
+
+    def test_explicitly_setting_allowed_values(self):
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "EnumField", ("Value1", "Value2")
+        )
+        sample_list_without_failed_field = [{"EnumField": "Value1"}]
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=sample_list_without_failed_field,
+            plates={},
+        )
+        sample_list_with_failed_field = [{"EnumField": "Value3"}]
+        with self.assertRaises(ValueError):
+            self.handler.PostExperiment(
+                sample_set_method_name="test",
+                sample_list=sample_list_with_failed_field,
+                plates={},
+            )
+
+    def test_implicitly_setting_allowed_values(self):
+        self.handler.connection.get.return_value = (
+            [{"member": "Value1"}, {"member": "Value2"}],
+        )
+        self.handler.SetAllowedSamplesetLineFieldValues("EnumField")
+        sample_list_without_failed_field = [{"EnumField": "Value1"}]
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=sample_list_without_failed_field,
+            plates={},
+        )
+        sample_list_with_failed_field = [{"EnumField": "Value3"}]
+        with self.assertRaises(ValueError):
+            self.handler.PostExperiment(
+                sample_set_method_name="test",
+                sample_list=sample_list_with_failed_field,
+                plates={},
+            )
+
+    def test_setting_allowed_values_with_synonym(self):
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "Enum Field Display Name", ("Value1", "Value2")
+        )
+        sample_list_without_failed_field = [{"EnumField": "Value1"}]
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=sample_list_without_failed_field,
+            plates={},
+        )
+        sample_list_with_failed_field = [{"EnumField": "Value3"}]
+        with self.assertRaises(ValueError):
+            self.handler.PostExperiment(
+                sample_set_method_name="test",
+                sample_list=sample_list_with_failed_field,
+                plates={},
+            )
+
+    def test_overwrite_allowed_values(self):
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "EnumField", ("Value1", "Value2")
+        )
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "EnumField", ("Value3", "Value4"), overwrite=False
+        )
+        sample_list_with_old_field = [{"EnumField": "Value1"}]
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=sample_list_with_old_field,
+            plates={},
+        )
+        sample_list_with_new_fielda = [{"EnumField": "Value3"}]
+        with self.assertRaises(ValueError):
+            self.handler.PostExperiment(
+                sample_set_method_name="test",
+                sample_list=sample_list_with_new_fielda,
+                plates={},
+            )
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "EnumField", ("Value3", "Value4"), overwrite=True
+        )
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=sample_list_with_new_fielda,
+            plates={},
+        )
+        with self.assertRaises(ValueError):
+            self.handler.PostExperiment(
+                sample_set_method_name="test",
+                sample_list=sample_list_with_old_field,
+                plates={},
+            )
+
+
 class TestLogout(unittest.TestCase):
     @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
     def setUp(self, _) -> None:
@@ -702,6 +851,22 @@ class TestLogout(unittest.TestCase):
             project="test_project",
             address="https://test_address/",
         )
+        self.username = "test_username"
+
+        def mock_get(endpoint, *args, **kwargs):
+            if "session-infoes" in endpoint:
+                return (
+                    [
+                        {"user": self.username, "id": "test_session_1"},
+                        {"user": self.username, "id": "test_session_2"},
+                        {"user": "another_user", "id": "test_session_3"},
+                        {"user": "another_user", "id": "test_session_4"},
+                    ],
+                )
+            else:
+                return ([],)
+
+        self.mock_get = mock_get
 
     def test_autologout_in_context_handler(self):
         with self.handler:
@@ -714,16 +879,8 @@ class TestLogout(unittest.TestCase):
 
     @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
     def test_logout_all_sessions(self, mock_connection):
-        username = "test_username"
-        mock_connection.return_value.get.return_value = (
-            [
-                {"user": username, "id": "test_session_1"},
-                {"user": username, "id": "test_session_2"},
-                {"user": "another_user", "id": "test_session_3"},
-                {"user": "another_user", "id": "test_session_4"},
-            ],
-        )
-        mock_connection.return_value.username = username
+        mock_connection.return_value.get = self.mock_get
+        mock_connection.return_value.username = self.username
         EmpowerHandler.LogoutAllSessions(
             address="https://test_address/", password="test_password"
         )
@@ -733,16 +890,8 @@ class TestLogout(unittest.TestCase):
     @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
     def test_logout_order(self, mock_connection):
         "Tests that the session we use to log out is the last one to be logged out"
-        username = "test_username"
-        mock_connection.return_value.get.return_value = (
-            [
-                {"user": username, "id": "test_session_1"},
-                {"user": username, "id": "test_session_2"},
-                {"user": "another_user", "id": "test_session_3"},
-                {"user": "another_user", "id": "test_session_4"},
-            ],
-        )
-        mock_connection.return_value.username = username
+        mock_connection.return_value.get = self.mock_get
+        mock_connection.return_value.username = self.username
         mock_connection.return_value.session_id = "test_session_1"
         EmpowerHandler.LogoutAllSessions(
             address="https://test_address/", password="test_password"
