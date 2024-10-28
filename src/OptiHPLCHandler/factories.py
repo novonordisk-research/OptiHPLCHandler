@@ -29,7 +29,7 @@ def module_method_factory(  # noqa: C901 This method is allowed to be "complex"
         except KeyError:
             tree = ET.fromstring(method_definition["nativeXml"])
             module_type = tree.tag
-        if "AcquityFTN" in module_type or "AcquitySM" in module_type:
+        if "AcquityFTN" in module_type or "AcquitySM" in module_type or "ACQ-FTN":
             logger.debug("Creating SampleManagerMethod")
             return SampleManagerMethod(method_definition)
         if "AcquityCM" in module_type or "ACQ-CM" in module_type:
