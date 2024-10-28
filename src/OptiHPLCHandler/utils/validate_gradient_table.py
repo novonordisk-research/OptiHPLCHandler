@@ -56,4 +56,14 @@ def validate_gradient_table(gradient_table: List[dict]) -> bool:  # noqa:C901
                     )
             previous_time = current_time
 
+        # check if all compositions are only increasing or only decreasing
+        composition_values = [
+            float(value) for key, value in row.items() if "Composition" in key
+        ]
+        if all(composition_values) or not any(composition_values):
+            raise ValueError(
+                "The composition values in the gradient table row are all increasing"
+                + "or all decreasing. The row is {row}"
+            )
+
     return True
