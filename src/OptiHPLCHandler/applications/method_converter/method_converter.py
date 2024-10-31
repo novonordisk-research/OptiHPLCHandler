@@ -7,6 +7,7 @@ from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
 )
 from OptiHPLCHandler.empower_detector_module_method import PDAMethod, TUVMethod
 from OptiHPLCHandler.empower_module_method import BSMMethod
+from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 logger = logging.getLogger(__name__)
 
@@ -21,27 +22,45 @@ def transfer_gradient_table(
     output_method (EmpowerInstrumentMethod): The method to transfer the gradient to.
 
     Returns:
-    EmpowerInstrumentMethod: The output method gradient table is modified in place.
+    None: The output method gradient table is modified in place.
 
     Description:
     This function transfers the gradient table from one method to another. The solvent
     selection is conserved based on the eluent strength of the output method.
+
+    Note:
+    The gradient table composition set and valve positions are set to how they were
+    defined in the output method.
     """
+    logger.debug("Transferring gradient table from input method to output method.")
+    input_gradient_type = type(input_method.solvent_handler_method)
+    output_gradient_type = type(output_method.solvent_handler_method)
+    logger.debug(f"Input gradient type: {input_gradient_type}")
+    logger.debug(f"Output gradient type: {output_gradient_type}")
+
     # Extract the gradient table from the input_method
     # Pump type of input_method is irrelevant as the gradient table is normalised
     input_gradient_table: list[dict] = input_method.gradient_table
     output_gradient_table: list[dict] = output_method.gradient_table
 
+    logger.debug(f"Input gradient table: {input_gradient_table}")
+    logger.debug(f"Initial output gradient table: {output_gradient_table}")
+
     # Determine eluent strength
     classification_input = classify_eluents(input_gradient_table)
     classification_output = classify_eluents(output_gradient_table)
 
+    logger.debug(f"Classification of eluents in input method: {classification_input}")
+    logger.debug(f"Classification of eluents in output method: {classification_output}")
+
+    logger.debug("Determining eluent composition of input and output methods.")
     if (
         len(classification_input["strong_eluents"]) == 1
         and len(classification_input["weak_eluents"]) == 1
         and len(classification_output["weak_eluents"]) == 1
         and len(classification_output["strong_eluents"]) == 1
     ):
+        logger.debug("Both gradient tables are simple, two component gradients.")
         # Only two eluents in the method, w/ gradient
         input_strong_composition = classification_input["strong_eluents"][0]
         input_weak_eluent = classification_input["weak_eluents"][0]
@@ -76,6 +95,7 @@ def transfer_gradient_table(
 
     # Ensure strong eluent is composition B and weak eluent is composition A
     # Doesn't check if already in correct format
+    logger.debug("Transferring gradient table to output method.")
     new_gradient_table = []
     for step in input_gradient_table:
         new_step = step.copy()  # Copy to prevent overwiting unread composition
@@ -100,6 +120,10 @@ def transfer_gradient_table(
 
     # Transfer the gradient table to the output method
     output_method.gradient_table = input_gradient_table
+
+    logger.info(
+        f"Gradient table of output method changed to : {output_method.gradient_table}"
+    )
 
 
 def change_wavelengths(input_dict: dict, output_dict: dict) -> tuple[dict, dict]:
@@ -128,6 +152,7 @@ def change_wavelengths(input_dict: dict, output_dict: dict) -> tuple[dict, dict]
     TUV to TUV, takes the first two wavelengths of the input and sets it to the output
 
     """
+    logger.debug("Changing wavelengths of the output dictionary to match the input.")
     change_dict = {}
     for (input_key, input_value), (output_key, output_value) in zip(
         input_dict.items(), output_dict.items()
@@ -151,13 +176,17 @@ def change_wavelengths(input_dict: dict, output_dict: dict) -> tuple[dict, dict]
         if "Enable" not in input_value and "Enable" in output_value:
             # TUV to PDA, set all enabled to True
             # No way of knowing if the input is enabled or not
+            logger.debug("TUV to PDA, setting all enabled to True.")
             change_dict[output_key]["Enable"] = True
 
         elif "Enable" in input_value and "Enable" in output_value:
             # PDA to PDA, takes enabled key of input and sets it to output
+            logger.debug("PDA to PDA, setting enabled key of input to output.")
             change_dict[output_key]["Enable"] = input_value["Enable"]
 
     output_dict.update(change_dict)
+    logger.debug(f"Output dictionary changed to: {output_dict}")
+    logger.debug(f"Changes made: {change_dict}")
 
     return change_dict, output_dict
 
@@ -172,12 +201,13 @@ def transfer_wavelengths(
     output_method (EmpowerInstrumentMethod): The method to transfer the wavelengths to.
 
     Returns:
-    EmpowerInstrumentMethod: The output method wavelengths are modified in place.
+    None: The output method wavelengths are modified in place.
 
     Description:
 
 
     """
+    logger.debug("Transferring wavelengths from input method to output method.")
     # Find first detector method that is either PDAMethod or TUVMethod
     # If a method has both a PDA and TUV detector method, the first one is used
     input_detector_method: Union[PDAMethod, TUVMethod] = next(
@@ -197,6 +227,8 @@ def transfer_wavelengths(
         None,
     )
 
+    logger.debug(f"Input detector method type: {type(input_detector_method)}")
+    logger.debug(f"Output detector method type: {type(output_detector_method)}")
     # if value is None, no PDA or TUV detector method found
 
     if input_detector_method is None:
@@ -207,6 +239,9 @@ def transfer_wavelengths(
     # Get the channel_dict
     input_detector_dict = input_detector_method.channel_dict
     output_detector_dict = output_detector_method.channel_dict
+
+    logger.debug(f"Input detector dictionary: {input_detector_dict}")
+    logger.debug(f"Output detector dictionary: {output_detector_dict}")
 
     # Transfer the wavelengths
     change_dict, _ = change_wavelengths(input_detector_dict, output_detector_dict)
@@ -231,4 +266,44 @@ def transfer_wavelengths(
         logger.warning(warning_str)  # warnings vs logger?
         output_detector_method.channel_dict["Channel1"]["Enable"] = True
 
-    return output_method
+
+def transfer_method(
+    input_method: EmpowerInstrumentMethod, output_method: EmpowerInstrumentMethod
+) -> None:
+    """Transfers the following from the input method to the output method:
+    - Gradient Table
+    - Wavelengths
+    - Sample Temperature
+    - Column Temperature
+
+    Args:
+        input_method (EmpowerInstrumentMethod): The method to transfer from
+        output_method (EmpowerInstrumentMethod): The method to transfer to
+
+    Returns:
+        None - The output_method is modified in place
+
+    Note:
+    The gradient table composition set and valve positions are set to how they were
+    defined in the output method.
+
+    Column position is set in the sample set method and not in the method itself.
+    """
+    transfer_gradient_table(input_method, output_method)
+    transfer_wavelengths(input_method, output_method)
+    logger.debug(
+        f"Transferring sample temperature from {output_method.sample_temperature} to {input_method.sample_temperature}."  # noqa E501
+    )
+    output_method.sample_temperature = input_method.sample_temperature
+    logger.debug(
+        f"Transferring column temperature from {output_method.column_temperature} to {input_method.column_temperature}."  # noqa E501
+    )
+    output_method.column_temperature = input_method.column_temperature
+
+    # New output method name is input method name + "_transfer" and is truncated to 32
+    # characters if necessary
+    logger.debug("Constructing method name for output method.")
+    new_method_name = append_truncate_method_name(input_method.method_name, "_transfer")
+    output_method.method_name = new_method_name
+
+    logger.info(f"Method transfer complete. Output method name: {new_method_name}")
