@@ -1,4 +1,4 @@
-import warnings
+import logging
 from typing import Union
 
 from OptiHPLCHandler import EmpowerInstrumentMethod
@@ -6,6 +6,9 @@ from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
     classify_eluents,
 )
 from OptiHPLCHandler.empower_detector_module_method import PDAMethod, TUVMethod
+from OptiHPLCHandler.empower_module_method import BSMMethod
+
+logger = logging.getLogger(__name__)
 
 
 def transfer_gradient_table(
@@ -30,14 +33,35 @@ def transfer_gradient_table(
     output_gradient_table: list[dict] = output_method.gradient_table
 
     # Determine eluent strength
-    input_strong_composition = classify_eluents(input_gradient_table)["strong_eluents"][
-        0
-    ]
-    input_weak_eluent = classify_eluents(input_gradient_table)["weak_eluents"][0]
-    output_strong_composition = classify_eluents(output_gradient_table)[
-        "strong_eluents"
-    ][0]
-    output_weak_eluent = classify_eluents(output_gradient_table)["weak_eluents"][0]
+    classification_input = classify_eluents(input_gradient_table)
+    classification_output = classify_eluents(output_gradient_table)
+
+    if (
+        len(classification_input["strong_eluents"]) == 1
+        and len(classification_input["weak_eluents"]) == 1
+        and len(classification_output["weak_eluents"]) == 1
+        and len(classification_output["strong_eluents"]) == 1
+    ):
+        # Only two eluents in the method, w/ gradient
+        input_strong_composition = classification_input["strong_eluents"][0]
+        input_weak_eluent = classification_input["weak_eluents"][0]
+        output_strong_composition = classification_output["strong_eluents"][0]
+        output_weak_eluent = classification_output["weak_eluents"][0]
+
+    elif (
+        not classification_input["strong_eluents"]
+        and not classification_input["weak_eluents"]
+    ):
+        # Compositions don't change, method is isocratic
+        # TODO: Implement isocratic method transfer
+        # if qsm to bsm, only two lines can have values
+        raise NotImplementedError("Method transfer of isocratic methods not supported.")
+
+    else:
+        # Too complicated.
+        raise ValueError(
+            "Method transfer of gradient tables with multiple strong or weak eluents not supported."  # noqa E501
+        )
 
     # Determine unused solvent lines
     unused_output_solvent_lines = output_method.solvent_handler_method.solvent_lines
@@ -59,7 +83,7 @@ def transfer_gradient_table(
         new_step[output_weak_eluent] = step[input_weak_eluent]
         # Strong eluent set to whatever the strong eluent was in output method initially
         new_step[output_strong_composition] = step[input_strong_composition]
-        # Set unused solvent lines to 0.0
+        # Set unused solvent lines to 0.0 (This needs changing for isocratic methods)
         for line in unused_output_solvent_lines:
             new_step[line] = 0.0
         new_step["Time"] = step["Time"]
@@ -68,11 +92,8 @@ def transfer_gradient_table(
         new_gradient_table.append(new_step)
     input_gradient_table = new_gradient_table
 
-    # TODO what if QSM to BSM and used solvent lines are different?
     # Remove CompositionC and CompositionD if output method is BSM
-    # isinstance(output_method.solvent_handler_method, BSMMethod) didn't work in tests
-    # so used __class__.__name__ instead. Probably a better way to mock the classes.
-    if output_method.solvent_handler_method.__class__.__name__ == "BSMMethod":
+    if isinstance(output_method.solvent_handler_method, BSMMethod):
         for step in input_gradient_table:
             step.pop("CompositionC", None)
             step.pop("CompositionD", None)
@@ -108,10 +129,16 @@ def change_wavelengths(input_dict: dict, output_dict: dict) -> tuple[dict, dict]
 
     """
     change_dict = {}
-    for input_value, (output_key, output_value) in zip(
-        input_dict.values(), output_dict.items()
+    for (input_key, input_value), (output_key, output_value) in zip(
+        input_dict.items(), output_dict.items()
     ):
         input_wavelength = input_value.get("Wavelength1", input_value.get("Wavelength"))
+
+        # Skip the spectral channel key
+        if input_key == "SpectralChannel" or output_key == "SpectralChannel":
+            # Skip the spectral channel key
+            logger.debug("Skipping spectral channel key.")
+            continue
 
         # Determine the wavelength key name of the output
         # (PDA: Wavelength1, TUV: Wavelength)
@@ -121,14 +148,14 @@ def change_wavelengths(input_dict: dict, output_dict: dict) -> tuple[dict, dict]
         change_dict[output_key] = {}
         change_dict[output_key][output_key_name] = input_wavelength
 
-        if "Enabled" not in input_value and "Enabled" in output_value:
+        if "Enable" not in input_value and "Enable" in output_value:
             # TUV to PDA, set all enabled to True
             # No way of knowing if the input is enabled or not
-            change_dict[output_key]["Enabled"] = True
+            change_dict[output_key]["Enable"] = True
 
-        elif "Enabled" in input_value and "Enabled" in output_value:
+        elif "Enable" in input_value and "Enable" in output_value:
             # PDA to PDA, takes enabled key of input and sets it to output
-            change_dict[output_key]["Enabled"] = input_value["Enabled"]
+            change_dict[output_key]["Enable"] = input_value["Enable"]
 
     output_dict.update(change_dict)
 
@@ -157,7 +184,7 @@ def transfer_wavelengths(
         (
             detector
             for detector in input_method.detector_method_list
-            if detector.__class__.__name__ in ["PDAMethod", "TUVMethod"]
+            if isinstance(detector, (PDAMethod, TUVMethod))
         ),
         None,
     )
@@ -165,7 +192,7 @@ def transfer_wavelengths(
         (
             detector
             for detector in output_method.detector_method_list
-            if detector.__class__.__name__ in ["PDAMethod", "TUVMethod"]
+            if isinstance(detector, (PDAMethod, TUVMethod))
         ),
         None,
     )
@@ -183,22 +210,25 @@ def transfer_wavelengths(
 
     # Transfer the wavelengths
     change_dict, _ = change_wavelengths(input_detector_dict, output_detector_dict)
-    print("changed to", change_dict)
+    logger.debug(
+        f"The following changes will be applied to {output_method.method_name} from {input_method.method_name}: {change_dict}"  # noqa E501
+    )
 
     # Set the output detector dictionary
     output_detector_method.channel_dict = change_dict
 
     # Set defaults
-    output_detector_method.lamp_enabled = True  # Ensure lamp is enabled
+    if output_detector_method.lamp_enabled is False:
+        output_detector_method.lamp_enabled = True  # Ensure lamp is enabled
+        logger.debug(f"Enabling lamp for {output_method.method_name}.")
 
     # Errors and warnings
     # If PDA method and no channels are enabled, enable the first channel
-    if output_detector_method.__class__.__name__ == "PDAMethod" and not any(
-        channel["Enabled"] for channel in output_detector_method.channel_dict.values()
+    if isinstance(output_detector_method, PDAMethod) and not any(
+        channel["Enable"] for channel in output_detector_method.channel_dict.values()
     ):
-        warnings.warn(
-            "No channels enabled in output method. Enabling Channel1.", stacklevel=1
-        )
-        output_detector_method.channel_dict["Channel1"]["Enabled"] = True
+        warning_str = "No channels enabled in output method. Enabling Channel1."
+        logger.warning(warning_str)  # warnings vs logger?
+        output_detector_method.channel_dict["Channel1"]["Enable"] = True
 
     return output_method

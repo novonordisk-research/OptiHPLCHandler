@@ -69,6 +69,10 @@ class Detector(EmpowerModuleMethod):
         old_channel = ET.fromstring(old_xml)
         for setting_name, setting_value in change_dict.items():
             if setting_name != "XML":
+                if old_channel.find(setting_name) is None:
+                    raise KeyError(
+                        f"Setting {setting_name} to {setting_value} failed. Key '{setting_name}' not found in '{channel_name}'"  # noqa: E501
+                    )
                 old_channel.find(setting_name).text = xml_compatible(setting_value)
         channel_str = ET.tostring(old_channel).decode()
         channel_str = channel_str.replace(f"<{channel_name}>", "")
