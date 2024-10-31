@@ -4,6 +4,7 @@ import unittest
 from typing import Union
 
 from OptiHPLCHandler.applications.method_converter.method_converter import (
+    change_gradient_table,
     change_wavelengths,
     transfer_gradient_table,
     transfer_wavelengths,
@@ -29,7 +30,176 @@ def get_example_file_dict() -> dict:
     return example
 
 
-class TestInstrumentMethod(unittest.TestCase):
+class TestChangeGradient(unittest.TestCase):
+    def setUp(self) -> None:
+        self.bsm_grad1 = [
+            {
+                "Time": "0.00",
+                "Flow": "0.600",
+                "CompositionA": "90.0",
+                "CompositionB": "10.0",
+                "Curve": "6",
+            },
+            {
+                "Time": "1.00",
+                "Flow": "0.600",
+                "CompositionA": "10.0",
+                "CompositionB": "90.0",
+                "Curve": "6",
+            },
+        ]
+        self.bsm_grad1_lines = ["A1", "B1"]
+        self.bsm_grad2 = [
+            {
+                "Time": "0.00",
+                "Flow": "0.500",
+                "CompositionA": "70.0",
+                "CompositionB": "30.0",
+                "Curve": "6",
+            },
+            {
+                "Time": "1.00",
+                "Flow": "0.500",
+                "CompositionA": "30.0",
+                "CompositionB": "70.0",
+                "Curve": "6",
+            },
+        ]
+        self.bsm_grad2_lines = ["A2", "B2"]
+        self.bsm_iso = [
+            {
+                "Time": "0.00",
+                "Flow": "0.600",
+                "CompositionA": "90.0",
+                "CompositionB": "10.0",
+                "Curve": "6",
+            },
+        ]
+        self.bsm_iso_lines = ["A1", "B1"]
+        self.qsm_grad_ab = [
+            {
+                "Time": "0.00",
+                "Flow": "0.600",
+                "CompositionA": "80.0",
+                "CompositionB": "20.0",
+                "CompositionC": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "6",
+            },
+            {
+                "Time": "1.00",
+                "Flow": "0.600",
+                "CompositionA": "20.0",
+                "CompositionB": "80.0",
+                "CompositionC": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "6",
+            },
+        ]
+        self.qsm_grad_ab_lines = ["A", "B", "C", "D1"]
+        self.qsm_grad_cd = [
+            {
+                "Time": "0.00",
+                "Flow": "0.600",
+                "CompositionC": "70.0",
+                "CompositionD": "30.0",
+                "CompositionA": "0.0",
+                "CompositionB": "0.0",
+                "Curve": "6",
+            },
+            {
+                "Time": "1.00",
+                "Flow": "0.600",
+                "CompositionC": "30.0",
+                "CompositionD": "70.0",
+                "CompositionA": "0.0",
+                "CompositionB": "0.0",
+                "Curve": "6",
+            },
+        ]
+        self.qsm_grad_cd_lines = ["A", "B", "C", "D2"]
+
+    def test_bsm_to_bsm(self) -> None:
+        """Test change_gradient_table function for BSM to BSM
+        Notes:
+        Transfers gradient 2 to the format of gradient 1 and checks if the output is the
+        same as gradient 1.
+        """
+        # Check input
+        self.assertEqual(self.bsm_grad2[0]["CompositionA"], "70.0")
+        self.assertEqual(self.bsm_grad1[0]["CompositionA"], "90.0")
+
+        # Run function
+        new_gradient_table = change_gradient_table(
+            self.bsm_grad2, self.bsm_grad1, self.bsm_grad1_lines
+        )
+
+        # Check output
+        for grad1, grad2 in zip(self.bsm_grad2, new_gradient_table):
+            self.assertEqual(grad1, grad2)
+
+    def test_bsm_to_qsm(self) -> None:
+        """Test change_gradient_table function for BSM to QSM
+        Notes:
+        Transfers gradient 1 to the format of qsm_grad_ab and checks if the output is
+        the same as qsm_grad_ab.
+        """
+        # Check input
+        self.assertEqual(self.bsm_grad1[0]["CompositionA"], "90.0")
+        self.assertEqual(self.qsm_grad_ab[0]["CompositionA"], "80.0")
+
+        # Run function
+        new_gradient_table = change_gradient_table(
+            self.bsm_grad1, self.qsm_grad_ab, self.qsm_grad_ab_lines
+        )
+
+        # Check output
+        for grad1, grad2 in zip(self.bsm_grad1, new_gradient_table):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+
+    def test_qsm_to_bsm(self) -> None:
+        """Test change_gradient_table function for QSM to BSM
+        Notes:
+        Transfers gradient ab to the format of bsm_grad1 and checks if the output is the
+        same as bsm_grad1.
+        """
+        # Check input
+        self.assertEqual(self.qsm_grad_ab[0]["CompositionA"], "80.0")
+        self.assertEqual(self.bsm_grad1[0]["CompositionA"], "90.0")
+
+        # Run function
+        new_gradient_table = change_gradient_table(
+            self.qsm_grad_ab, self.bsm_grad1, self.bsm_grad1_lines
+        )
+
+        # Check output
+        for grad1, grad2 in zip(self.qsm_grad_ab, new_gradient_table):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+
+    def test_qsm_to_qsm(self) -> None:
+        """Test change_gradient_table function for QSM to QSM
+        Notes:
+        Transfers gradient cd to the format of qsm_grad_ab and checks if the output is
+        the same as qsm_grad_ab.
+        """
+        # Check input
+        self.assertEqual(self.qsm_grad_cd[0]["CompositionC"], "70.0")
+        self.assertEqual(self.qsm_grad_ab[0]["CompositionA"], "80.0")
+
+        # Run function
+        new_gradient_table = change_gradient_table(
+            self.qsm_grad_cd, self.qsm_grad_ab, self.qsm_grad_ab_lines
+        )
+
+        # Check output
+        for grad1, grad2 in zip(self.qsm_grad_cd, new_gradient_table):
+            self.assertEqual(grad1["CompositionC"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionD"], grad2["CompositionB"])
+
+
+class TestTransferGradient(unittest.TestCase):
     def setUp(self) -> None:
         self.example = get_example_file_dict()
         self.bsm_tuv_method = EmpowerInstrumentMethod(
@@ -445,9 +615,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # TUV1
         self.tuv1: EmpowerInstrumentMethod = self.bsm_tuv_method.copy()
-        self.tuv1_detector: Union[
-            PDAMethod, TUVMethod
-        ] = self.tuv1.detector_method_list[0]
+        self.tuv1_detector: Union[PDAMethod, TUVMethod] = (
+            self.tuv1.detector_method_list[0]
+        )
         self.tuv1_detector.channel_dict = self.channel_dict_tuv1
 
         # PDA
@@ -459,9 +629,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # PDA1
         self.pda1: EmpowerInstrumentMethod = self.bsm_pda_method.copy()
-        self.pda1_detector: Union[
-            PDAMethod, TUVMethod
-        ] = self.pda1.detector_method_list[0]
+        self.pda1_detector: Union[PDAMethod, TUVMethod] = (
+            self.pda1.detector_method_list[0]
+        )
         self.pda1_detector.channel_dict = self.channel_dict_pda1
 
     def test_instrument_method(self):

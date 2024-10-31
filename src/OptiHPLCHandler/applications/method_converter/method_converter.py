@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Union
 
 from OptiHPLCHandler import EmpowerInstrumentMethod
@@ -10,6 +11,88 @@ from OptiHPLCHandler.empower_module_method import BSMMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 logger = logging.getLogger(__name__)
+
+
+def change_gradient_table(
+    input_gradient_table: dict, output_gradient_table: dict, output_lines: list[str]
+) -> dict:
+    logger.debug(f"Input gradient table: {input_gradient_table}")
+    logger.debug(f"Initial output gradient table: {output_gradient_table}")
+
+    # Determine eluent strength
+    classification_input = classify_eluents(input_gradient_table)
+    classification_output = classify_eluents(output_gradient_table)
+
+    logger.debug(f"Classification of eluents in input method: {classification_input}")
+    logger.debug(f"Classification of eluents in output method: {classification_output}")
+
+    logger.debug("Determining eluent composition of input and output methods.")
+    if (
+        len(classification_input["strong_eluents"]) == 1
+        and len(classification_input["weak_eluents"]) == 1
+        and len(classification_output["weak_eluents"]) == 1
+        and len(classification_output["strong_eluents"]) == 1
+    ):
+        logger.debug("Both gradient tables are simple, two component gradients.")
+        # Only two eluents in the method, w/ gradient
+        input_strong_composition = classification_input["strong_eluents"][0]
+        input_weak_eluent = classification_input["weak_eluents"][0]
+        output_strong_composition = classification_output["strong_eluents"][0]
+        output_weak_eluent = classification_output["weak_eluents"][0]
+
+    elif (  # remove this elif when above done
+        not classification_input["strong_eluents"]
+        and not classification_input["weak_eluents"]
+    ):
+        # Compositions don't change, method is isocratic
+        # TODO: Implement isocratic method transfer
+        # if qsm to bsm, only two lines can have values
+        raise NotImplementedError("Method transfer of isocratic methods not supported.")
+
+    else:
+        # Too complicated.
+        raise ValueError(
+            "Method transfer of gradient tables with multiple strong or weak eluents not supported."  # noqa E501
+        )
+
+    # Determine unused solvent lines
+    unused_output_solvent_lines = output_lines
+    # Remove valve number and add Composition to the solvent lines
+    unused_output_solvent_lines = unused_output_solvent_lines = [
+        f"Composition{line[:-1]}" if line[-1].isdigit() else f"Composition{line}"
+        for line in unused_output_solvent_lines
+    ]
+    # remove used solvent lines
+    unused_output_solvent_lines.remove(output_strong_composition)
+    unused_output_solvent_lines.remove(output_weak_eluent)
+
+    # Ensure strong eluent is composition B and weak eluent is composition A
+    # Doesn't check if already in correct format
+    logger.debug("Transferring gradient table to output method.")
+    new_gradient_table = []
+    for step in input_gradient_table:
+        new_step = step.copy()  # Copy to prevent overwiting unread composition
+        # Weak eluent set to whatever the weak eluent is in output method initially
+        new_step[output_weak_eluent] = step[input_weak_eluent]
+        # Strong eluent set to whatever the strong eluent was in output method initially
+        new_step[output_strong_composition] = step[input_strong_composition]
+        # Set unused solvent lines to 0.0 (This needs changing for isocratic methods)
+        if (
+            float(new_step[output_weak_eluent])
+            + float(new_step[output_strong_composition])
+            != 100
+        ):
+            raise ValueError(
+                "The sum of the strong and weak eluent in the input method does not equal 100. The gradient is either invalid or another composition has a non zero value which is not supported."  # noqa E501
+            )
+        for line in unused_output_solvent_lines:
+            new_step[line] = 0.0
+        new_step["Time"] = step["Time"]
+        new_step["Flow"] = step["Flow"]
+        new_step["Curve"] = step["Curve"]
+        new_gradient_table.append(new_step)
+
+    return new_gradient_table
 
 
 def transfer_gradient_table(
@@ -43,74 +126,11 @@ def transfer_gradient_table(
     input_gradient_table: list[dict] = input_method.gradient_table
     output_gradient_table: list[dict] = output_method.gradient_table
 
-    logger.debug(f"Input gradient table: {input_gradient_table}")
-    logger.debug(f"Initial output gradient table: {output_gradient_table}")
-
-    # Determine eluent strength
-    classification_input = classify_eluents(input_gradient_table)
-    classification_output = classify_eluents(output_gradient_table)
-
-    logger.debug(f"Classification of eluents in input method: {classification_input}")
-    logger.debug(f"Classification of eluents in output method: {classification_output}")
-
-    logger.debug("Determining eluent composition of input and output methods.")
-    if (
-        len(classification_input["strong_eluents"]) == 1
-        and len(classification_input["weak_eluents"]) == 1
-        and len(classification_output["weak_eluents"]) == 1
-        and len(classification_output["strong_eluents"]) == 1
-    ):
-        logger.debug("Both gradient tables are simple, two component gradients.")
-        # Only two eluents in the method, w/ gradient
-        input_strong_composition = classification_input["strong_eluents"][0]
-        input_weak_eluent = classification_input["weak_eluents"][0]
-        output_strong_composition = classification_output["strong_eluents"][0]
-        output_weak_eluent = classification_output["weak_eluents"][0]
-
-    elif (
-        not classification_input["strong_eluents"]
-        and not classification_input["weak_eluents"]
-    ):
-        # Compositions don't change, method is isocratic
-        # TODO: Implement isocratic method transfer
-        # if qsm to bsm, only two lines can have values
-        raise NotImplementedError("Method transfer of isocratic methods not supported.")
-
-    else:
-        # Too complicated.
-        raise ValueError(
-            "Method transfer of gradient tables with multiple strong or weak eluents not supported."  # noqa E501
-        )
-
-    # Determine unused solvent lines
-    unused_output_solvent_lines = output_method.solvent_handler_method.solvent_lines
-    # Remove valve number and add Composition to the solvent lines
-    unused_output_solvent_lines = unused_output_solvent_lines = [
-        f"Composition{line[:-1]}" if line[-1].isdigit() else f"Composition{line}"
-        for line in unused_output_solvent_lines
-    ]
-    # remove used solvent lines
-    unused_output_solvent_lines.remove(output_strong_composition)
-    unused_output_solvent_lines.remove(output_weak_eluent)
-
-    # Ensure strong eluent is composition B and weak eluent is composition A
-    # Doesn't check if already in correct format
-    logger.debug("Transferring gradient table to output method.")
-    new_gradient_table = []
-    for step in input_gradient_table:
-        new_step = step.copy()  # Copy to prevent overwiting unread composition
-        # Weak eluent set to whatever the weak eluent is in output method initially
-        new_step[output_weak_eluent] = step[input_weak_eluent]
-        # Strong eluent set to whatever the strong eluent was in output method initially
-        new_step[output_strong_composition] = step[input_strong_composition]
-        # Set unused solvent lines to 0.0 (This needs changing for isocratic methods)
-        for line in unused_output_solvent_lines:
-            new_step[line] = 0.0
-        new_step["Time"] = step["Time"]
-        new_step["Flow"] = step["Flow"]
-        new_step["Curve"] = step["Curve"]
-        new_gradient_table.append(new_step)
-    input_gradient_table = new_gradient_table
+    input_gradient_table = change_gradient_table(
+        input_gradient_table,
+        output_gradient_table,
+        output_method.solvent_handler_method.solvent_lines,
+    )
 
     # Remove CompositionC and CompositionD if output method is BSM
     if isinstance(output_method.solvent_handler_method, BSMMethod):
@@ -263,7 +283,7 @@ def transfer_wavelengths(
         channel["Enable"] for channel in output_detector_method.channel_dict.values()
     ):
         warning_str = "No channels enabled in output method. Enabling Channel1."
-        logger.warning(warning_str)  # warnings vs logger?
+        warnings.warn(warning_str)
         output_detector_method.channel_dict["Channel1"]["Enable"] = True
 
 
