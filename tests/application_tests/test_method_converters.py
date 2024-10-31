@@ -615,9 +615,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # TUV1
         self.tuv1: EmpowerInstrumentMethod = self.bsm_tuv_method.copy()
-        self.tuv1_detector: Union[PDAMethod, TUVMethod] = (
-            self.tuv1.detector_method_list[0]
-        )
+        self.tuv1_detector: Union[
+            PDAMethod, TUVMethod
+        ] = self.tuv1.detector_method_list[0]
         self.tuv1_detector.channel_dict = self.channel_dict_tuv1
 
         # PDA
@@ -629,9 +629,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # PDA1
         self.pda1: EmpowerInstrumentMethod = self.bsm_pda_method.copy()
-        self.pda1_detector: Union[PDAMethod, TUVMethod] = (
-            self.pda1.detector_method_list[0]
-        )
+        self.pda1_detector: Union[
+            PDAMethod, TUVMethod
+        ] = self.pda1.detector_method_list[0]
         self.pda1_detector.channel_dict = self.channel_dict_pda1
 
     def test_instrument_method(self):
