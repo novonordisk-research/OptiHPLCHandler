@@ -12,6 +12,8 @@ from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_na
 
 logger = logging.getLogger(__name__)
 
+# make function that extracts the parts
+
 
 def change_gradient_table(
     input_gradient_table: dict, output_gradient_table: dict, output_lines: list[str]
@@ -30,8 +32,6 @@ def change_gradient_table(
     if (
         len(classification_input["strong_eluents"]) == 1
         and len(classification_input["weak_eluents"]) == 1
-        and len(classification_output["weak_eluents"]) == 1
-        and len(classification_output["strong_eluents"]) == 1
     ):
         logger.debug("Both gradient tables are simple, two component gradients.")
         # Only two eluents in the method, w/ gradient
@@ -327,3 +327,69 @@ def transfer_method(
     output_method.method_name = new_method_name
 
     logger.info(f"Method transfer complete. Output method name: {new_method_name}")
+
+
+def change_method(
+    method: EmpowerInstrumentMethod,
+    gradient_table: list[dict],
+    channel_dict: dict,
+    sample_temperature: float,
+    column_temperature: float,
+):
+    """Applies the following changes to the method:
+    - Gradient Table
+    - Wavelengths
+    - Sample Temperature
+    - Column Temperature
+
+    Args:
+    method (EmpowerInstrumentMethod): The method to change
+    gradient_table (list[dict]): The gradient table to change to
+    channel_dict (dict): The channel dictionary to change to
+    sample_temperature (float): The sample temperature to change to
+    column_temperature (float): The column temperature to change to
+
+    Returns:
+    None - The method is modified in place
+    """
+
+    # Generate gradient table based on format of output method
+    output_gradient_table: list[dict] = change_gradient_table(
+        gradient_table,
+        method.gradient_table,
+        method.solvent_handler_method.solvent_lines,
+    )
+
+    # Remove CompositionC and CompositionD if output method is BSM
+    if isinstance(method.solvent_handler_method, BSMMethod):
+        for step in output_gradient_table:
+            step.pop("CompositionC", None)
+            step.pop("CompositionD", None)
+
+    # Transfer the gradient table to the output method
+    method.gradient_table = output_gradient_table
+
+    # Generate channel_dict based on format of output method
+    change_dict, _ = change_wavelengths(
+        channel_dict, method.detector_method_list[0].channel_dict
+    )
+    method.detector_method_list[0].channel_dict = change_dict
+    # HCECK DETECTOR!
+
+    # Set defaults
+    # if method.detector_method.lamp_enabled is False:
+    #    method.detector_method.lamp_enabled = True
+
+    # Errors and warnings
+    # If PDA method and no channels are enabled, enable the first channel
+    # if isinstance(method.detector_method, PDAMethod) and not any(
+    #    channel["Enable"] for channel in method.detector_method.channel_dict.values()
+    # ):
+    #    warning_str = "No channels enabled in output method. Enabling Channel1."
+    #    warnings.warn(warning_str)
+
+    # Set sample and column temperature
+    method.sample_temperature = sample_temperature
+    method.column_temperature = column_temperature
+
+    logger.info("Method change complete.")

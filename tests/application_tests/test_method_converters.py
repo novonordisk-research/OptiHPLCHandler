@@ -6,6 +6,7 @@ from typing import Union
 from OptiHPLCHandler.applications.method_converter.method_converter import (
     change_gradient_table,
     change_wavelengths,
+    change_method,
     transfer_gradient_table,
     transfer_wavelengths,
 )
@@ -615,9 +616,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # TUV1
         self.tuv1: EmpowerInstrumentMethod = self.bsm_tuv_method.copy()
-        self.tuv1_detector: Union[
-            PDAMethod, TUVMethod
-        ] = self.tuv1.detector_method_list[0]
+        self.tuv1_detector: Union[PDAMethod, TUVMethod] = (
+            self.tuv1.detector_method_list[0]
+        )
         self.tuv1_detector.channel_dict = self.channel_dict_tuv1
 
         # PDA
@@ -629,9 +630,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # PDA1
         self.pda1: EmpowerInstrumentMethod = self.bsm_pda_method.copy()
-        self.pda1_detector: Union[
-            PDAMethod, TUVMethod
-        ] = self.pda1.detector_method_list[0]
+        self.pda1_detector: Union[PDAMethod, TUVMethod] = (
+            self.pda1.detector_method_list[0]
+        )
         self.pda1_detector.channel_dict = self.channel_dict_pda1
 
     def test_instrument_method(self):
@@ -759,3 +760,128 @@ class TestTransferWavelength(unittest.TestCase):
                 value_tuv.get("Wavelength"),
                 value_pda.get("Wavelength1"),
             )
+
+
+class TestChangeMethod(unittest.TestCase):
+    def setUp(self):
+        self.example = get_example_file_dict()
+        self.qsm_method = EmpowerInstrumentMethod(
+            self.example["response-QSM-2489-Acq.json"]
+        )
+
+        self.bsm_tuv_method = EmpowerInstrumentMethod(
+            self.example["response-BSM-TUV-CM-Acq.json"]
+        )
+        self.gradient_table_bsm_initialise = [
+            {
+                "Time": "0.00",
+                "Flow": "0.600",
+                "CompositionA": "80.0",
+                "CompositionB": "20.0",
+                "Curve": "6",
+            },
+            {
+                "Time": "1.00",
+                "Flow": "0.600",
+                "CompositionA": "20.0",
+                "CompositionB": "80.0",
+                "Curve": "6",
+            },
+        ]
+        self.gradient_table_qsm_initialise = [
+            {
+                "Time": "0.00",
+                "Flow": "0.600",
+                "CompositionA": "80.0",
+                "CompositionB": "20.0",
+                "CompositionC": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "6",
+            },
+            {
+                "Time": "1.00",
+                "Flow": "0.600",
+                "CompositionA": "20.0",
+                "CompositionB": "80.0",
+                "CompositionC": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "6",
+            },
+        ]
+        self.channel_dict_tuv = {
+            "Channel1": {"Wavelength": 210.0},
+            "Channel2": {"Wavelength": 220.0},
+        }
+        self.channel_dict_pda = {
+            "Channel1": {"Wavelength1": 210.0, "Enable": True},
+            "Channel2": {"Wavelength1": 220.0, "Enable": True},
+            "Channel3": {"Wavelength1": 230.0, "Enable": False},
+            "Channel4": {"Wavelength1": 240.0, "Enable": False},
+            "Channel5": {"Wavelength1": 250.0, "Enable": False},
+            "Channel6": {"Wavelength1": 260.0, "Enable": False},
+            "Channel7": {"Wavelength1": 270.0, "Enable": False},
+            "Channel8": {"Wavelength1": 280.0, "Enable": False},
+        }
+        self.bsm_tuv_method.gradient_table = self.gradient_table_bsm_initialise
+        self.qsm_method.gradient_table = self.gradient_table_qsm_initialise
+
+    def test_change_bsmtuv_with_qsmpda_input(self):
+        # New gradient
+        new_gradient = [
+            {
+                "Time": "0.00",
+                "Flow": "0.600",
+                "CompositionA": "70.0",
+                "CompositionB": "30.0",
+                "CompositionC": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "6",
+            },
+            {
+                "Time": "1.00",
+                "Flow": "0.600",
+                "CompositionA": "30.0",
+                "CompositionB": "70.0",
+                "CompositionC": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "6",
+            },
+        ]
+
+        # New sample temperature and column temperature
+        sample_temp = "35.0"
+        column_temp = "40.0"
+
+        # Change the method
+        change_method(
+            self.bsm_tuv_method,  # Method to change
+            new_gradient,  # Gradient table to change to
+            self.channel_dict_pda,  # change from PDA to TUV (first two channels)
+            sample_temp,
+            column_temp,
+        )
+
+        # Check Gradient
+        self.assertEqual(self.bsm_tuv_method.gradient_table[0]["CompositionA"], "70.0")
+        self.assertEqual(self.bsm_tuv_method.gradient_table[0]["CompositionB"], "30.0")
+        self.assertFalse("CompositionC" in self.bsm_tuv_method.gradient_table[0])
+        self.assertFalse("CompositionD" in self.bsm_tuv_method.gradient_table[0])
+
+        # Check Channel Dict
+        detector: Union[PDAMethod, TUVMethod] = (
+            self.bsm_tuv_method.detector_method_list[0]
+        )
+        self.assertEqual(
+            detector.channel_dict["Channel1"]["Wavelength"],  # TUV therefore Wavelength
+            "210.0",
+        )
+        self.assertEqual(
+            detector.channel_dict["Channel2"]["Wavelength"],  # TUV therefore Wavelength
+            "220.0",
+        )
+
+        # Check Sample Temperature
+        self.assertEqual(self.bsm_tuv_method.sample_temperature, sample_temp)
+
+        # Check Column Temperature
+        self.assertEqual(self.bsm_tuv_method.column_temperature, column_temp)
