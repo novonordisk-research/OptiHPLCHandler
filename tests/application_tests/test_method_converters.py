@@ -5,8 +5,8 @@ from typing import Union
 
 from OptiHPLCHandler.applications.method_converter.method_converter import (
     change_gradient_table,
-    change_wavelengths,
     change_method,
+    change_wavelengths,
     transfer_gradient_table,
     transfer_wavelengths,
 )
@@ -616,9 +616,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # TUV1
         self.tuv1: EmpowerInstrumentMethod = self.bsm_tuv_method.copy()
-        self.tuv1_detector: Union[PDAMethod, TUVMethod] = (
-            self.tuv1.detector_method_list[0]
-        )
+        self.tuv1_detector: Union[
+            PDAMethod, TUVMethod
+        ] = self.tuv1.detector_method_list[0]
         self.tuv1_detector.channel_dict = self.channel_dict_tuv1
 
         # PDA
@@ -630,9 +630,9 @@ class TestTransferWavelength(unittest.TestCase):
 
         # PDA1
         self.pda1: EmpowerInstrumentMethod = self.bsm_pda_method.copy()
-        self.pda1_detector: Union[PDAMethod, TUVMethod] = (
-            self.pda1.detector_method_list[0]
-        )
+        self.pda1_detector: Union[
+            PDAMethod, TUVMethod
+        ] = self.pda1.detector_method_list[0]
         self.pda1_detector.channel_dict = self.channel_dict_pda1
 
     def test_instrument_method(self):
@@ -868,9 +868,9 @@ class TestChangeMethod(unittest.TestCase):
         self.assertFalse("CompositionD" in self.bsm_tuv_method.gradient_table[0])
 
         # Check Channel Dict
-        detector: Union[PDAMethod, TUVMethod] = (
-            self.bsm_tuv_method.detector_method_list[0]
-        )
+        detector: Union[
+            PDAMethod, TUVMethod
+        ] = self.bsm_tuv_method.detector_method_list[0]
         self.assertEqual(
             detector.channel_dict["Channel1"]["Wavelength"],  # TUV therefore Wavelength
             "210.0",
