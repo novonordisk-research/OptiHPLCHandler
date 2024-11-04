@@ -4,11 +4,10 @@ import unittest
 from typing import Union
 
 from OptiHPLCHandler.applications.method_converter.method_converter import (
+    MethodParts,
     change_gradient_table,
-    change_method,
     change_wavelengths,
-    transfer_gradient_table,
-    transfer_wavelengths,
+    transfer_method_from_method_parts,
 )
 from OptiHPLCHandler.empower_detector_module_method import PDAMethod, TUVMethod
 from OptiHPLCHandler.empower_instrument_method import EmpowerInstrumentMethod
@@ -31,15 +30,51 @@ def get_example_file_dict() -> dict:
     return example
 
 
+class TestMethodPartsInitialisation(unittest.TestCase):
+    def setUp(self):
+        self.example = get_example_file_dict()
+        self.qsm_method = EmpowerInstrumentMethod(
+            self.example["response-QSM-PDA-Acq.json"]
+        )
+
+        self.bsm_tuv_method = EmpowerInstrumentMethod(
+            self.example["response-BSM-TUV-CM-Acq.json"]
+        )
+
+    def test_extract_method_parts(self):
+        data_extracted = MethodParts(self.bsm_tuv_method)
+        detector: Union[
+            PDAMethod, TUVMethod
+        ] = self.bsm_tuv_method.detector_method_list[0]
+
+        self.assertIsInstance(data_extracted, MethodParts)
+        self.assertEqual(
+            data_extracted.gradient_table, self.bsm_tuv_method.gradient_table
+        )
+        self.assertEqual(
+            data_extracted.channel_dict,
+            detector.channel_dict,
+        )
+        self.assertEqual(
+            data_extracted.sample_temperature, self.bsm_tuv_method.sample_temperature
+        )
+        self.assertEqual(
+            data_extracted.column_temperature, self.bsm_tuv_method.column_temperature
+        )
+        self.assertEqual(
+            data_extracted.original_method_name, self.bsm_tuv_method.method_name
+        )
+
+
 class TestChangeGradient(unittest.TestCase):
     def setUp(self) -> None:
         self.bsm_grad1 = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.600",
                 "CompositionA": "90.0",
                 "CompositionB": "10.0",
-                "Curve": "6",
+                "Curve": "Initial",
             },
             {
                 "Time": "1.00",
@@ -49,14 +84,13 @@ class TestChangeGradient(unittest.TestCase):
                 "Curve": "6",
             },
         ]
-        self.bsm_grad1_lines = ["A1", "B1"]
         self.bsm_grad2 = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.500",
                 "CompositionA": "70.0",
                 "CompositionB": "30.0",
-                "Curve": "6",
+                "Curve": "Initial",
             },
             {
                 "Time": "1.00",
@@ -66,26 +100,78 @@ class TestChangeGradient(unittest.TestCase):
                 "Curve": "6",
             },
         ]
-        self.bsm_grad2_lines = ["A2", "B2"]
         self.bsm_iso = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.600",
                 "CompositionA": "90.0",
                 "CompositionB": "10.0",
-                "Curve": "6",
+                "Curve": "Initial",
             },
         ]
-        self.bsm_iso_lines = ["A1", "B1"]
-        self.qsm_grad_ab = [
+        self.bsm_iso2 = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
+                "Flow": "0.600",
+                "CompositionA": "80.0",
+                "CompositionB": "20.0",
+                "Curve": "Initial",
+            },
+        ]
+        self.qsm_iso = [
+            {
+                "Time": "Initial",
                 "Flow": "0.600",
                 "CompositionA": "80.0",
                 "CompositionB": "20.0",
                 "CompositionC": "0.0",
                 "CompositionD": "0.0",
-                "Curve": "6",
+                "Curve": "Initial",
+            },
+        ]
+        self.qsm_iso2 = [
+            {
+                "Time": "Initial",
+                "Flow": "0.600",
+                "CompositionC": "70.0",
+                "CompositionD": "30.0",
+                "CompositionA": "0.0",
+                "CompositionB": "0.0",
+                "Curve": "Initial",
+            },
+        ]
+        self.qsm_iso3 = [
+            {
+                "Time": "Initial",
+                "Flow": "0.600",
+                "CompositionC": "70.0",
+                "CompositionB": "30.0",
+                "CompositionA": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "Initial",
+            },
+        ]
+
+        self.qsm_iso_threecomp = [
+            {
+                "Time": "Initial",
+                "Flow": "0.600",
+                "CompositionA": "80.0",
+                "CompositionB": "10.0",
+                "CompositionC": "10.0",
+                "CompositionD": "0.0",
+                "Curve": "Initial",
+            },
+        ]
+        self.qsm_grad_ab = [
+            {
+                "Time": "Initial",
+                "Flow": "0.600",
+                "CompositionA": "80.0",
+                "CompositionB": "20.0",
+                "CompositionC": "0.0",
+                "CompositionD": "0.0",
+                "Curve": "Initial",
             },
             {
                 "Time": "1.00",
@@ -97,16 +183,15 @@ class TestChangeGradient(unittest.TestCase):
                 "Curve": "6",
             },
         ]
-        self.qsm_grad_ab_lines = ["A", "B", "C", "D1"]
         self.qsm_grad_cd = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.600",
                 "CompositionC": "70.0",
                 "CompositionD": "30.0",
                 "CompositionA": "0.0",
                 "CompositionB": "0.0",
-                "Curve": "6",
+                "Curve": "Initial",
             },
             {
                 "Time": "1.00",
@@ -118,7 +203,6 @@ class TestChangeGradient(unittest.TestCase):
                 "Curve": "6",
             },
         ]
-        self.qsm_grad_cd_lines = ["A", "B", "C", "D2"]
 
     def test_bsm_to_bsm(self) -> None:
         """Test change_gradient_table function for BSM to BSM
@@ -131,9 +215,7 @@ class TestChangeGradient(unittest.TestCase):
         self.assertEqual(self.bsm_grad1[0]["CompositionA"], "90.0")
 
         # Run function
-        new_gradient_table = change_gradient_table(
-            self.bsm_grad2, self.bsm_grad1, self.bsm_grad1_lines
-        )
+        new_gradient_table = change_gradient_table(self.bsm_grad2, self.bsm_grad1)
 
         # Check output
         for grad1, grad2 in zip(self.bsm_grad2, new_gradient_table):
@@ -148,16 +230,23 @@ class TestChangeGradient(unittest.TestCase):
         # Check input
         self.assertEqual(self.bsm_grad1[0]["CompositionA"], "90.0")
         self.assertEqual(self.qsm_grad_ab[0]["CompositionA"], "80.0")
+        self.assertTrue("CompositionC" in self.qsm_grad_ab[0])
+        self.assertTrue("CompositionD" in self.qsm_grad_ab[0])
+        self.assertFalse("CompositionC" in self.bsm_grad1[0])
+        self.assertFalse("CompositionD" in self.bsm_grad1[0])
 
         # Run function
         new_gradient_table = change_gradient_table(
-            self.bsm_grad1, self.qsm_grad_ab, self.qsm_grad_ab_lines
+            self.bsm_grad1,
+            self.qsm_grad_ab,
         )
 
         # Check output
         for grad1, grad2 in zip(self.bsm_grad1, new_gradient_table):
             self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
             self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+            self.assertTrue("CompositionC" in grad2)
+            self.assertTrue("CompositionD" in grad2)
 
     def test_qsm_to_bsm(self) -> None:
         """Test change_gradient_table function for QSM to BSM
@@ -168,16 +257,23 @@ class TestChangeGradient(unittest.TestCase):
         # Check input
         self.assertEqual(self.qsm_grad_ab[0]["CompositionA"], "80.0")
         self.assertEqual(self.bsm_grad1[0]["CompositionA"], "90.0")
+        self.assertTrue("CompositionC" in self.qsm_grad_ab[0])
+        self.assertTrue("CompositionD" in self.qsm_grad_ab[0])
+        self.assertFalse("CompositionC" in self.bsm_grad1[0])
+        self.assertFalse("CompositionD" in self.bsm_grad1[0])
 
         # Run function
         new_gradient_table = change_gradient_table(
-            self.qsm_grad_ab, self.bsm_grad1, self.bsm_grad1_lines
+            self.qsm_grad_ab,
+            self.bsm_grad1,
         )
 
         # Check output
         for grad1, grad2 in zip(self.qsm_grad_ab, new_gradient_table):
             self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
             self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+            self.assertFalse("CompositionC" in grad2)
+            self.assertFalse("CompositionD" in grad2)
 
     def test_qsm_to_qsm(self) -> None:
         """Test change_gradient_table function for QSM to QSM
@@ -188,10 +284,15 @@ class TestChangeGradient(unittest.TestCase):
         # Check input
         self.assertEqual(self.qsm_grad_cd[0]["CompositionC"], "70.0")
         self.assertEqual(self.qsm_grad_ab[0]["CompositionA"], "80.0")
+        self.assertTrue("CompositionC" in self.qsm_grad_cd[0])
+        self.assertTrue("CompositionD" in self.qsm_grad_cd[0])
+        self.assertTrue("CompositionC" in self.qsm_grad_ab[0])
+        self.assertTrue("CompositionD" in self.qsm_grad_ab[0])
 
         # Run function
         new_gradient_table = change_gradient_table(
-            self.qsm_grad_cd, self.qsm_grad_ab, self.qsm_grad_ab_lines
+            self.qsm_grad_cd,
+            self.qsm_grad_ab,
         )
 
         # Check output
@@ -199,249 +300,140 @@ class TestChangeGradient(unittest.TestCase):
             self.assertEqual(grad1["CompositionC"], grad2["CompositionA"])
             self.assertEqual(grad1["CompositionD"], grad2["CompositionB"])
 
+    def test_bsm_to_bsm_iso(self) -> None:
+        """Test change_gradient_table function for BSM to BSM"""
+        # Check input
+        self.assertEqual(self.bsm_iso2[0]["CompositionA"], "80.0")  # BSM Isocratic
+        self.assertEqual(self.bsm_grad1[0]["CompositionA"], "90.0")  # BSM Gradient
 
-class TestTransferGradient(unittest.TestCase):
-    def setUp(self) -> None:
-        self.example = get_example_file_dict()
-        self.bsm_tuv_method = EmpowerInstrumentMethod(
-            self.example["response-BSM-TUV-CM-Acq.json"]
-        )
-        self.bsm_pda_method = EmpowerInstrumentMethod(
-            self.example["response-BSM-PDA-Acq.json"]
-        )
-        self.qsm_method = EmpowerInstrumentMethod(
-            self.example["response-QSM-2489-Acq.json"]
+        # Run function
+        new_gradient_table = change_gradient_table(
+            self.bsm_iso2,
+            self.bsm_grad1,
         )
 
-        bsm_grad1 = [
-            {
-                "Time": "0.00",
-                "Flow": "0.600",
-                "CompositionA": "90.0",
-                "CompositionB": "10.0",
-                "Curve": "6",
-            },
-            {
-                "Time": "1.00",
-                "Flow": "0.600",
-                "CompositionA": "10.0",
-                "CompositionB": "90.0",
-                "Curve": "6",
-            },
-        ]
-        bsm_grad2 = [
-            {
-                "Time": "0.00",
-                "Flow": "0.500",
-                "CompositionA": "70.0",
-                "CompositionB": "30.0",
-                "Curve": "6",
-            },
-            {
-                "Time": "1.00",
-                "Flow": "0.500",
-                "CompositionA": "30.0",
-                "CompositionB": "70.0",
-                "Curve": "6",
-            },
-        ]
-        bsm_iso = [
-            {
-                "Time": "0.00",
-                "Flow": "0.600",
-                "CompositionA": "90.0",
-                "CompositionB": "10.0",
-                "Curve": "6",
-            },
-        ]
-        qsm_grad_ab = [
-            {
-                "Time": "0.00",
-                "Flow": "0.600",
-                "CompositionA": "80.0",
-                "CompositionB": "20.0",
-                "CompositionC": "0.0",
-                "CompositionD": "0.0",
-                "Curve": "6",
-            },
-            {
-                "Time": "1.00",
-                "Flow": "0.600",
-                "CompositionA": "20.0",
-                "CompositionB": "80.0",
-                "CompositionC": "0.0",
-                "CompositionD": "0.0",
-                "Curve": "6",
-            },
-        ]
-        qsm_grad_cd = [
-            {
-                "Time": "0.00",
-                "Flow": "0.600",
-                "CompositionC": "70.0",
-                "CompositionD": "30.0",
-                "CompositionA": "0.0",
-                "CompositionB": "0.0",
-                "Curve": "6",
-            },
-            {
-                "Time": "1.00",
-                "Flow": "0.600",
-                "CompositionC": "30.0",
-                "CompositionD": "70.0",
-                "CompositionA": "0.0",
-                "CompositionB": "0.0",
-                "Curve": "6",
-            },
-        ]
+        # Check output
+        for grad1, grad2 in zip(self.bsm_iso2, new_gradient_table):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
 
-        # Modified Methods
-        self.bsm1_tuv = self.bsm_tuv_method.copy()
-        self.bsm1_tuv.gradient_table = bsm_grad1
-
-        self.bsm2_tuv = self.bsm_tuv_method.copy()
-        self.bsm2_tuv.gradient_table = bsm_grad2
-
-        self.bsm1_pda = self.bsm_pda_method.copy()
-        self.bsm1_pda.gradient_table = bsm_grad1
-
-        self.bsm2_pda = self.bsm_pda_method.copy()
-        self.bsm2_pda.gradient_table = bsm_grad2
-
-        self.qsm_ab = self.qsm_method.copy()
-        self.qsm_ab.gradient_table = qsm_grad_ab
-
-        self.qsm_cd = self.qsm_method.copy()
-        self.qsm_cd.gradient_table = qsm_grad_cd
-
-        self.bsm_tuv_iso = self.bsm_tuv_method.copy()
-        self.bsm_tuv_iso.gradient_table = bsm_iso
-
-    def test_instrument_method(self):
-        self.assertIsInstance(self.bsm_tuv_method, EmpowerInstrumentMethod)
-        self.assertIsInstance(self.bsm_pda_method, EmpowerInstrumentMethod)
-        self.assertIsInstance(self.qsm_method, EmpowerInstrumentMethod)
-
-    def test_bsm_to_qsm(self):
-        """Test transfer_gradient_table function for BSM to QSM
-        Notes:
-        - Modifies the qsm_mock in place
-        - transfer gradient starting at 90% CompositionA and 10% CompositionB in a bsm
-        to a qsm (with 80% CompositionA and 20% CompositionB initially)
-        - the qsm should have 90% CompositionA and 10% CompositionB after the transfer
-        - there should be CompositionA, B, C, and D in the qsm gradient table
-        """
+    def test_bsm_to_qsm_iso(self) -> None:
+        """Test change_gradient_table function for BSM to QSM"""
         # Check input
-        self.assertEqual(self.bsm1_tuv.gradient_table[0]["CompositionA"], "90.0")
-        self.assertEqual(self.qsm_ab.gradient_table[0]["CompositionA"], "80.0")
+        self.assertEqual(self.bsm_iso[0]["CompositionA"], "90.0")
+        self.assertEqual(self.qsm_iso[0]["CompositionA"], "80.0")
 
         # Run function
-        transfer_gradient_table(self.bsm1_tuv, self.qsm_ab)
+        new_gradient_table = change_gradient_table(
+            self.bsm_iso,
+            self.qsm_iso,
+        )
 
         # Check output
-        self.assertEqual(self.qsm_ab.gradient_table[0]["CompositionA"], "90.0")
-        self.assertTrue("CompositionB" in self.qsm_ab.gradient_table[0])
-        self.assertTrue("CompositionC" in self.qsm_ab.gradient_table[0])
-        self.assertTrue("CompositionD" in self.qsm_ab.gradient_table[0])
+        for grad1, grad2 in zip(self.bsm_iso, new_gradient_table):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+            self.assertEqual(grad2["CompositionC"], "0.0")
+            self.assertEqual(grad2["CompositionD"], "0.0")
 
-    def test_qsm_to_bsm(self):
-        """Test transfer_gradient_table function for QSM to BSM
-        Notes:
-        - Modifies the bsm_mock in place
-        - transfer gradient starting at 80% CompositionA and 20% CompositionB in a qsm
-        to a bsm (with 90% CompositionA and 10% CompositionB initially)
-        - the bsm should have 80% CompositionA and 20% CompositionB after the transfer
-        - there should be no CompositionC and CompositionD in the bsm gradient table
-        """
+    def test_qsmab_to_bsm_iso(self) -> None:
+        """Test change_gradient_table function for QSM to BSM."""
         # Check input
-        self.assertEqual(self.bsm1_tuv.gradient_table[0]["CompositionA"], "90.0")
-        self.assertEqual(self.qsm_ab.gradient_table[0]["CompositionA"], "80.0")
+        self.assertEqual(self.qsm_iso[0]["CompositionA"], "80.0")
+        self.assertEqual(self.bsm_iso[0]["CompositionA"], "90.0")
 
         # Run function
-        transfer_gradient_table(self.qsm_ab, self.bsm1_tuv)
+        new_gradient_table = change_gradient_table(
+            self.qsm_iso,
+            self.bsm_iso,
+        )
 
         # Check output
-        self.assertEqual(self.bsm1_tuv.gradient_table[0]["CompositionA"], "80.0")
-        self.assertTrue("CompositionB" in self.qsm_ab.gradient_table[0])
-        self.assertFalse("CompositionC" in self.bsm1_tuv.gradient_table[0])
-        self.assertFalse("CompositionD" in self.bsm1_tuv.gradient_table[0])
+        for grad1, grad2 in zip(self.qsm_iso, new_gradient_table):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
 
-    def test_bsm_to_bsm(self):
-        """Test transfer_gradient_table function for BSM to BSM
-        Notes:
-        - Modifies the bsm_mock_2 in place
-        - transfer gradient starting at 70% CompositionA and 30% CompositionB in a bsm
-        to another bsm (with 90% CompositionA and 10% CompositionB initially)
-        - the bsm should have 70% CompositionA and 30% CompositionB after the transfer
-        - there should be no CompositionC and CompositionD in the bsm gradient table
-        """
-
+    def test_qsmcd_to_bsm_iso(self) -> None:
+        """Test change_gradient_table function for QSM to BSM. The QSM uses CompositionC
+        and CompositionD, while the BSM uses CompositionA and CompositionB. Thus the
+        CompositionC and CompositionD values are transferred to CompositionB and
+        CompositionA, respectively."""
         # Check input
-        self.assertEqual(self.bsm1_tuv.gradient_table[0]["CompositionA"], "90.0")
-        self.assertEqual(self.bsm2_tuv.gradient_table[0]["CompositionA"], "70.0")
+        self.assertEqual(self.qsm_iso2[0]["CompositionC"], "70.0")
+        self.assertEqual(self.bsm_iso[0]["CompositionA"], "90.0")
 
         # Run function
-        transfer_gradient_table(self.bsm1_tuv, self.bsm2_tuv)
+        new_gradient_table = change_gradient_table(
+            self.qsm_iso2,
+            self.bsm_iso,
+        )
 
         # Check output
-        self.assertEqual(self.bsm2_tuv.gradient_table[0]["CompositionA"], "90.0")
-        self.assertTrue("CompositionB" in self.bsm2_tuv.gradient_table[0])
-        self.assertFalse("CompositionC" in self.bsm2_tuv.gradient_table[0])
-        self.assertFalse("CompositionD" in self.bsm2_tuv.gradient_table[0])
+        for grad1, grad2 in zip(self.qsm_iso2, new_gradient_table):
+            self.assertEqual(grad1["CompositionC"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionD"], grad2["CompositionB"])
 
-    def test_qsm_to_qsm(self):
-        """Test transfer_gradient_table function for QSM to QSM
-        Notes:
-        - Modifies the qsm_mock_2 in place
-        - transfer gradient starting at 70% CompositionC and 30% CompositionD in a qsm
-        to another qsm (with 80% CompositionA and 20% CompositionB initially)
-        - the qsm should have 70% CompositionC and 30% CompositionD after the transfer
-        - there should be CompositionA, B, C, and D in the qsm gradient table
-        """
+    def test_qsmcb_to_bsm_iso(self) -> None:
+        """Test change_gradient_table function for QSM to BSM. The QSM uses CompositionC
+        and CompositionD, while the BSM uses CompositionA and CompositionB. Thus the
+        CompositionC and CompositionD values are transferred to CompositionB and
+        CompositionA, respectively."""
         # Check input
-        self.assertEqual(self.qsm_ab.gradient_table[0]["CompositionA"], "80.0")
-        self.assertEqual(self.qsm_cd.gradient_table[0]["CompositionC"], "70.0")
+        self.assertEqual(self.qsm_iso3[0]["CompositionC"], "70.0")
+        self.assertEqual(self.bsm_iso[0]["CompositionA"], "90.0")
 
         # Run function
-        transfer_gradient_table(self.qsm_ab, self.qsm_cd)
+        new_gradient_table = change_gradient_table(
+            self.qsm_iso3,
+            self.bsm_iso,
+        )
 
         # Check output
-        self.assertEqual(self.qsm_cd.gradient_table[0]["CompositionC"], "80.0")
-        self.assertTrue("CompositionA" in self.qsm_cd.gradient_table[0])
-        self.assertTrue("CompositionB" in self.qsm_cd.gradient_table[0])
-        self.assertTrue("CompositionD" in self.qsm_cd.gradient_table[0])
+        for grad1, grad2 in zip(self.qsm_iso3, new_gradient_table):
+            self.assertEqual(grad1["CompositionC"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
 
-    def test_qsm_compcd_to_bsm_compab(self):
-        """Test transfer_gradient_table function for QSM to BSM
-        Notes:
-        - Modifies the bsm_mock in place
-        - transfer gradient starting at 70% CompositionC and 30% CompositionD in a qsm
-        to a bsm (with 90% CompositionA and 10% CompositionB initially)
-        - the bsm should have 70% CompositionA and 30% CompositionB after the transfer
-        - there should be no CompositionC and CompositionD in the bsm gradient table
-        """
+    def test_qsm_to_qsm_iso(self) -> None:
+        """Test change_gradient_table function for QSM to QSM."""
         # Check input
-        self.assertEqual(self.bsm1_tuv.gradient_table[0]["CompositionA"], "90.0")
-        self.assertEqual(self.qsm_cd.gradient_table[0]["CompositionC"], "70.0")
+        self.assertEqual(self.qsm_iso2[0]["CompositionC"], "70.0")
+        self.assertEqual(self.qsm_iso[0]["CompositionA"], "80.0")
 
         # Run function
-        transfer_gradient_table(self.qsm_cd, self.bsm1_tuv)
+        new_gradient_table = change_gradient_table(
+            self.qsm_iso,
+            self.qsm_iso2,
+        )
 
         # Check output
-        self.assertEqual(self.bsm1_tuv.gradient_table[0]["CompositionA"], "70.0")
-        self.assertEqual(self.bsm1_tuv.gradient_table[0]["CompositionB"], "30.0")
-        self.assertFalse("CompositionC" in self.bsm1_tuv.gradient_table[0])
-        self.assertFalse("CompositionD" in self.bsm1_tuv.gradient_table[0])
+        for grad1, grad2 in zip(self.qsm_iso, new_gradient_table):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+            self.assertEqual(grad1["CompositionC"], grad2["CompositionC"])
+            self.assertEqual(grad1["CompositionD"], grad2["CompositionD"])
 
-    def test_isocratic_input(self):
+    def test_qsm3_to_qsm_iso(self) -> None:
+        """Test change_gradient_table function for QSM to QSM. The input QSM uses
+        three components, while the output QSM uses two components. The output should be
+        the same as the input."""
         # Check input
-        self.assertEqual(self.bsm_tuv_iso.gradient_table[0]["CompositionA"], "90.0")
-        self.assertEqual(self.qsm_ab.gradient_table[0]["CompositionA"], "80.0")
-        self.assertEqual(len(self.bsm_tuv_iso.gradient_table), 1)
+        self.assertEqual(self.qsm_iso_threecomp[0]["CompositionC"], "10.0")
+        self.assertEqual(self.qsm_iso_threecomp[0]["CompositionD"], "0.0")
+        self.assertEqual(self.qsm_iso_threecomp[0]["CompositionA"], "80.0")
+        self.assertEqual(self.qsm_iso_threecomp[0]["CompositionB"], "10.0")
 
         # Run function
-        with self.assertRaises(NotImplementedError):
-            transfer_gradient_table(self.bsm_tuv_iso, self.qsm_ab)
+        new_gradient_table = change_gradient_table(
+            self.qsm_iso_threecomp,
+            self.qsm_iso,
+        )
+
+        # Check output
+        for grad1, grad2 in zip(self.qsm_iso_threecomp, new_gradient_table):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+            self.assertEqual(grad1["CompositionC"], grad2["CompositionC"])
+            self.assertEqual(grad1["CompositionD"], grad2["CompositionD"])
 
 
 class TestChangeWavelengths(unittest.TestCase):
@@ -565,238 +557,25 @@ class TestChangeWavelengths(unittest.TestCase):
             )
 
 
-class TestTransferWavelength(unittest.TestCase):
-    def setUp(self):
-        self.example = get_example_file_dict()
-        self.bsm_tuv_method = EmpowerInstrumentMethod(
-            self.example["response-BSM-TUV-CM-Acq.json"]
-        )
-        self.bsm_pda_method = EmpowerInstrumentMethod(
-            self.example["response-BSM-PDA-Acq.json"]
-        )
-
-        self.channel_dict_pda = {
-            "Channel1": {"Wavelength1": 210.0, "Enable": True},
-            "Channel2": {"Wavelength1": 220.0, "Enable": True},
-            "Channel3": {"Wavelength1": 230.0, "Enable": False},
-            "Channel4": {"Wavelength1": 240.0, "Enable": False},
-            "Channel5": {"Wavelength1": 250.0, "Enable": False},
-            "Channel6": {"Wavelength1": 260.0, "Enable": False},
-            "Channel7": {"Wavelength1": 270.0, "Enable": False},
-            "Channel8": {"Wavelength1": 280.0, "Enable": False},
-        }
-
-        self.channel_dict_pda1 = {
-            "Channel1": {"Wavelength1": 310.0, "Enable": True},
-            "Channel2": {"Wavelength1": 320.0, "Enable": True},
-            "Channel3": {"Wavelength1": 330.0, "Enable": False},
-            "Channel4": {"Wavelength1": 340.0, "Enable": False},
-            "Channel5": {"Wavelength1": 350.0, "Enable": False},
-            "Channel6": {"Wavelength1": 360.0, "Enable": False},
-            "Channel7": {"Wavelength1": 370.0, "Enable": False},
-            "Channel8": {"Wavelength1": 380.0, "Enable": False},
-        }
-
-        self.channel_dict_tuv = {
-            "Channel1": {"Wavelength": 310.0},
-            "Channel2": {"Wavelength": 320.0},
-        }
-        self.channel_dict_tuv1 = {
-            "Channel1": {"Wavelength": 410.0},
-            "Channel2": {"Wavelength": 420.0},
-        }
-
-        # Modified Methods
-        # TUV
-        self.tuv: EmpowerInstrumentMethod = self.bsm_tuv_method.copy()
-        self.tuv_detector: Union[PDAMethod, TUVMethod] = self.tuv.detector_method_list[
-            0
-        ]
-        self.tuv_detector.channel_dict = self.channel_dict_tuv
-
-        # TUV1
-        self.tuv1: EmpowerInstrumentMethod = self.bsm_tuv_method.copy()
-        self.tuv1_detector: Union[
-            PDAMethod, TUVMethod
-        ] = self.tuv1.detector_method_list[0]
-        self.tuv1_detector.channel_dict = self.channel_dict_tuv1
-
-        # PDA
-        self.pda: EmpowerInstrumentMethod = self.bsm_pda_method.copy()
-        self.pda_detector: Union[PDAMethod, TUVMethod] = self.pda.detector_method_list[
-            0
-        ]
-        self.pda_detector.channel_dict = self.channel_dict_pda
-
-        # PDA1
-        self.pda1: EmpowerInstrumentMethod = self.bsm_pda_method.copy()
-        self.pda1_detector: Union[
-            PDAMethod, TUVMethod
-        ] = self.pda1.detector_method_list[0]
-        self.pda1_detector.channel_dict = self.channel_dict_pda1
-
-    def test_instrument_method(self):
-        self.assertIsInstance(self.tuv, EmpowerInstrumentMethod)
-        self.assertIsInstance(self.tuv1, EmpowerInstrumentMethod)
-        self.assertIsInstance(self.pda, EmpowerInstrumentMethod)
-        self.assertIsInstance(self.pda1, EmpowerInstrumentMethod)
-
-    def test_pda_to_pda(self):
-        """Test transfer_wavelengths function for PDA to PDA
-        Notes:
-        - Modifies the pda1 in place
-        - transfer the wavelengths of the pda detector to the pda1 detector
-        - the pda1 detector should have the same wavelengths as the pda detector
-        """
-        # Check input
-        self.assertEqual(
-            self.pda_detector.channel_dict["Channel1"]["Wavelength1"], "210.0"
-        )
-        self.assertEqual(
-            self.pda1_detector.channel_dict["Channel1"]["Wavelength1"], "310.0"
-        )
-        self.assertTrue(self.pda_detector.channel_dict["Channel1"]["Enable"])
-        self.assertTrue(self.pda1_detector.channel_dict["Channel1"]["Enable"])
-
-        # Run function
-        transfer_wavelengths(self.pda, self.pda1)
-
-        # Check output
-        # iterate through the shortest channel_dict checking if the wavelengths
-        for value_pda, value_pda1 in zip(
-            self.pda_detector.channel_dict.values(),
-            self.pda1_detector.channel_dict.values(),
-        ):
-            self.assertEqual(
-                value_pda.get("Wavelength1"),
-                value_pda1.get("Wavelength1"),
-            )
-            self.assertEqual(value_pda.get("Enable"), value_pda1.get("Enable"))
-
-    def test_tuv_to_tuv(self):
-        """Test transfer_wavelengths function for TUV to TUV
-        Notes:
-        - Modifies the tuv1 in place
-        - transfer the wavelengths of the tuv detector to the tuv1 detector
-        - the tuv1 detector should have the same wavelengths as the tuv detector
-        """
-
-        # Check input
-        self.assertEqual(
-            self.tuv_detector.channel_dict["Channel1"]["Wavelength"], "310.0"
-        )
-        self.assertEqual(
-            self.tuv1_detector.channel_dict["Channel1"]["Wavelength"], "410.0"
-        )
-
-        # Run function
-        transfer_wavelengths(self.tuv, self.tuv1)
-
-        # Check output
-        # iterate through the shortest channel_dict checking if the wavelengths
-        for value_tuv, value_tuv1 in zip(
-            self.tuv_detector.channel_dict.values(),
-            self.tuv1_detector.channel_dict.values(),
-        ):
-            self.assertEqual(
-                value_tuv.get("Wavelength"),
-                value_tuv1.get("Wavelength"),
-            )
-
-    def test_pda_to_tuv(self):
-        """Test transfer_wavelengths function for PDA to TUV
-        Notes:
-        - Modifies the tuv in place
-        - transfer the wavelengths of the pda detector to the tuv detector
-        - the tuv detector should have the same wavelengths as the pda detector
-        """
-        # Check input
-        self.assertEqual(
-            self.pda_detector.channel_dict["Channel1"]["Wavelength1"], "210.0"
-        )
-        self.assertEqual(
-            self.tuv_detector.channel_dict["Channel1"]["Wavelength"], "310.0"
-        )
-
-        # Run function
-        transfer_wavelengths(self.pda, self.tuv)
-
-        # Check output
-        # iterate through the shortest channel_dict checking if the wavelengths
-        for value_pda, value_tuv in zip(
-            self.pda_detector.channel_dict.values(),
-            self.tuv_detector.channel_dict.values(),
-        ):
-            self.assertEqual(
-                value_pda.get("Wavelength1"),
-                value_tuv.get("Wavelength"),
-            )
-
-    def test_tuv_to_pda(self):
-        """Test transfer_wavelengths function for TUV to PDA
-        Notes:
-        - Modifies the pda in place
-        - transfer the wavelengths of the tuv detector to the pda detector
-        - the pda detector should have the same wavelengths as the tuv detector
-        """
-        # Check input
-        self.assertEqual(
-            self.tuv_detector.channel_dict["Channel1"]["Wavelength"], "310.0"
-        )
-        self.assertEqual(
-            self.pda_detector.channel_dict["Channel1"]["Wavelength1"], "210.0"
-        )
-
-        # Run function
-        transfer_wavelengths(self.tuv, self.pda)
-
-        # Check output
-        # iterate through the shortest channel_dict checking if the wavelengths
-        for value_tuv, value_pda in zip(
-            self.tuv_detector.channel_dict.values(),
-            self.pda_detector.channel_dict.values(),
-        ):
-            self.assertEqual(
-                value_tuv.get("Wavelength"),
-                value_pda.get("Wavelength1"),
-            )
-
-
-class TestChangeMethod(unittest.TestCase):
+class TestTransferMethodFromParts(unittest.TestCase):
     def setUp(self):
         self.example = get_example_file_dict()
         self.qsm_method = EmpowerInstrumentMethod(
-            self.example["response-QSM-2489-Acq.json"]
+            self.example["response-QSM-PDA-Acq.json"]
         )
 
         self.bsm_tuv_method = EmpowerInstrumentMethod(
             self.example["response-BSM-TUV-CM-Acq.json"]
         )
-        self.gradient_table_bsm_initialise = [
+        self.qsm_gradient_table = [
             {
-                "Time": "0.00",
-                "Flow": "0.600",
-                "CompositionA": "80.0",
-                "CompositionB": "20.0",
-                "Curve": "6",
-            },
-            {
-                "Time": "1.00",
-                "Flow": "0.600",
-                "CompositionA": "20.0",
-                "CompositionB": "80.0",
-                "Curve": "6",
-            },
-        ]
-        self.gradient_table_qsm_initialise = [
-            {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.600",
                 "CompositionA": "80.0",
                 "CompositionB": "20.0",
                 "CompositionC": "0.0",
                 "CompositionD": "0.0",
-                "Curve": "6",
+                "Curve": "Initial",
             },
             {
                 "Time": "1.00",
@@ -808,80 +587,82 @@ class TestChangeMethod(unittest.TestCase):
                 "Curve": "6",
             },
         ]
-        self.channel_dict_tuv = {
-            "Channel1": {"Wavelength": 210.0},
-            "Channel2": {"Wavelength": 220.0},
-        }
-        self.channel_dict_pda = {
-            "Channel1": {"Wavelength1": 210.0, "Enable": True},
-            "Channel2": {"Wavelength1": 220.0, "Enable": True},
-            "Channel3": {"Wavelength1": 230.0, "Enable": False},
-            "Channel4": {"Wavelength1": 240.0, "Enable": False},
-            "Channel5": {"Wavelength1": 250.0, "Enable": False},
-            "Channel6": {"Wavelength1": 260.0, "Enable": False},
-            "Channel7": {"Wavelength1": 270.0, "Enable": False},
-            "Channel8": {"Wavelength1": 280.0, "Enable": False},
-        }
-        self.bsm_tuv_method.gradient_table = self.gradient_table_bsm_initialise
-        self.qsm_method.gradient_table = self.gradient_table_qsm_initialise
-
-    def test_change_bsmtuv_with_qsmpda_input(self):
-        # New gradient
-        new_gradient = [
+        self.bsm_gradient_table = [
             {
-                "Time": "0.00",
+                "Time": "Initial",
                 "Flow": "0.600",
-                "CompositionA": "70.0",
-                "CompositionB": "30.0",
-                "CompositionC": "0.0",
-                "CompositionD": "0.0",
-                "Curve": "6",
+                "CompositionA": "90.0",
+                "CompositionB": "10.0",
+                "Curve": "Initial",
             },
             {
                 "Time": "1.00",
                 "Flow": "0.600",
-                "CompositionA": "30.0",
-                "CompositionB": "70.0",
-                "CompositionC": "0.0",
-                "CompositionD": "0.0",
+                "CompositionA": "10.0",
+                "CompositionB": "90.0",
                 "Curve": "6",
             },
         ]
+        self.bsm_tuv_method.gradient_table = self.bsm_gradient_table
+        self.qsm_method.gradient_table = self.qsm_gradient_table
 
-        # New sample temperature and column temperature
-        sample_temp = "35.0"
-        column_temp = "40.0"
+    def test_transfer_method_from_parts(self):
+        parts_from_input = MethodParts(self.bsm_tuv_method)
 
-        # Change the method
-        change_method(
-            self.bsm_tuv_method,  # Method to change
-            new_gradient,  # Gradient table to change to
-            self.channel_dict_pda,  # change from PDA to TUV (first two channels)
-            sample_temp,
-            column_temp,
-        )
-
-        # Check Gradient
-        self.assertEqual(self.bsm_tuv_method.gradient_table[0]["CompositionA"], "70.0")
-        self.assertEqual(self.bsm_tuv_method.gradient_table[0]["CompositionB"], "30.0")
-        self.assertFalse("CompositionC" in self.bsm_tuv_method.gradient_table[0])
-        self.assertFalse("CompositionD" in self.bsm_tuv_method.gradient_table[0])
-
-        # Check Channel Dict
-        detector: Union[
-            PDAMethod, TUVMethod
-        ] = self.bsm_tuv_method.detector_method_list[0]
+        # Check extracted parts
         self.assertEqual(
-            detector.channel_dict["Channel1"]["Wavelength"],  # TUV therefore Wavelength
-            "210.0",
+            parts_from_input.gradient_table, self.bsm_tuv_method.gradient_table
         )
         self.assertEqual(
-            detector.channel_dict["Channel2"]["Wavelength"],  # TUV therefore Wavelength
-            "220.0",
+            parts_from_input.channel_dict["Channel1"]["Wavelength"],
+            self.bsm_tuv_method.detector_method_list[0].channel_dict["Channel1"][
+                "Wavelength"
+            ],
+        )
+        self.assertEqual(
+            parts_from_input.sample_temperature,
+            self.bsm_tuv_method.sample_temperature,
+        )
+        self.assertEqual(
+            parts_from_input.column_temperature,
+            self.bsm_tuv_method.column_temperature,
+        )
+        self.assertEqual(
+            parts_from_input.solvent_lines,
+            self.bsm_tuv_method.solvent_handler_method.solvent_lines,
+        )
+        self.assertEqual(
+            parts_from_input.original_method_name, self.bsm_tuv_method.method_name
         )
 
-        # Check Sample Temperature
-        self.assertEqual(self.bsm_tuv_method.sample_temperature, sample_temp)
+        # Check transferred method
+        transfer_method_from_method_parts(parts_from_input, self.qsm_method)
 
-        # Check Column Temperature
-        self.assertEqual(self.bsm_tuv_method.column_temperature, column_temp)
+        # Gradient
+        for grad1, grad2 in zip(
+            self.bsm_tuv_method.gradient_table, self.qsm_method.gradient_table
+        ):
+            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
+            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+            self.assertTrue("CompositionC" in grad2)
+            self.assertTrue("CompositionD" in grad2)
+
+        # Detector
+        for value1, value2 in zip(
+            self.bsm_tuv_method.detector_method_list[0].channel_dict.values(),
+            self.qsm_method.detector_method_list[0].channel_dict.values(),
+        ):
+            self.assertEqual(value1["Wavelength"], value2["Wavelength1"])
+
+        # Sample temperature
+        self.assertEqual(
+            self.bsm_tuv_method.sample_temperature, self.qsm_method.sample_temperature
+        )
+
+        # Column temperature
+        self.assertEqual(
+            self.bsm_tuv_method.column_temperature, self.qsm_method.column_temperature
+        )
+
+        # Name alteration
+        self.assertEqual(self.qsm_method.method_name[-9:], "_transfer")
