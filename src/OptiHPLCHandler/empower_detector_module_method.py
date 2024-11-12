@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import Union
 from xml.etree import ElementTree as ET
 from dataclasses import dataclass
@@ -7,13 +6,6 @@ from dataclasses import dataclass
 from .empower_module_method import EmpowerModuleMethod
 
 logger = logging.getLogger(__name__)
-
-# TUV
-# Single <DataRate>SingleDataRate_20A</DataRate>\r\n    <DataMode>SingleMode_1A</DataMode>\r\n
-# <DataRate>DualDataRate_1B</DataRate>\r\n    <DataMode>DualModeB_2C</DataMode>\r\n
-
-# Dual <DataRate>DualDataRate_1B</DataRate>\r\n    <DataMode>DualModeA_1B</DataMode>\r\n
-# <DataRate>DualDataRate_1B</DataRate>\r\n    <DataMode>DualModeB_2C</DataMode>\r\n
 
 
 def to_bool(bool_string: Union[str, bool]) -> bool:
@@ -34,58 +26,18 @@ def xml_compatible(value: Union[str, bool]) -> str:
 
 
 class Detector(EmpowerModuleMethod):
-    def simplified_channel_name(self, channel_name: str) -> str:
-        # Convert "ChannelA" to "Channel1" and "ChannelB" to "Channel2"
-        channel_number = ord(channel_name[-1]) - 64
-        # ord converts a character into an integer, so ord("A") = 65, ord("B") = 66, ...
-        if channel_number < 1:
-            return channel_name
-        return f"Channel{channel_number}"
-
-    def empower_channel_name(self, channel_name: str) -> str:
-        if not channel_name.startswith("Channel"):
-            # For things like spectral channel
-            return channel_name
-        if ord(channel_name[-1]) < 65:
-            channel_number = int(channel_name[-1])
-        else:
-            channel_number = ord(channel_name[-1]) - 64
-        try:
-            self["ChannelA"]
-            # If there is a ChannelA, the channels are designated alphabetically
-            return f"Channel{chr(channel_number+64)}"
-        except KeyError:
-            # If there is no ChannelA, the channels are designated numerically
-            return f"Channel{channel_number}"
-
     @property
     def lamp_enabled(self) -> bool:
         try:
             return self["Lamp"] == "true"
         except KeyError as me:
             raise AttributeError(
-                f"Dector method {type(self).__name__} does not have a lamp setting."
+                f"Detector method {type(self).__name__} does not have a lamp setting."
             ) from me
 
     @lamp_enabled.setter
     def lamp_enabled(self, value: bool):
         self["Lamp"] = to_bool(value)
-
-    def create_channel_text(self, channel_name: str, change_dict: dict) -> str:
-        channel_name = self.empower_channel_name(channel_name)
-        old_xml = f"<{channel_name}>{self[channel_name]}</{channel_name}>"
-        old_channel = ET.fromstring(old_xml)
-        for setting_name, setting_value in change_dict.items():
-            if setting_name != "XML":
-                if old_channel.find(setting_name) is None:
-                    raise KeyError(
-                        f"Setting {setting_name} to {setting_value} failed. Key '{setting_name}' not found in '{channel_name}'"  # noqa: E501
-                    )
-                old_channel.find(setting_name).text = xml_compatible(setting_value)
-        channel_str = ET.tostring(old_channel).decode()
-        channel_str = channel_str.replace(f"<{channel_name}>", "")
-        channel_str = channel_str.replace(f"</{channel_name}>", "")
-        return channel_str
 
 
 @dataclass
@@ -102,7 +54,7 @@ class TUVChannel:
     autozeroeventorkey: bool = True
 
     def to_xml(self):
-        return f"<Wavelength>{self.wavelength}</Wavelength>\r\n    <DataRate>{self.datarate}</DataRate>\r\n    <DataMode>{self.datamode}</DataMode>\r\n    <FilterType>{self.filtertype}</FilterType>\r\n    <TimeConstant>{self.timeconstant}</TimeConstant>\r\n    <RatioMinimum>{self.ratiominimum}</RatioMinimum>\r\n    <AutoZeroWavelength>{self.autozerowavelength}</AutoZeroWavelength>\r\n    <AutoZeroInjectStart>{xml_compatible(self.autozeroinjectstart)}</AutoZeroInjectStart>\r\n    <AutoZeroEventOrKey>{xml_compatible(self.autozeroeventorkey)}</AutoZeroEventOrKey>"  # noqa: E501
+        return f"<Wavelength>{self.wavelength}</Wavelength><DataRate>{self.datarate}</DataRate><DataMode>{self.datamode}</DataMode><FilterType>{self.filtertype}</FilterType><TimeConstant>{self.timeconstant}</TimeConstant><RatioMinimum>{self.ratiominimum}</RatioMinimum><AutoZeroWavelength>{self.autozerowavelength}</AutoZeroWavelength><AutoZeroInjectStart>{xml_compatible(self.autozeroinjectstart)}</AutoZeroInjectStart><AutoZeroEventOrKey>{xml_compatible(self.autozeroeventorkey)}</AutoZeroEventOrKey>"  # noqa: E501
 
 
 class TUVMethod(Detector):
@@ -113,22 +65,28 @@ class TUVMethod(Detector):
         channels = []
         for channel_name in self.channel_names:
             channel_xml = self[channel_name]
+            channel_xml = "<xml>" + channel_xml + "</xml>"  # give root
             channel = ET.fromstring(channel_xml)
-            if not channel.Enable:
-                continue
+            datamode = channel.find("DataMode").text
             channels.append(
                 TUVChannel(
-                    wavelength=channel.Wavelength,
-                    datarate=channel.DataRate,
-                    datamode=channel.DataMode,
-                    filtertype=channel.FilterType,
-                    timeconstant=channel.TimeConstant,
-                    ratiominimum=channel.RatioMinimum,
-                    autozerowavelength=channel.AutoZeroWavelength,
-                    autozeroinjectstart=to_bool(channel.AutoZeroInjectStart),
-                    autozeroeventorkey=to_bool(channel.AutoZeroEventOrKey),
+                    wavelength=channel.find("Wavelength").text,
+                    datarate=channel.find("DataRate").text,
+                    datamode=datamode,
+                    filtertype=channel.find("FilterType").text,
+                    timeconstant=channel.find("TimeConstant").text,
+                    ratiominimum=channel.find("RatioMinimum").text,
+                    autozerowavelength=channel.find("AutoZeroWavelength").text,
+                    autozeroinjectstart=to_bool(
+                        channel.find("AutoZeroInjectStart").text
+                    ),
+                    autozeroeventorkey=to_bool(channel.find("AutoZeroEventOrKey").text),
                 )
             )
+            if (
+                "SingleMode" in datamode
+            ):  # Only load first channel if set to single mode
+                break
         return channels
 
     @channels.setter
@@ -155,9 +113,9 @@ class TUVMethod(Detector):
 
         for i, settings in enumerate(channel_settings):
             self[f"Channel{chr(65 + i)}"] = (
-                f"<DataRate>{settings['datarate']}</DataRate>\r\n"
-                f"<DataMode>{settings['datamode']}</DataMode>\r\n"
-                f"<TimeConstant>{settings['timeconstant']}</TimeConstant>\r\n"
+                f"<DataRate>{settings['datarate']}</DataRate>"
+                f"<DataMode>{settings['datamode']}</DataMode>"
+                f"<TimeConstant>{settings['timeconstant']}</TimeConstant>"
                 f"{settings['channel']}"
             )
 
@@ -167,11 +125,9 @@ class TUVMethod(Detector):
 
     @wavelengths.setter
     def wavelengths(self, value: list[str]):
-        if isinstance(value, (int, str)):
-            value = [str(value)]
-            self.channels = [TUVChannel(wavelength=wavelength) for wavelength in value]
-        else:
+        if not all(isinstance(v, (int, str)) for v in value):
             raise ValueError("Wavelengths must be a list of strings or integers.")
+        self.channels = [TUVChannel(wavelength=wavelength) for wavelength in value]
 
 
 @dataclass
@@ -185,7 +141,7 @@ class PDAChannel:
     ratio2dminimumau: str = "0.01"  # used in Ratio
 
     def to_xml(self) -> str:
-        return f"<DataMode>{self.datamode}</DataMode>\r\n    <Wavelength1>{self.wavelength1}</Wavelength1>\r\n    <Wavelength2>{self.wavelength2}</Wavelength2>\r\n    <Resolution>{self.resolution}</Resolution>\r\n    <Ratio2DMinimumAU>{self.ratio2dminimumau}</Ratio2DMinimumAU>"
+        return f"<DataMode>{self.datamode}</DataMode><Wavelength1>{self.wavelength1}</Wavelength1><Wavelength2>{self.wavelength2}</Wavelength2><Resolution>{self.resolution}</Resolution><Ratio2DMinimumAU>{self.ratio2dminimumau}</Ratio2DMinimumAU>"
 
 
 @dataclass
@@ -196,7 +152,7 @@ class PDASpectralChannel:
     resolution: str = "Resolution_12"
 
     def to_xml(self) -> str:
-        return f"<Enable>{xml_compatible(self.enable)}</Enable>\r\n <StartWavelength>{self.start_wavelength}</StartWavelength>\r\n    <EndWavelength>{self.end_wavelength}</EndWavelength>\r\n    <Resolution>{self.resolution}</Resolution>"
+        return f"<Enable>{xml_compatible(self.enable)}</Enable> <StartWavelength>{self.start_wavelength}</StartWavelength>    <EndWavelength>{self.end_wavelength}</EndWavelength>    <Resolution>{self.resolution}</Resolution>"
 
 
 class PDAMethod(Detector):
@@ -207,16 +163,17 @@ class PDAMethod(Detector):
         channels = []
         for channel_name in self.channel_names:
             channel_xml = self[channel_name]
+            channel_xml = "<xml>" + channel_xml + "</xml>"
             channel = ET.fromstring(channel_xml)
-            if not channel.Enable:
+            if not channel.find("Enable").text == "true":
                 continue
             channels.append(
                 PDAChannel(
-                    datamode=channel.DataMode,
-                    wavelength1=channel.Wavelength1,
-                    wavelength2=channel.Wavelength2,
-                    resolution=channel.Resolution,
-                    ratio2dminimumau=channel.Ratio2DMinimumAU,
+                    datamode=channel.find("DataMode").text,
+                    wavelength1=channel.find("Wavelength1").text,
+                    wavelength2=channel.find("Wavelength2").text,
+                    resolution=channel.find("Resolution").text,
+                    ratio2dminimumau=channel.find("Ratio2DMinimumAU").text,
                 )
             )
         return channels
@@ -227,16 +184,12 @@ class PDAMethod(Detector):
             raise ValueError("Too many channels")
         for channel_index in range(8):
             try:
-                channel_xml = (
-                    f"<Enable>true</Enable>\r\n{value[channel_index].to_xml()}"
-                )
+                channel_xml = f"<Enable>true</Enable>{value[channel_index].to_xml()}"
             except IndexError:
                 default_pda_channel = PDAChannel(wavelength1="254")
-                channel_xml = (
-                    f"<Enable>false</Enable>\r\n{default_pda_channel.to_xml()}"
-                )
+                channel_xml = f"<Enable>false</Enable>{default_pda_channel.to_xml()}"
 
-            self[self.channel_names(channel_index)] = channel_xml
+            self[self.channel_names[channel_index]] = channel_xml
 
     @property
     def wavelengths(self) -> list[str]:
@@ -244,21 +197,20 @@ class PDAMethod(Detector):
 
     @wavelengths.setter
     def wavelengths(self, value: list[str]):  # Deal with numbers
-        if isinstance(value, (int, str)):
-            value = [str(value)]
-            self.channels = [PDAChannel(wavelength1=wavelength) for wavelength in value]
-        else:
+        if not all(isinstance(v, (int, str)) for v in value):
             raise ValueError("Wavelengths must be a list of strings or integers.")
+        self.channels = [PDAChannel(wavelength1=wavelength) for wavelength in value]
 
     @property
     def spectral_channel(self) -> PDASpectralChannel:
         spectral_channel_xml = self["SpectralChannel"]
+        spectral_channel_xml = "<xml>" + spectral_channel_xml + "</xml>"  # give root
         spectral_channel = ET.fromstring(spectral_channel_xml)
         return PDASpectralChannel(
-            enable=spectral_channel.Enable,
-            start_wavelength=spectral_channel.StartWavelength,
-            end_wavelength=spectral_channel.EndWavelength,
-            resolution=spectral_channel.Resolution,
+            enable=spectral_channel.find("Enable").text == "true",
+            start_wavelength=spectral_channel.find("StartWavelength").text,
+            end_wavelength=spectral_channel.find("EndWavelength").text,
+            resolution=spectral_channel.find("Resolution").text,
         )
 
     @spectral_channel.setter
@@ -289,17 +241,16 @@ class FLRChannel:
     # description hardcoded to blank
     excitation: str
     emission: str
+    channel_name: str = ""  # handled on module level
     enable: bool = True  # handled on module level
     datamode: str = "Emission_1F"  # Done on module level
 
     @property
     def name(self) -> str:
-        return (
-            f"AcqFlr$Ch$x{self.excitation}e{self.emission}"  # $$ to name channel after
-        )
+        return f"AcqFlrCh{self.channel_name[-1]}x{self.excitation}e{self.emission}"
 
     def to_xml(self) -> str:
-        return f"<Name>{self.name}</Name>\r\n <Description />\r\n    <Excitation>{self.excitation}</Excitation>\r\n    <Emission>{self.emission}</Emission>\r\n"  # noqa: E501
+        return f"<Name>{self.name}</Name><Enable>{xml_compatible(self.enable)}</Enable><Excitation>{self.excitation}</Excitation><Emission>{self.emission}</Emission><DataMode>{self.datamode}</DataMode>"
 
 
 class FLRMethod(Detector):
@@ -310,16 +261,17 @@ class FLRMethod(Detector):
         channels = []
         for channel_name in self.channel_names:
             channel_xml = self[channel_name]
+            channel_xml = "<xml>" + channel_xml + "</xml>"  # give root
             channel = ET.fromstring(channel_xml)
-            if not channel.Enable:
+            if channel.find("Enable").text != "true":
                 continue
+            # Correct channel name to include ChA, ChB, ChC, ChD
             channels.append(
                 FLRChannel(
-                    name=channel.Name,
-                    excitation=channel.Excitation,
-                    emission=channel.Emission,
-                    enable=channel.Enable,
-                    datamode=channel.DataMode,
+                    excitation=channel.find("Excitation").text,
+                    emission=channel.find("Emission").text,
+                    datamode=channel.find("DataMode").text,
+                    channel_name=channel_name,
                 )
             )
         return channels
@@ -336,25 +288,23 @@ class FLRMethod(Detector):
         }
         for channel_index in range(4):
             try:
-                # Correct channel name to include ChA, ChB, ChC, ChD
-                name = value[channel_index].name
-                name = re.sub(r"\$Ch\$", f"Ch{chr(65 + channel_index)}", name)
-                value[channel_index].name = name
                 # Always enable if it is in the list
+                value[channel_index].channel_name = self.channel_names[channel_index]
                 value[channel_index].enable = True
                 # Ensure datamode is set to the correct enum
-                value[channel_index].datamode = dict_modes[channel_index]
+                value[channel_index].datamode = dict_modes[channel_index + 1]
                 channel_xml = value[channel_index].to_xml()
             except IndexError:
                 default_flr_channel = FLRChannel(
                     excitation="350",
                     emission="397",
                     enable=False,
-                    datamode=dict_modes[channel_index],
+                    datamode=dict_modes[channel_index + 1],
+                    channel_name=self.channel_names[channel_index],
                 )
                 channel_xml = default_flr_channel.to_xml()
 
-            self[self.channel_names(channel_index)] = channel_xml
+            self[self.channel_names[channel_index]] = channel_xml
 
     @property
     def wavelengths(self) -> list[tuple[str, str]]:
