@@ -7,7 +7,11 @@ from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
     classify_eluents,
 )
-from OptiHPLCHandler.empower_detector_module_method import PDAMethod, TUVMethod
+from OptiHPLCHandler.empower_detector_module_method import (
+    PDAMethod,
+    TUVMethod,
+    FLRMethod,
+)
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 logger = logging.getLogger(__name__)
@@ -18,7 +22,7 @@ class MethodParts:
     """Dataclass to store the parts of an EmpowerInstrumentMethod."""
 
     gradient_table: list[dict]
-    channel_dict: dict
+    channels: list[dict]
     sample_temperature: float
     column_temperature: float
     solvent_lines: list[str]
@@ -34,11 +38,11 @@ class MethodParts:
         other_detectors = [
             detector
             for detector in method.detector_method_list
-            if not isinstance(detector, (PDAMethod, TUVMethod))
+            if not isinstance(detector, (PDAMethod, TUVMethod, FLRMethod))
         ]
         if other_detectors:
             warnings.warn(
-                f"Detectors other than PDA or TUV are present in the method: {other_detectors}. These detectors will not be transferred."  # noqa E501
+                f"Detectors other than PDA,TUV or FLR are present in the method: {other_detectors}. These detectors will not be transferred."  # noqa E501
             )
 
         # If both PDA and TUV detectors are used, raise a warning
@@ -47,19 +51,13 @@ class MethodParts:
             for detector in method.detector_method_list
             if isinstance(detector, (PDAMethod, TUVMethod))
         ]
-        # If no PDA or TUV detectors are found, raise a ValueError
+        # If no PDA, FLR or TUV detectors are found, raise a ValueError
         if not allowed_detectors:
-            raise ValueError("No PDA or TUV detector method found in the method.")
+            raise ValueError("No PDA, FLR or TUV detector method found in the method.")
 
-        # If more than one PDA or TUV detector is found, raise a warning
-        if len(allowed_detectors) > 1:
-            warnings.warn(
-                f"Both PDA and TUV detectors are present in the method. Only the first detector will be transferred {allowed_detectors[0]}."  # noqa E501
-            )
+        detectors: list[Union[PDAMethod, TUVMethod, FLRMethod]] = allowed_detectors
 
-        detector: Union[PDAMethod, TUVMethod] = allowed_detectors[0]
-
-        self.channel_dict = detector.channel_dict
+        self.channels = [detector.channel_dict for detector in detectors]
         if not self.channel_dict:
             raise ValueError("No channel dictionary found in the detector method.")
 
@@ -303,6 +301,50 @@ def change_gradient_table_from_method_parts(
         input_parts.gradient_table,
         output_method.gradient_table,
     )
+
+
+@dataclass
+class PDAAbsorbanceChannel:
+    """Dataclass to store the channels in PDA Method."""
+
+    absorbance_wavelength: float
+    enable: bool
+    type: str = "Single"  # Hardcode
+
+
+@dataclass
+class PDASpectralChannel:
+    """Dataclass to store the sepctral channel in a PDA Method."""
+
+    start_wavelength: float
+    end_wavelength: float
+    enable: bool
+    type: str = "Spectral"  # Hardcode
+
+
+@dataclass
+class TUVChannel:
+    """Dataclass to store the channels in TUV Method."""
+
+    absorbance_wavelength: float
+    type: str
+
+
+def change_channels(input_list_dict: dict, output_list_dict: dict) -> list[dict]:
+    """Takes a list of channel_dicts (from detector methods), identifies the module and
+    changes the output to match the input."""
+    # if input only contains PDA and output contains TUV, it will change
+    # if input contains TUV and PDA and output contains TUV, it will assume its the TUV
+    # you would want to change
+    # if input contains TUV and PDA and output contains TUV and PDA, it will change both
+
+    # identify the module
+    # PDA has 8 channels and a spectral channel, has wavelength1 as the key (enable key)
+    # TUV has two and the key is wavelength (no enable key)
+    # FLR has 4 channels and two different wavelength keys, Excitation and Emission
+    # enable key is present
+    # RI not support
+    pass
 
 
 # minimum input, requires channel_dict for both input and output
