@@ -1,7 +1,7 @@
 import logging
+from dataclasses import dataclass
 from typing import Union
 from xml.etree import ElementTree as ET
-from dataclasses import dataclass
 
 from .empower_module_method import EmpowerModuleMethod
 
@@ -141,7 +141,7 @@ class PDAChannel:
     ratio2dminimumau: str = "0.01"  # used in Ratio
 
     def to_xml(self) -> str:
-        return f"<DataMode>{self.datamode}</DataMode><Wavelength1>{self.wavelength1}</Wavelength1><Wavelength2>{self.wavelength2}</Wavelength2><Resolution>{self.resolution}</Resolution><Ratio2DMinimumAU>{self.ratio2dminimumau}</Ratio2DMinimumAU>"
+        return f"<DataMode>{self.datamode}</DataMode><Wavelength1>{self.wavelength1}</Wavelength1><Wavelength2>{self.wavelength2}</Wavelength2><Resolution>{self.resolution}</Resolution><Ratio2DMinimumAU>{self.ratio2dminimumau}</Ratio2DMinimumAU>"  # noqa: E501
 
 
 @dataclass
@@ -152,7 +152,7 @@ class PDASpectralChannel:
     resolution: str = "Resolution_12"
 
     def to_xml(self) -> str:
-        return f"<Enable>{xml_compatible(self.enable)}</Enable> <StartWavelength>{self.start_wavelength}</StartWavelength>    <EndWavelength>{self.end_wavelength}</EndWavelength>    <Resolution>{self.resolution}</Resolution>"
+        return f"<Enable>{xml_compatible(self.enable)}</Enable> <StartWavelength>{self.start_wavelength}</StartWavelength><EndWavelength>{self.end_wavelength}</EndWavelength>    <Resolution>{self.resolution}</Resolution>"  # noqa: E501
 
 
 class PDAMethod(Detector):
@@ -237,7 +237,7 @@ class PDAMethod(Detector):
 
 @dataclass
 class FLRChannel:
-    # name: str # Emission and excitation constructed here and channel name is constructed in module level
+    # name: str # Emission and excitation constructed here and channel name is constructed in module level # noqa: E501
     # description hardcoded to blank
     excitation: str
     emission: str
@@ -250,7 +250,7 @@ class FLRChannel:
         return f"AcqFlrCh{self.channel_name[-1]}x{self.excitation}e{self.emission}"
 
     def to_xml(self) -> str:
-        return f"<Name>{self.name}</Name><Enable>{xml_compatible(self.enable)}</Enable><Excitation>{self.excitation}</Excitation><Emission>{self.emission}</Emission><DataMode>{self.datamode}</DataMode>"
+        return f"<Name>{self.name}</Name><Enable>{xml_compatible(self.enable)}</Enable><Excitation>{self.excitation}</Excitation><Emission>{self.emission}</Emission><DataMode>{self.datamode}</DataMode>"  # noqa: E501
 
 
 class FLRMethod(Detector):

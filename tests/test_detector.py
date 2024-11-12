@@ -3,12 +3,12 @@ import unittest
 
 from OptiHPLCHandler.empower_detector_module_method import (
     Detector,
-    FLRMethod,
-    PDAMethod,
-    TUVMethod,
-    TUVChannel,
-    PDAChannel,
     FLRChannel,
+    FLRMethod,
+    PDAChannel,
+    PDAMethod,
+    TUVChannel,
+    TUVMethod,
 )
 from OptiHPLCHandler.factories import module_method_factory
 
@@ -21,7 +21,6 @@ def load_example_file(example_name: str) -> str:
 
 
 class TestDetector(unittest.TestCase):
-
     def test_lamp_enabled(self):
         method = Detector({"nativeXml": "<Lamp>true</Lamp>"})
         assert method.lamp_enabled is True
