@@ -3,6 +3,8 @@ ENUM_DICT contains all the builtin enumerated fields for SampleSetLines, and the
 allowed values.
 
 SYNONYMS contains the hard-coded synonyms for sampleset line fields.
+
+RUN_MODES contains the allowed values for the RunMode when starting a run in Empower.
 """
 
 from types import MappingProxyType  # Pythons name for a frozen dict
