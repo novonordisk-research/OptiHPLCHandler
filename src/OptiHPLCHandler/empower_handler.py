@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
-from .utils.default_data import BUILTIN_ALLOWED_VALUES, SYNONYMS
+from .utils.default_data import BUILTIN_ALLOWED_VALUES, RUN_MODES, SYNONYMS
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,7 @@ class EmpowerHandler:
         self._has_context = False
         self._samplesetline_enum_dict = dict(BUILTIN_ALLOWED_VALUES)
         self.synonym_dict = dict(SYNONYMS)
+        self.allowed_run_modes = RUN_MODES
 
     def __enter__(self):
         """Start the context manager."""
@@ -311,6 +312,10 @@ class EmpowerHandler:
         :param run_mode: The run mode. Must be one of "RunOnly", "RunAndProcess", or
             "RunAndReport".
         """
+        if run_mode not in self.allowed_run_modes:
+            raise ValueError(
+                f"Run mode {run_mode} not in available run modes: {RUN_MODES}"
+            )
         parameters = {
             "sampleSetMethodName": sample_set_method,
             "sampleSetName": sample_set_name,

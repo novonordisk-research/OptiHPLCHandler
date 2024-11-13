@@ -112,3 +112,5 @@ SYNONYMS: Mapping[str, str] = MappingProxyType(
         "InjectionVolume": "InjVol",
     }  # Key are "human readable" names, values are the names used in Empower.
 )
+
+RUN_MODES: tuple[str, ...] = ("RunOnly", "RunAndProcess", "RunAndReport")
