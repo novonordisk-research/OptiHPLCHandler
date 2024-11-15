@@ -314,7 +314,8 @@ class EmpowerHandler:
         """
         if run_mode not in self.allowed_run_modes:
             raise ValueError(
-                f"Run mode {run_mode} not in available run modes: {RUN_MODES}"
+                f"Run mode {run_mode} not in "
+                f"available run modes: {self.allowed_run_modes}."
             )
         parameters = {
             "sampleSetMethodName": sample_set_method,
