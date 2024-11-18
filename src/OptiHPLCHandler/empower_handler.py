@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
-from .utils.default_data import BUILTIN_ALLOWED_VALUES, SYNONYMS
+from .utils.default_data import BUILTIN_ALLOWED_VALUES, RUN_MODES, SYNONYMS
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,7 @@ class EmpowerHandler:
         self._has_context = False
         self._samplesetline_enum_dict = dict(BUILTIN_ALLOWED_VALUES)
         self.synonym_dict = dict(SYNONYMS)
+        self.allowed_run_modes = RUN_MODES
 
     def __enter__(self):
         """Start the context manager."""
@@ -298,6 +299,7 @@ class EmpowerHandler:
         node: str,
         system: str,  # TODO: Allow for none, in that case, use the only entry
         sample_set_name: Optional[str] = None,
+        run_mode: str = "RunOnly",
     ) -> None:
         """
         Run the experiment on an instrument.
@@ -307,13 +309,20 @@ class EmpowerHandler:
         :param system: Name of the chromatographic system to run the experiment on.
         :param sample_set_name: Name of the sample set to run. If not given, the name
             of the sample set method will be used.
+        :param run_mode: The run mode. Must be one of "RunOnly", "RunAndProcess", or
+            "RunAndReport".
         """
+        if run_mode not in self.allowed_run_modes:
+            raise ValueError(
+                f"Run mode {run_mode} not in "
+                f"available run modes: {self.allowed_run_modes}."
+            )
         parameters = {
             "sampleSetMethodName": sample_set_method,
             "sampleSetName": sample_set_name,
             "shutDownMethodName": "",
             "processingPrinter": "",
-            "runMode": "RunOnly",
+            "runMode": run_mode,
             "suitabilityMode": "ContinueOnFault",
             "waitForUser": False,
             "reRun": False,
