@@ -1,11 +1,15 @@
 import logging
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 from xml.etree import ElementTree as ET
 
 from .empower_module_method import EmpowerModuleMethod
 
 logger = logging.getLogger(__name__)
+
+
+class NoWavelengthError(NotImplementedError):
+    pass
 
 
 def to_bool(bool_string: Union[str, bool]) -> bool:
@@ -25,6 +29,19 @@ def xml_compatible(value: Union[str, bool]) -> str:
     return str(value)
 
 
+class Channel:
+    def __iter__(self):
+        yield "channel_type", self.__class__.__name__
+        for attr, value in self.__dict__.items():
+            yield attr, value
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def convert(self):
+        return self
+
+
 class Detector(EmpowerModuleMethod):
     @property
     def lamp_enabled(self) -> bool:
@@ -39,9 +56,27 @@ class Detector(EmpowerModuleMethod):
     def lamp_enabled(self, value: bool):
         self["Lamp"] = to_bool(value)
 
+    @property
+    def channels(self) -> list[Channel]:
+        raise NotImplementedError
+
+    @property
+    def wavelengths(self) -> list[str]:
+        raise NoWavelengthError("Detector method does not have a wavelength setting.")
+
+    @property
+    def spectral_wavelengths(self) -> list[dict[str, str]]:
+        raise NoWavelengthError("Detector method does not have a wavelength setting.")
+
+    @wavelengths.setter
+    def wavelengths(self, _: list[str]):
+        raise NoWavelengthError("Wavelengths not settable for this module.")
+
+    channel_types: tuple[Channel, ...] = tuple()
+
 
 @dataclass
-class TUVChannel:
+class TUVChannel(Channel):
     # Description ignored and just placed in xml
     wavelength: str
     datarate: str = "SingleDataRate_20A"  # DualDataRate_1B # DEAL IN MODULE
@@ -56,9 +91,13 @@ class TUVChannel:
     def to_xml(self):
         return f"<Wavelength>{self.wavelength}</Wavelength><DataRate>{self.datarate}</DataRate><DataMode>{self.datamode}</DataMode><FilterType>{self.filtertype}</FilterType><TimeConstant>{self.timeconstant}</TimeConstant><RatioMinimum>{self.ratiominimum}</RatioMinimum><AutoZeroWavelength>{self.autozerowavelength}</AutoZeroWavelength><AutoZeroInjectStart>{xml_compatible(self.autozeroinjectstart)}</AutoZeroInjectStart><AutoZeroEventOrKey>{xml_compatible(self.autozeroeventorkey)}</AutoZeroEventOrKey>"  # noqa: E501
 
+    def convert(self):
+        return PDAChannel(wavelength1=self.wavelength)
+
 
 class TUVMethod(Detector):
     channel_names = [f"Channel{letter}" for letter in ["A", "B"]]
+    channel_types = (TUVChannel,)
 
     @property
     def channels(self) -> list[TUVChannel]:
@@ -127,36 +166,39 @@ class TUVMethod(Detector):
     def wavelengths(self, value: list[str]):
         if not all(isinstance(v, (int, str)) for v in value):
             raise ValueError("Wavelengths must be a list of strings or integers.")
-        self.channels = [TUVChannel(wavelength=wavelength) for wavelength in value]
+        self.channels = [TUVChannel(wavelength=str(wavelength)) for wavelength in value]
 
 
 @dataclass
-class PDAChannel:
+class PDAChannel(Channel):
     # Wrapper of channel name and enable handled on module method level
     # enable handled in module level
     wavelength1: str  # abs wavelength
-    datamode: str = "DataModeAbsorbance_0"  # default to Absorbance
     wavelength2: str = "254"  # Used in difference/sum etc
     resolution: str = "Resolution_48"  # used in Absorbance etc
+    datamode: str = "DataModeAbsorbance_0"  # default to Absorbance
     ratio2dminimumau: str = "0.01"  # used in Ratio
 
     def to_xml(self) -> str:
         return f"<DataMode>{self.datamode}</DataMode><Wavelength1>{self.wavelength1}</Wavelength1><Wavelength2>{self.wavelength2}</Wavelength2><Resolution>{self.resolution}</Resolution><Ratio2DMinimumAU>{self.ratio2dminimumau}</Ratio2DMinimumAU>"  # noqa: E501
 
+    def convert(self):
+        return TUVChannel(wavelength=self.wavelength1)
+
 
 @dataclass
-class PDASpectralChannel:
+class PDASpectralChannel(Channel):
     start_wavelength: str
     end_wavelength: str
-    enable: bool = False
     resolution: str = "Resolution_12"
 
     def to_xml(self) -> str:
-        return f"<Enable>{xml_compatible(self.enable)}</Enable> <StartWavelength>{self.start_wavelength}</StartWavelength><EndWavelength>{self.end_wavelength}</EndWavelength>    <Resolution>{self.resolution}</Resolution>"  # noqa: E501
+        return f"<Enable>true</Enable> <StartWavelength>{self.start_wavelength}</StartWavelength><EndWavelength>{self.end_wavelength}</EndWavelength>    <Resolution>{self.resolution}</Resolution>"  # noqa: E501
 
 
 class PDAMethod(Detector):
     channel_names = [f"Channel{num}" for num in range(1, 9)]
+    channel_types = (PDAChannel, PDASpectralChannel)
 
     @property
     def channels(self) -> list[PDAChannel]:
@@ -192,36 +234,45 @@ class PDAMethod(Detector):
             self[self.channel_names[channel_index]] = channel_xml
 
     @property
-    def wavelengths(self) -> list[str]:
-        return [channel.wavelength1 for channel in self.channels]
+    def wavelengths(self) -> list[Union[str, dict[str, str]]]:
+        single_wavelengths = [channel.wavelength1 for channel in self.channels]
+        single_wavelengths.extend(self.spectral_wavelengths)
+        return single_wavelengths
 
     @wavelengths.setter
     def wavelengths(self, value: list[str]):  # Deal with numbers
         if not all(isinstance(v, (int, str)) for v in value):
             raise ValueError("Wavelengths must be a list of strings or integers.")
-        self.channels = [PDAChannel(wavelength1=wavelength) for wavelength in value]
+        self.channels = [
+            PDAChannel(wavelength1=str(wavelength)) for wavelength in value
+        ]
 
     @property
-    def spectral_channel(self) -> PDASpectralChannel:
+    def spectral_channel(self) -> Optional[PDASpectralChannel]:
         spectral_channel_xml = self["SpectralChannel"]
         spectral_channel_xml = "<xml>" + spectral_channel_xml + "</xml>"  # give root
         spectral_channel = ET.fromstring(spectral_channel_xml)
-        return PDASpectralChannel(
-            enable=spectral_channel.find("Enable").text == "true",
-            start_wavelength=spectral_channel.find("StartWavelength").text,
-            end_wavelength=spectral_channel.find("EndWavelength").text,
-            resolution=spectral_channel.find("Resolution").text,
-        )
+        if spectral_channel.find("Enable").text == "true":
+            return PDASpectralChannel(
+                start_wavelength=spectral_channel.find("StartWavelength").text,
+                end_wavelength=spectral_channel.find("EndWavelength").text,
+                resolution=spectral_channel.find("Resolution").text,
+            )
+        return None
 
     @spectral_channel.setter
     def spectral_channel(self, value: PDASpectralChannel):
         self["SpectralChannel"] = value.to_xml()
 
     @property
-    def spectral_wavelengths(self) -> list[str]:
+    def spectral_wavelengths(self) -> list[dict[str, str]]:
+        if self.spectral_channel is None:
+            return []
         return [
-            self.spectral_channel.start_wavelength,
-            self.spectral_channel.end_wavelength,
+            {
+                "Start Wavelength": self.spectral_channel.start_wavelength,
+                "End Wavelength": self.spectral_channel.end_wavelength,
+            }
         ]
 
     @spectral_wavelengths.setter
@@ -236,7 +287,7 @@ class PDAMethod(Detector):
 
 
 @dataclass
-class FLRChannel:
+class FLRChannel(Channel):
     # name: str # Emission and excitation constructed here and channel name is constructed in module level # noqa: E501
     # description hardcoded to blank
     excitation: str
@@ -255,6 +306,7 @@ class FLRChannel:
 
 class FLRMethod(Detector):
     channel_names = [f"Channel{letter}" for letter in ["A", "B", "C", "D"]]
+    channel_types = (FLRChannel,)
 
     @property
     def channels(self) -> list[FLRChannel]:
@@ -307,18 +359,11 @@ class FLRMethod(Detector):
             self[self.channel_names[channel_index]] = channel_xml
 
     @property
-    def wavelengths(self) -> list[tuple[str, str]]:
-        return [(channel.excitation, channel.emission) for channel in self.channels]
-
-    @wavelengths.setter
-    def wavelengths(self, value: list[tuple[str, str]]):
-        self.channels = [
-            FLRChannel(excitation=excitation, emission=emission)
-            for excitation, emission in value
+    def wavelengths(self) -> list[dict[str, str]]:
+        return [
+            {
+                "Excitation wavelength": channel.excitation,
+                "Emission wavelength": channel.emission,
+            }
+            for channel in self.channels
         ]
-
-
-class RIMethod(Detector):
-    @property
-    def channel_dict(self) -> dict[str, dict]:
-        return {"RIChannel": {}}
