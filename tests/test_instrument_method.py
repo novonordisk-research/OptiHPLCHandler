@@ -486,3 +486,35 @@ class TestSampleTemperature(unittest.TestCase):
         assert self.method.sample_temperature != copy.sample_temperature
         copy = self.method.copy()
         assert self.method.sample_temperature == copy.sample_temperature
+
+    def test_get_wavelengths(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        self.assertEqual(
+            method.wavelengths,
+            ["254"],
+        )
+
+        method = EmpowerInstrumentMethod(self.example["response-BSM-PDA-CM-Acq.json"])
+        self.assertEqual(
+            method.wavelengths,
+            [
+                {"Start Wavelength": "210", "End Wavelength": "400"},
+                # {"Start Wavelength": "210", "End Wavelength": "400"},  # why
+            ],
+        )
+
+    def test_set_wavelengths(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        method.wavelengths = ["669"]
+        self.assertEqual(
+            method.wavelengths,
+            ["669"],
+        )
+
+        method = EmpowerInstrumentMethod(self.example["response-BSM-PDA-CM-Acq.json"])
+        # Try set the pda, check it raises a not implemented error
+        with self.assertRaises(NotImplementedError):
+            method.wavelengths = [
+                {"Start Wavelength": "210", "End Wavelength": "400"},
+                # {"Start Wavelength": "210", "End Wavelength": "400"}, #why tho
+            ]

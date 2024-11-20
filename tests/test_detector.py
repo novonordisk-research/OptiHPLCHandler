@@ -80,6 +80,17 @@ class TestTUV(unittest.TestCase):
         self.method.wavelengths = ["222", "400"]
         self.assertEqual(self.method.wavelengths, ["222", "400"])
 
+    def test_set_channel_from_tuv(self):
+        pda_channels = PDAChannel(wavelength1="999")
+        self.method.channels[0] = pda_channels
+        self.assertIsInstance(self.method.channels[0], TUVChannel)
+
+    def test_set_channel_from_tuv_list(self):
+        # Fails when trying to set a list of channels
+        pda_channels = [PDAChannel(wavelength1="999")]
+        self.method.channels = pda_channels
+        self.assertIsInstance(self.method.channels[0], TUVChannel)
+
 
 class TestPDA(unittest.TestCase):
     def setUp(self) -> None:
@@ -109,6 +120,17 @@ class TestPDA(unittest.TestCase):
         self.assertEqual(self.method.wavelengths, ["214", "280"])
         self.method.wavelengths = ["222", "400"]
         self.assertEqual(self.method.wavelengths, ["222", "400"])
+
+    def test_set_channel_from_pda(self):
+        tuv_channels = TUVChannel(wavelength="999")
+        self.method.channels[0] = tuv_channels
+        self.assertIsInstance(self.method.channels[0], PDAChannel)
+
+    def test_set_channel_from_pda_list(self):
+        # Fails when trying to set a list of channels
+        tuv_channels = [TUVChannel(wavelength="999")]
+        self.method.channels = tuv_channels
+        self.assertIsInstance(self.method.channels[0], PDAChannel)
 
 
 class TestFLR(unittest.TestCase):
