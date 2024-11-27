@@ -334,10 +334,14 @@ class TestSampleList(unittest.TestCase):
             "sampleSetLines"
         ]
         components = sample_set_lines[0]["components"]
-        assert {"name": "Component", "value": "test_component_name_1"} in components[0][
+        assert {
+            "name": "Component",
+            "value": "test_component_name_1",
+            "dataType": "String",
+        } in components[0]["fields"]
+        assert {"name": "Value", "value": 1, "dataType": "Double"} in components[0][
             "fields"
         ]
-        assert {"name": "Value", "value": 1} in components[0]["fields"]
         assert {
             "name": "Components",
             "value": "test_custom_field_value",
