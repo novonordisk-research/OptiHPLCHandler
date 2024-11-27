@@ -245,10 +245,12 @@ class EmpowerHandler:
                             {
                                 "name": "Component",
                                 "value": component_name,
+                                "dataType": "String",
                             },
                             {
                                 "name": "Value",
                                 "value": component_value,
+                                "dataType": "Double",
                             },
                         ],
                     }

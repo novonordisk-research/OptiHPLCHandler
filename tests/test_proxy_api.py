@@ -302,9 +302,13 @@ class TestSampleList(unittest.TestCase):
         components = sample_set_lines[0]["components"]
         assert components[0]["id"] != components[1]["id"]
         for i, (name, concentration) in enumerate(component_dict.items()):
-            name_dict = {"name": "Component", "value": name}
+            name_dict = {"name": "Component", "value": name, "dataType": "String"}
             assert name_dict in components[i]["fields"]
-            concentration_dict = {"name": "Value", "value": concentration}
+            concentration_dict = {
+                "name": "Value",
+                "value": concentration,
+                "dataType": "Double",
+            }
             assert concentration_dict in components[i]["fields"]
 
     def test_component_key(self):
