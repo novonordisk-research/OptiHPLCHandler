@@ -3,10 +3,10 @@ import re
 from typing import List, Optional, Union
 
 from .empower_detector_module_method import (
-    Detector,
-    PDAMethod,
     Channel,
+    Detector,
     NoWavelengthError,
+    PDAMethod,
 )
 from .empower_module_method import (
     ColumnManagerMethod,
@@ -232,7 +232,7 @@ class EmpowerInstrumentMethod:
         detector_channel_pairing = [
             (detector, []) for detector in self.detector_method_list
         ]
-        # Fnding all the viable channel types in the output method
+        # Finding all the viable channel types in the output method
         all_channel_types: tuple[Channel, ...] = tuple()
         for detector in self.detector_method_list:
             all_channel_types = all_channel_types + detector.channel_types
@@ -248,8 +248,9 @@ class EmpowerInstrumentMethod:
                         f"Channel type {original_channel_type} is not compatible with the output method, nor can it beconverted to any detector in the output method."  # noqa E501
                     )
             for detector, detector_channels in detector_channel_pairing:
-                # For each output detector, check whether the channel is viable. If it is,
-                # pair it with that detector and stop. If not, continue to the next detector
+                # For each output detector, check whether the channel is viable. If it
+                # is, pair it with that detector and stop. If not, continue to the next
+                # detector
                 if isinstance(channel, detector.channel_types):
                     detector_channels.append(channel)
                     break

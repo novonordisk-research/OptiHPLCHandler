@@ -58,7 +58,7 @@ class Detector(EmpowerModuleMethod):
 
     @property
     def channels(self) -> list[Channel]:
-        raise NotImplementedError
+        raise NotImplementedError("Detector method does not have a channel setting.")
 
     @property
     def wavelengths(self) -> list[str]:
@@ -66,7 +66,9 @@ class Detector(EmpowerModuleMethod):
 
     @property
     def spectral_wavelengths(self) -> list[dict[str, str]]:
-        raise NoWavelengthError("Detector method does not have a wavelength setting.")
+        raise NoWavelengthError(
+            "Detector method does not have a spectral wavelength setting."
+        )
 
     @wavelengths.setter
     def wavelengths(self, _: list[str]):
@@ -236,7 +238,6 @@ class PDAMethod(Detector):
     @property
     def wavelengths(self) -> list[Union[str, dict[str, str]]]:
         single_wavelengths = [channel.wavelength1 for channel in self.channels]
-        single_wavelengths.extend(self.spectral_wavelengths)
         return single_wavelengths
 
     @wavelengths.setter
@@ -272,7 +273,7 @@ class PDAMethod(Detector):
             {
                 "Start Wavelength": self.spectral_channel.start_wavelength,
                 "End Wavelength": self.spectral_channel.end_wavelength,
-            }
+            },
         ]
 
     @spectral_wavelengths.setter
@@ -367,3 +368,14 @@ class FLRMethod(Detector):
             }
             for channel in self.channels
         ]
+
+    @wavelengths.setter
+    def wavelengths(self, value: list[dict[str, str]]):
+        if len(value) not in [1, 2, 3, 4]:
+            raise ValueError(
+                f"Invalid number of wavelengths entered. Expected 1 to 4. Got {len(value)}"  # noqa: E501
+            )
+        self.channels = [
+            FLRChannel(excitation=value[i], emission=value[i + 1])
+            for i in range(0, len(value), 2)
+        ]  # GPT
