@@ -98,7 +98,13 @@ class EmpowerConnection:
                     self.address + "/authentication/db-service-list",
                     headers=self.header,
                     timeout=60,
-                    verify=self.verify,
+                    verify=False,  # This is a get request for something that will be
+                    # obvious if it is wrong when the user tries to log in, so we do not
+                    # need to verify the SSL certificate. If there are SSL issues, the
+                    # instantiation of EmpowerHandler will fail since the verify
+                    # parameter is not set explicitly when EmpowerHandler creates the
+                    # EmpowerConnection object, and since this call happens before the
+                    # user can set it. So we turn off verification here.
                 )
             except requests.exceptions.Timeout as e:
                 raise requests.exceptions.Timeout(
