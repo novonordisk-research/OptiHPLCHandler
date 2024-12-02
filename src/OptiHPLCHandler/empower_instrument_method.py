@@ -278,6 +278,8 @@ class EmpowerInstrumentMethod:
 
     @wavelengths.setter
     def wavelengths(self, wavelengths: list[str]):
+        if len(set(type(wavelength) for wavelength in wavelengths)) > 1:
+            raise ValueError("Only one type of wavelength can be set at a time.")
         if not all(isinstance(wavelength, str) for wavelength in wavelengths):
             raise NotImplementedError("Only single wavelength channels are settable.")
         for module in self.detector_method_list:
@@ -286,6 +288,9 @@ class EmpowerInstrumentMethod:
                 return  # Stops after finding the first detector with wavelengths
             except NoWavelengthError:
                 pass
+        raise NoWavelengthError(
+            "No detector with appropriate channel definitions found."
+        )
 
     @property
     def channels_serialisable(self):

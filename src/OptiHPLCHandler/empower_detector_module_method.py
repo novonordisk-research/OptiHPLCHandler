@@ -167,7 +167,9 @@ class TUVMethod(Detector):
     @wavelengths.setter
     def wavelengths(self, value: list[str]):
         if not all(isinstance(v, (int, str)) for v in value):
-            raise ValueError("Wavelengths must be a list of strings or integers.")
+            raise NoWavelengthError(
+                "Wavelengths for TUV must be a list of strings or integers."
+            )
         self.channels = [TUVChannel(wavelength=str(wavelength)) for wavelength in value]
 
 
@@ -243,7 +245,9 @@ class PDAMethod(Detector):
     @wavelengths.setter
     def wavelengths(self, value: list[str]):  # Deal with numbers
         if not all(isinstance(v, (int, str)) for v in value):
-            raise ValueError("Wavelengths must be a list of strings or integers.")
+            raise NoWavelengthError(
+                "Wavelengths for PDA must be a list of strings or integers."
+            )
         self.channels = [
             PDAChannel(wavelength1=str(wavelength)) for wavelength in value
         ]
@@ -371,6 +375,10 @@ class FLRMethod(Detector):
 
     @wavelengths.setter
     def wavelengths(self, value: list[dict[str, str]]):
+        if not all(isinstance(v, dict) for v in value):
+            raise NoWavelengthError(
+                "Wavelengths for FLR must be a list of dictionaries."
+            )
         if len(value) not in [1, 2, 3, 4]:
             raise ValueError(
                 f"Invalid number of wavelengths entered. Expected 1 to 4. Got {len(value)}"  # noqa: E501
