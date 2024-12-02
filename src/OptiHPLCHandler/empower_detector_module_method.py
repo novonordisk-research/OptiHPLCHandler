@@ -65,6 +65,16 @@ class Detector(EmpowerModuleMethod):
         raise NoWavelengthError("Detector method does not have a wavelength setting.")
 
     @property
+    def spectral_channel(self) -> Optional[Channel]:
+        raise NoWavelengthError(
+            "Detector method does not have a spectral channel setting."
+        )
+
+    @spectral_channel.setter
+    def spectral_channel(self, _: Channel):
+        raise NoWavelengthError("Spectral channel not settable for this module.")
+
+    @property
     def spectral_wavelengths(self) -> list[dict[str, str]]:
         raise NoWavelengthError(
             "Detector method does not have a spectral wavelength setting."
@@ -281,13 +291,16 @@ class PDAMethod(Detector):
         ]
 
     @spectral_wavelengths.setter
-    def spectral_wavelengths(self, value: list[str]):
-        if len(value) != 2:
-            raise ValueError("Invalid number of wavelengths entered. Expected 2.")
+    def spectral_wavelengths(self, value: list[dict[str:str]]):
+        if len(value) != 1:
+            raise ValueError("Invalid number of scans. Should only be one.")
+        value = value[0]
+
+        if value == {}:
+            self.spectral_channel = None
         self.spectral_channel = PDASpectralChannel(
-            enable=True,
-            start_wavelength=value[0],
-            end_wavelength=value[1],
+            start_wavelength=value["Start Wavelength"],
+            end_wavelength=value["End Wavelength"],
         )
 
 
