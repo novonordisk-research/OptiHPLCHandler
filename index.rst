@@ -130,7 +130,7 @@ Empower module methods
    :inherited-members:
    :exclude-members: current_method, alter_method, find_value
 
-.. automodule:: OptiHPLCHandler.empower_instrument_method
+.. automodule:: OptiHPLCHandler.empower_detector_module_method
    :members:
    :inherited-members:
    :exclude-members: current_method, alter_method, find_value

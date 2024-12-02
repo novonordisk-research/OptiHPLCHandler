@@ -67,6 +67,26 @@ class TestEmpowerHandler(unittest.TestCase):
             self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
         ) == "test_sample_set_name"  # Check that the correct sample set name is given
 
+    def test_explicit_run_mode(self):
+        self.handler.RunExperiment(
+            sample_set_method="test_sample_set_method",
+            node="test_node",
+            system="test_hplc",
+            run_mode="RunAndReport",
+        )
+        assert (self.handler.connection.post.call_args[1]["body"]["runMode"]) == (
+            "RunAndReport"
+        )
+
+    def test_invalid_run_mode(self):
+        with self.assertRaises(ValueError):
+            self.handler.RunExperiment(
+                sample_set_method="test_sample_set_method",
+                node="test_node",
+                system="test_hplc",
+                run_mode="InvalidRunMode",
+            )
+
     def test_get_node_name_list(self):
         self.handler.connection.get.return_value = create_empower_response(
             ["test_node_name_1"]
@@ -282,9 +302,13 @@ class TestSampleList(unittest.TestCase):
         components = sample_set_lines[0]["components"]
         assert components[0]["id"] != components[1]["id"]
         for i, (name, concentration) in enumerate(component_dict.items()):
-            name_dict = {"name": "Component", "value": name}
+            name_dict = {"name": "Component", "value": name, "dataType": "String"}
             assert name_dict in components[i]["fields"]
-            concentration_dict = {"name": "Value", "value": concentration}
+            concentration_dict = {
+                "name": "Value",
+                "value": concentration,
+                "dataType": "Double",
+            }
             assert concentration_dict in components[i]["fields"]
 
     def test_component_key(self):
@@ -310,10 +334,14 @@ class TestSampleList(unittest.TestCase):
             "sampleSetLines"
         ]
         components = sample_set_lines[0]["components"]
-        assert {"name": "Component", "value": "test_component_name_1"} in components[0][
+        assert {
+            "name": "Component",
+            "value": "test_component_name_1",
+            "dataType": "String",
+        } in components[0]["fields"]
+        assert {"name": "Value", "value": 1, "dataType": "Double"} in components[0][
             "fields"
         ]
-        assert {"name": "Value", "value": 1} in components[0]["fields"]
         assert {
             "name": "Components",
             "value": "test_custom_field_value",
