@@ -254,9 +254,10 @@ class EmpowerInstrumentMethod:
                 if isinstance(channel, detector.channel_types):
                     detector_channels.append(channel)
                     break
-            raise ValueError(
-                f"Channel type {original_channel_type} does not match any detector in the output method."  # noqa E501
-            )
+                else:
+                    raise ValueError(
+                        f"Channel type {original_channel_type} does not match any detector in the output method."  # noqa E501
+                    )
         for detector, detector_channels in detector_channel_pairing:
             if len(detector_channels) > 0:
                 detector.channels = detector_channels
@@ -280,7 +281,7 @@ class EmpowerInstrumentMethod:
     def wavelengths(self, wavelengths: list[str]):
         if len(set(type(wavelength) for wavelength in wavelengths)) > 1:
             raise ValueError("Only one type of wavelength can be set at a time.")
-        if not all(isinstance(wavelength, str) for wavelength in wavelengths):
+        if not all(isinstance(wavelength, (str, int)) for wavelength in wavelengths):
             raise NotImplementedError("Only single wavelength channels are settable.")
         for module in self.detector_method_list:
             try:
