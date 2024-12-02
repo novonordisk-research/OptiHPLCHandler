@@ -255,8 +255,8 @@ class TestChangeGradient(unittest.TestCase):
 
         # Check output
         for grad1, grad2 in zip(self.qsm_grad_cd, new_gradient_table):
-            self.assertEqual(grad1["CompositionC"], grad2["CompositionA"])
-            self.assertEqual(grad1["CompositionD"], grad2["CompositionB"])
+            self.assertEqual(grad1["CompositionC"], grad2["CompositionC"])
+            self.assertEqual(grad1["CompositionD"], grad2["CompositionD"])
 
     def test_bsm_to_bsm_iso(self) -> None:
         """Test change_gradient_table function for BSM to BSM"""

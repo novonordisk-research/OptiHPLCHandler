@@ -7,6 +7,7 @@ from OptiHPLCHandler.empower_detector_module_method import (
     FLRMethod,
     PDAChannel,
     PDAMethod,
+    PDASpectralChannel,
     TUVChannel,
     TUVMethod,
 )
@@ -109,6 +110,33 @@ class TestPDA(unittest.TestCase):
         self.assertEqual(self.method.wavelengths, ["214", "280"])
         self.method.wavelengths = ["222", "400"]
         self.assertEqual(self.method.wavelengths, ["222", "400"])
+
+    def test_get_spectral_channel(self):
+        self.assertEqual(self.method.spectral_channel, None)
+
+    def test_set_spectral_channel(self):
+        self.assertEqual(self.method.spectral_channel, None)
+        self.method.spectral_channel = PDASpectralChannel(
+            start_wavelength="200", end_wavelength="300"
+        )
+        self.assertIsInstance(self.method.spectral_channel, PDASpectralChannel)
+        self.assertEqual(self.method.spectral_channel.start_wavelength, "200")
+        self.assertEqual(self.method.spectral_channel.end_wavelength, "300")
+
+    def test_get_spectral_wavelengths(self):
+        self.assertEqual(
+            self.method.spectral_wavelengths, []
+        )  # should it be none and a dict rather than list of dict # noqa
+
+    def test_set_spectral_wavelengths(self):
+        self.assertEqual(self.method.spectral_wavelengths, [])
+        self.method.spectral_wavelengths = [
+            {"Start Wavelength": "200", "End Wavelength": "300"}
+        ]
+        self.assertEqual(
+            self.method.spectral_wavelengths,
+            [{"Start Wavelength": "200", "End Wavelength": "300"}],
+        )
 
 
 class TestFLR(unittest.TestCase):
