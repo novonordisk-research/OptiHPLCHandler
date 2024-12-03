@@ -2,11 +2,7 @@ import logging
 import re
 from typing import List, Optional, Union
 
-from .empower_detector_module_method import (
-    Channel,
-    Detector,
-    NoWavelengthError,
-)
+from .empower_detector_module_method import Channel, Detector, NoWavelengthError
 from .empower_module_method import (
     ColumnManagerMethod,
     ColumnOvenMethod,
