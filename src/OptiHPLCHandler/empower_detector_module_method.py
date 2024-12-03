@@ -108,7 +108,7 @@ class TUVChannel(Channel):
 
 
 class TUVMethod(Detector):
-    channel_names = [f"Channel{letter}" for letter in ["A", "B"]]
+    channel_names = ["ChannelA", "ChannelB"]
     channel_types = (TUVChannel,)
 
     @property
@@ -211,7 +211,7 @@ class PDASpectralChannel(Channel):
 
 
 class PDAMethod(Detector):
-    channel_names = [f"Channel{num}" for num in range(1, 9)]
+    channel_names = ["Channel1", "Channel2", "Channel3", "Channel4", "Channel5", "Channel6", "Channel7", "Channel8"]
     channel_types = (PDAChannel, PDASpectralChannel)
 
     @property
@@ -248,7 +248,7 @@ class PDAMethod(Detector):
             self[self.channel_names[channel_index]] = channel_xml
 
     @property
-    def wavelengths(self) -> list[Union[str, dict[str, str]]]:
+    def wavelengths(self) -> list[str]:
         single_wavelengths = [channel.wavelength1 for channel in self.channels]
         return single_wavelengths
 
@@ -323,7 +323,7 @@ class FLRChannel(Channel):
 
 
 class FLRMethod(Detector):
-    channel_names = [f"Channel{letter}" for letter in ["A", "B", "C", "D"]]
+    channel_names = ["ChannelA", "ChannelB", "ChannelC", "ChannelD"]
     channel_types = (FLRChannel,)
 
     @property

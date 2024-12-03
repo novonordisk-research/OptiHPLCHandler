@@ -222,7 +222,9 @@ class EmpowerInstrumentMethod:
         channels = []
         for module in self.detector_method_list:
             channels.extend(module.channels)
-            if isinstance(module, PDAMethod):
+            spectral_channel = getattr(module, "spectral_channel", None)
+            if spectral_channel is not None:
+                channels.append(spectral_channel)
                 if module.spectral_channel is not None:
                     channels.append(module.spectral_channel)
         return channels
