@@ -211,7 +211,16 @@ class PDASpectralChannel(Channel):
 
 
 class PDAMethod(Detector):
-    channel_names = ["Channel1", "Channel2", "Channel3", "Channel4", "Channel5", "Channel6", "Channel7", "Channel8"]
+    channel_names = [
+        "Channel1",
+        "Channel2",
+        "Channel3",
+        "Channel4",
+        "Channel5",
+        "Channel6",
+        "Channel7",
+        "Channel8",
+    ]
     channel_types = (PDAChannel, PDASpectralChannel)
 
     @property

@@ -6,7 +6,6 @@ from .empower_detector_module_method import (
     Channel,
     Detector,
     NoWavelengthError,
-    PDAMethod,
 )
 from .empower_module_method import (
     ColumnManagerMethod,
