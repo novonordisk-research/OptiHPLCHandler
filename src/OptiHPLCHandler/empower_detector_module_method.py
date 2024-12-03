@@ -248,7 +248,7 @@ class PDAMethod(Detector):
             self[self.channel_names[channel_index]] = channel_xml
 
     @property
-    def wavelengths(self) -> list[Union[str, dict[str, str]]]:
+    def wavelengths(self) -> list[str]:
         single_wavelengths = [channel.wavelength1 for channel in self.channels]
         return single_wavelengths
 
