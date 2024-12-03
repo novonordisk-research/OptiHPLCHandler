@@ -108,7 +108,7 @@ class TUVChannel(Channel):
 
 
 class TUVMethod(Detector):
-    channel_names = [f"Channel{letter}" for letter in ["A", "B"]]
+    channel_names = ["ChannelA", "ChannelB"]
     channel_types = (TUVChannel,)
 
     @property
