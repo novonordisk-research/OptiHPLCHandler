@@ -254,9 +254,7 @@ class TestChangeGradient(unittest.TestCase):
         )
 
         # Check output
-        for grad1, grad2 in zip(self.qsm_grad_cd, new_gradient_table):
-            self.assertEqual(grad1["CompositionC"], grad2["CompositionC"])
-            self.assertEqual(grad1["CompositionD"], grad2["CompositionD"])
+        self.assertEqual(self.qsm_grad_cd, new_gradient_table)
 
     def test_bsm_to_bsm_iso(self) -> None:
         """Test change_gradient_table function for BSM to BSM"""
@@ -271,9 +269,7 @@ class TestChangeGradient(unittest.TestCase):
         )
 
         # Check output
-        for grad1, grad2 in zip(self.bsm_iso2, new_gradient_table):
-            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
-            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
+        self.assertEqual(self.bsm_iso2, new_gradient_table)
 
     def test_bsm_to_qsm_iso(self) -> None:
         """Test change_gradient_table function for BSM to QSM"""
@@ -288,11 +284,11 @@ class TestChangeGradient(unittest.TestCase):
         )
 
         # Check output
+        # Cant compare the gradient tables directly because of the difference in
+        # compositions
         for grad1, grad2 in zip(self.bsm_iso, new_gradient_table):
             self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
             self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
-            self.assertEqual(grad2["CompositionC"], "0.0")
-            self.assertEqual(grad2["CompositionD"], "0.0")
 
     def test_qsmab_to_bsm_iso(self) -> None:
         """Test change_gradient_table function for QSM to BSM."""
@@ -364,11 +360,7 @@ class TestChangeGradient(unittest.TestCase):
         )
 
         # Check output
-        for grad1, grad2 in zip(self.qsm_iso, new_gradient_table):
-            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
-            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
-            self.assertEqual(grad1["CompositionC"], grad2["CompositionC"])
-            self.assertEqual(grad1["CompositionD"], grad2["CompositionD"])
+        self.assertEqual(self.qsm_iso, new_gradient_table)
 
     def test_qsm3_to_qsm_iso(self) -> None:
         """Test change_gradient_table function for QSM to QSM. The input QSM uses
@@ -387,8 +379,4 @@ class TestChangeGradient(unittest.TestCase):
         )
 
         # Check output
-        for grad1, grad2 in zip(self.qsm_iso_threecomp, new_gradient_table):
-            self.assertEqual(grad1["CompositionA"], grad2["CompositionA"])
-            self.assertEqual(grad1["CompositionB"], grad2["CompositionB"])
-            self.assertEqual(grad1["CompositionC"], grad2["CompositionC"])
-            self.assertEqual(grad1["CompositionD"], grad2["CompositionD"])
+        self.assertEqual(self.qsm_iso_threecomp, new_gradient_table)

@@ -72,6 +72,16 @@ class TestTUV(unittest.TestCase):
         self.assertEqual(channels[1].datarate, "DualDataRate_1B")
         self.assertEqual(channels[0].timeconstant, "2.0000")
         self.assertEqual(channels[1].timeconstant, "2.0000")
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<Wavelength>400</Wavelength>", xml_content)
+        self.assertIn("<Wavelength>500</Wavelength>", xml_content)
+        self.assertIn("<DataMode>DualModeA_1B</DataMode>", xml_content)
+        self.assertIn("<DataMode>DualModeB_2C</DataMode>", xml_content)
+        self.assertIn("<DataRate>DualDataRate_1B</DataRate>", xml_content)
+        self.assertIn("<DataRate>DualDataRate_1B</DataRate>", xml_content)
+        self.assertIn("<TimeConstant>2.0000</TimeConstant>", xml_content)
+        self.assertIn("<TimeConstant>2.0000</TimeConstant>", xml_content)
 
     def test_get_wavelengths(self):
         self.assertEqual(self.method.wavelengths, ["214"])
@@ -80,6 +90,10 @@ class TestTUV(unittest.TestCase):
         self.assertEqual(self.method.wavelengths, ["214"])
         self.method.wavelengths = ["222", "400"]
         self.assertEqual(self.method.wavelengths, ["222", "400"])
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<Wavelength>222</Wavelength>", xml_content)
+        self.assertIn("<Wavelength>400</Wavelength>", xml_content)
 
 
 class TestPDA(unittest.TestCase):
@@ -102,6 +116,9 @@ class TestPDA(unittest.TestCase):
         channels = self.method.channels
         self.assertEqual(len(channels), 1)
         self.assertEqual(channels[0].wavelength1, "400")
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<Wavelength1>400</Wavelength1>", xml_content)
 
     def test_get_wavelengths(self):
         self.assertEqual(self.method.wavelengths, ["214", "280"])
@@ -110,6 +127,11 @@ class TestPDA(unittest.TestCase):
         self.assertEqual(self.method.wavelengths, ["214", "280"])
         self.method.wavelengths = ["222", "400"]
         self.assertEqual(self.method.wavelengths, ["222", "400"])
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<Wavelength1>222</Wavelength1>", xml_content)
+        self.assertIn("<Wavelength1>400</Wavelength1>", xml_content)
+        self.assertIn("<Enable>true</Enable>", xml_content)
 
     def test_get_spectral_channel(self):
         self.assertEqual(self.method.spectral_channel, None)
@@ -122,6 +144,10 @@ class TestPDA(unittest.TestCase):
         self.assertIsInstance(self.method.spectral_channel, PDASpectralChannel)
         self.assertEqual(self.method.spectral_channel.start_wavelength, "200")
         self.assertEqual(self.method.spectral_channel.end_wavelength, "300")
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<StartWavelength>200</StartWavelength>", xml_content)
+        self.assertIn("<EndWavelength>300</EndWavelength>", xml_content)
 
     def test_get_spectral_wavelengths(self):
         self.assertEqual(
@@ -137,6 +163,10 @@ class TestPDA(unittest.TestCase):
             self.method.spectral_wavelengths,
             [{"Start Wavelength": "200", "End Wavelength": "300"}],
         )
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<StartWavelength>200</StartWavelength>", xml_content)
+        self.assertIn("<EndWavelength>300</EndWavelength>", xml_content)
 
 
 class TestFLR(unittest.TestCase):
@@ -170,3 +200,9 @@ class TestFLR(unittest.TestCase):
         self.assertEqual(channels[1].excitation, "500")
         self.assertEqual(channels[1].emission, "600")
         self.assertEqual(channels[1].datamode, "Emission_2B")
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<Excitation>400</Excitation>", xml_content)
+        self.assertIn("<Emission>500</Emission>", xml_content)
+        self.assertIn("<Excitation>500</Excitation>", xml_content)
+        self.assertIn("<Emission>600</Emission>", xml_content)
