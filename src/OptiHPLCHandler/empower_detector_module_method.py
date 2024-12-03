@@ -323,7 +323,7 @@ class FLRChannel(Channel):
 
 
 class FLRMethod(Detector):
-    channel_names = [f"Channel{letter}" for letter in ["A", "B", "C", "D"]]
+    channel_names = ["ChannelA", "ChannelB", "ChannelC", "ChannelD"]
     channel_types = (FLRChannel,)
 
     @property
