@@ -181,3 +181,6 @@ examples/address.txt
 # sphinx build folder
 _build/
 _readthedocs/
+
+# Certificates
+ca-certificates.crt

@@ -138,12 +138,11 @@ class EmpowerModuleMethod:
 
     @staticmethod
     def _round(value: Union[str, float], decimal_digits: int = 3) -> str:
-        if value == "Initial":
-            return value
         try:
             value = float(value)
         except ValueError:
-            raise ValueError(f"Could not convert {value} to a float.")
+            logger.debug("Could not convert %s to float, returning as is", value)
+            return value
         rounded_value = round(value, decimal_digits)
         if rounded_value != float(value):
             warnings.warn(
