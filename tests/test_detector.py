@@ -150,9 +150,7 @@ class TestPDA(unittest.TestCase):
         self.assertIn("<EndWavelength>300</EndWavelength>", xml_content)
 
     def test_get_spectral_wavelengths(self):
-        self.assertEqual(
-            self.method.spectral_wavelengths, []
-        )  # should it be none and a dict rather than list of dict # noqa
+        self.assertEqual(self.method.spectral_wavelengths, [])
 
     def test_set_spectral_wavelengths(self):
         self.assertEqual(self.method.spectral_wavelengths, [])
@@ -183,11 +181,14 @@ class TestFLR(unittest.TestCase):
         self.assertEqual(len(channels), 1)
         self.assertEqual(channels[0].excitation, "280")
         self.assertEqual(channels[0].emission, "348")
+        self.assertEqual(channels[0].datamode, "Emission_1F")
+        self.assertEqual(channels[0].channel_name, "AcqFlrChAx280e348")
 
     def test_set_channels(self):
         self.assertEqual(self.method.channels[0].excitation, "280")
         self.assertEqual(self.method.channels[0].emission, "348")
         self.assertEqual(self.method.channels[0].datamode, "Emission_1F")
+        self.assertEqual(self.method.channels[0].channel_name, "AcqFlrChAx280e348")
         self.method.channels = [
             FLRChannel(excitation="400", emission="500"),
             FLRChannel(excitation="500", emission="600"),
@@ -200,9 +201,43 @@ class TestFLR(unittest.TestCase):
         self.assertEqual(channels[1].excitation, "500")
         self.assertEqual(channels[1].emission, "600")
         self.assertEqual(channels[1].datamode, "Emission_2B")
+        self.assertEqual(channels[0].channel_name, "AcqFlrChAx400e500")
+        self.assertEqual(channels[1].channel_name, "AcqFlrChBx500e600")
         # Check xml
         xml_content = self.method.current_method["nativeXml"]
         self.assertIn("<Excitation>400</Excitation>", xml_content)
         self.assertIn("<Emission>500</Emission>", xml_content)
         self.assertIn("<Excitation>500</Excitation>", xml_content)
         self.assertIn("<Emission>600</Emission>", xml_content)
+        self.assertIn("<Name>AcqFlrChAx400e500</Name>", xml_content)
+
+    def test_get_wavelengths(self):
+        self.assertEqual(
+            self.method.wavelengths,
+            [{"Emission wavelength": "348", "Excitation wavelength": "280"}],
+        )
+        self.assertEqual(self.method.channels[0].channel_name, "AcqFlrChAx280e348")
+
+    def test_set_wavelengths(self):
+        new_wavelengths = [
+            {"Emission wavelength": "400", "Excitation wavelength": "500"},
+            {"Emission wavelength": "500", "Excitation wavelength": "600"},
+            {"Emission wavelength": "600", "Excitation wavelength": "700"},
+            {"Emission wavelength": "700", "Excitation wavelength": "800"},
+        ]
+        self.method.wavelengths = new_wavelengths
+        self.assertEqual(self.method.wavelengths, new_wavelengths)
+        self.assertEqual(self.method.channels[0].channel_name, "AcqFlrChAx500e400")
+        self.assertEqual(self.method.channels[1].channel_name, "AcqFlrChBx600e500")
+        self.assertEqual(self.method.channels[2].channel_name, "AcqFlrChCx700e600")
+        self.assertEqual(self.method.channels[3].channel_name, "AcqFlrChDx800e700")
+        # Check xml
+        xml_content = self.method.current_method["nativeXml"]
+        self.assertIn("<Excitation>500</Excitation>", xml_content)
+        self.assertIn("<Emission>400</Emission>", xml_content)
+        self.assertIn("<Excitation>600</Excitation>", xml_content)
+        self.assertIn("<Emission>500</Emission>", xml_content)
+        self.assertIn("<Name>AcqFlrChAx500e400</Name>", xml_content)
+        self.assertIn("<Name>AcqFlrChBx600e500</Name>", xml_content)
+        self.assertIn("<Name>AcqFlrChCx700e600</Name>", xml_content)
+        self.assertIn("<Name>AcqFlrChDx800e700</Name>", xml_content)
