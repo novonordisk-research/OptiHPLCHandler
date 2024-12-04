@@ -218,14 +218,13 @@ class EmpowerInstrumentMethod:
         for module in self.detector_method_list:
             channels.extend(module.channels)
             try:
+                # get attr with default value None raises NoWavelengthError if not found
                 spectral_channel = module.spectral_channel
             except NoWavelengthError:
                 # No spectral channel found for this detector, so set it to None
                 spectral_channel = None
             if spectral_channel is not None:
                 channels.append(spectral_channel)
-                if module.spectral_channel is not None:
-                    channels.append(module.spectral_channel)
         return channels
 
     @channels.setter
