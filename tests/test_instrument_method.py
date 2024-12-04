@@ -194,6 +194,7 @@ class TestInstrumentMethod(unittest.TestCase):
         )
 
     def test_get_channels_SpectralPDA(self):
+        # method.channels duplicates
         method = EmpowerInstrumentMethod(self.example["response-BSM-PDA-CM-Acq.json"])
         self.assertEqual(
             method.channels,
