@@ -234,7 +234,7 @@ class TestInstrumentMethod(unittest.TestCase):
                 FLRChannel(
                     excitation="280",
                     emission="348",
-                    channel_name="ChannelA",
+                    channel_name="AcqFlrChAx280e348",
                     enable=True,
                     datamode="Emission_1F",
                 ),
