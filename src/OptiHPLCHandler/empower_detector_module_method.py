@@ -345,6 +345,7 @@ class FLRMethod(Detector):
             if channel.find("Enable").text != "true":
                 continue
             # Correct channel name to include ChA, ChB, ChC, ChD
+            channel_name = channel.find("Name").text
             channels.append(
                 FLRChannel(
                     excitation=channel.find("Excitation").text,
@@ -406,6 +407,9 @@ class FLRMethod(Detector):
                 f"Invalid number of wavelengths entered. Expected 1 to 4. Got {len(value)}"  # noqa: E501
             )
         self.channels = [
-            FLRChannel(excitation=value[i], emission=value[i + 1])
-            for i in range(0, len(value), 2)
-        ]  # GPT
+            FLRChannel(
+                excitation=int(value[i]["Excitation wavelength"]),
+                emission=int(value[i]["Emission wavelength"]),
+            )
+            for i in range(len(value))
+        ]
