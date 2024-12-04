@@ -2,7 +2,7 @@ import logging
 import re
 from typing import List, Optional, Union
 
-from .empower_detector_module_method import Detector
+from .empower_detector_module_method import Channel, Detector, NoWavelengthError
 from .empower_module_method import (
     ColumnManagerMethod,
     ColumnOvenMethod,
@@ -72,7 +72,7 @@ class EmpowerInstrumentMethod:
         self.use_sample_manager_oven = use_sample_manager_oven
 
     @property
-    def detector_method_list(self) -> List[Detector]:
+    def detector_method_list(self) -> list[Detector]:
         """A list of detector module methods in the instrument method."""
         return [
             module for module in self.module_method_list if isinstance(module, Detector)
@@ -210,6 +210,92 @@ class EmpowerInstrumentMethod:
                     f"Found nothing that could be a valve position in {valve_position}"
                 )
         self.solvent_handler_method.valve_position = valve_position
+
+    @property
+    def channels(self):
+        """The channels for the relevant detector(s) if any are present."""
+        channels = []
+        for module in self.detector_method_list:
+            channels.extend(module.channels)
+            try:
+                # get attr with default value None raises NoWavelengthError if not found
+                spectral_channel = module.spectral_channel
+            except NoWavelengthError:
+                # No spectral channel found for this detector, so set it to None
+                spectral_channel = None
+            if spectral_channel is not None:
+                channels.append(spectral_channel)
+        return channels
+
+    @channels.setter
+    def channels(self, channels: list[Channel]):
+        detector_channel_pairing = [
+            (detector, []) for detector in self.detector_method_list
+        ]
+        # Finding all the viable channel types in the output method
+        all_channel_types: tuple[Channel, ...] = tuple()
+        for detector in self.detector_method_list:
+            all_channel_types = all_channel_types + detector.channel_types
+        # For each input channel, assign it to a detector in the output method
+        for channel in channels:
+            # For each input channel, check whether it is a viable channel type in the
+            # output method. If not, convert it to something else.
+            original_channel_type = type(channel)
+            if not isinstance(channel, all_channel_types):
+                channel = channel.convert()
+                if not isinstance(channel, all_channel_types):
+                    raise ValueError(
+                        f"Channel type {original_channel_type} is not compatible with the output method, nor can it beconverted to any detector in the output method."  # noqa E501
+                    )
+            for detector, detector_channels in detector_channel_pairing:
+                # For each output detector, check whether the channel is viable. If it
+                # is, pair it with that detector and stop. If not, continue to the next
+                # detector
+                if isinstance(channel, detector.channel_types):
+                    detector_channels.append(channel)
+                    break
+                else:
+                    raise ValueError(
+                        f"Channel type {original_channel_type} does not match any detector in the output method."  # noqa E501
+                    )
+        for detector, detector_channels in detector_channel_pairing:
+            if len(detector_channels) > 0:
+                detector.channels = detector_channels
+
+    @property
+    def wavelengths(self):
+        """The wavelengths for the relevant detector(s) if any are present."""
+        wavelengths = []
+        for module in self.detector_method_list:
+            try:
+                wavelengths.extend(module.wavelengths)
+            except NoWavelengthError:
+                pass  # No wavelengths found for this detector
+            try:
+                wavelengths.extend(module.spectral_wavelengths)
+            except NoWavelengthError:
+                pass  # No spectral wavelengths found for this detector
+        return wavelengths
+
+    @wavelengths.setter
+    def wavelengths(self, wavelengths: list[str]):
+        if len(set(type(wavelength) for wavelength in wavelengths)) > 1:
+            raise ValueError("Only one type of wavelength can be set at a time.")
+        if not all(isinstance(wavelength, (str, int)) for wavelength in wavelengths):
+            raise NotImplementedError("Only single wavelength channels are settable.")
+        for module in self.detector_method_list:
+            try:
+                module.wavelengths = wavelengths
+                return  # Stops after finding the first detector with wavelengths
+            except NoWavelengthError:
+                pass
+        raise NoWavelengthError(
+            "No detector with appropriate channel definitions found."
+        )
+
+    @property
+    def channels_serialisable(self):
+        return [dict(channel) for channel in self.channels]
 
     def __str__(self):
         return (

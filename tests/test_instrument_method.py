@@ -2,6 +2,12 @@ import json
 import os
 import unittest
 
+from OptiHPLCHandler.empower_detector_module_method import (
+    FLRChannel,
+    PDAChannel,
+    PDASpectralChannel,
+    TUVChannel,
+)
 from OptiHPLCHandler.empower_instrument_method import EmpowerInstrumentMethod
 from OptiHPLCHandler.empower_module_method import SolventManagerMethod
 
@@ -186,6 +192,113 @@ class TestInstrumentMethod(unittest.TestCase):
         assert len(one_oven_copy.column_oven_method_list) != len(
             two_oven_copy.column_oven_method_list
         )
+
+    def test_get_channels_SpectralPDA(self):
+        # method.channels duplicates
+        method = EmpowerInstrumentMethod(self.example["response-BSM-PDA-CM-Acq.json"])
+        self.assertEqual(
+            method.channels,
+            [
+                PDASpectralChannel(
+                    start_wavelength="210",
+                    end_wavelength="400",
+                    resolution="Resolution_12",
+                )
+            ],
+        )
+
+    def test_get_channels_TUV(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        self.assertEqual(
+            method.channels,
+            [
+                TUVChannel(
+                    wavelength="254",
+                    datarate="SingleDataRate_20A",
+                    datamode="SingleMode_1A",
+                    filtertype="Filter_2",
+                    timeconstant="0.1",
+                    ratiominimum="0.0001",
+                    autozerowavelength="Az_3",
+                    autozeroinjectstart=True,
+                    autozeroeventorkey=True,
+                )
+            ],
+        )
+
+    def test_get_channels_FLR(self):
+        method = EmpowerInstrumentMethod(self.example["response-QSM-FLR-PDA-Acq.json"])
+        self.assertEqual(
+            method.channels,
+            [
+                FLRChannel(
+                    excitation="280",
+                    emission="348",
+                    channel_name="AcqFlrChAx280e348",
+                    enable=True,
+                    datamode="Emission_1F",
+                ),
+                PDAChannel(
+                    wavelength1="214",
+                    wavelength2="498",
+                    resolution="Resolution_48",
+                    datamode="DataModeAbsorbance_0",
+                    ratio2dminimumau="0.01",
+                ),
+            ],
+        )
+
+    def test_get_wavelengths_TUV(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        self.assertEqual(
+            method.wavelengths,
+            ["254"],
+        )
+
+    def test_get_wavelengths_FLR(self):
+        method = EmpowerInstrumentMethod(self.example["response-QSM-FLR-PDA-Acq.json"])
+        self.assertEqual(
+            method.wavelengths,
+            [{"Emission wavelength": "348", "Excitation wavelength": "280"}, "214"],
+        )
+
+    def test_get_wavelengths_PDA(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-PDA-CM-Acq.json"])
+        self.assertEqual(
+            method.wavelengths,
+            [
+                {"Start Wavelength": "210", "End Wavelength": "400"},
+            ],
+        )
+
+    def test_set_wavelengths_TUV(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-TUV-CM-Acq.json"])
+        method.wavelengths = ["669"]
+        self.assertEqual(
+            method.wavelengths,
+            ["669"],
+        )
+
+    def test_set_wavelengths_PDA_FLR(self):
+        method = EmpowerInstrumentMethod(self.example["response-QSM-FLR-PDA-Acq.json"])
+        method.wavelengths = [
+            "777",
+        ]
+        self.assertEqual(
+            method.wavelengths,
+            [
+                {"Emission wavelength": "348", "Excitation wavelength": "280"},
+                "777",
+            ],
+        )
+
+    def test_set_wavelengths_PDA_Spectral(self):
+        method = EmpowerInstrumentMethod(self.example["response-BSM-PDA-CM-Acq.json"])
+        # Try set the pda, check it raises a not implemented error
+        with self.assertRaises(NotImplementedError):
+            method.wavelengths = [
+                {"Start Wavelength": "210", "End Wavelength": "400"},
+            ]
 
 
 class TestColumnTemperature(unittest.TestCase):
