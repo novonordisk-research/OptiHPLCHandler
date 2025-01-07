@@ -7,6 +7,7 @@ from typing import NamedTuple, Optional, Union
 import keyring
 import requests
 from keyring.errors import NoKeyringError
+from urllib3.exceptions import InsecureRequestWarning
 
 logger = logging.getLogger(__name__)
 
@@ -94,18 +95,21 @@ class EmpowerConnection:
         if service is None:
             logger.debug("No service specified, getting service from Empower")
             try:
-                response = requests.get(
-                    self.address + "/authentication/db-service-list",
-                    headers=self.header,
-                    timeout=60,
-                    verify=False,  # This is a get request for something that will be
-                    # obvious if it is wrong when the user tries to log in, so we do not
-                    # need to verify the SSL certificate. If there are SSL issues, the
-                    # instantiation of EmpowerHandler will fail since the verify
-                    # parameter is not set explicitly when EmpowerHandler creates the
-                    # EmpowerConnection object, and since this call happens before the
-                    # user can set it. So we turn off verification here.
-                )
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=InsecureRequestWarning)
+                    response = requests.get(
+                        self.address + "/authentication/db-service-list",
+                        headers=self.header,
+                        timeout=60,
+                        verify=False,  # This is a get request for something that will
+                        # be obvious if it is wrong when the user tries to log in, so we
+                        # do not need to verify the SSL certificate. If there are SSL
+                        # issues, the instantiation of EmpowerHandler will fail since
+                        # the verify parameter is not set explicitly when EmpowerHandler
+                        # creates the EmpowerConnection object, and since this call
+                        # happens before the user can set it. So we turn off
+                        # verification here.
+                    )
             except requests.exceptions.Timeout as e:
                 raise requests.exceptions.Timeout(
                     f"Getting service from {self.address} timed out"
