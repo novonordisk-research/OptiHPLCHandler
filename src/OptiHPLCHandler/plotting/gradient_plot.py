@@ -22,8 +22,7 @@ def order_gradient_table(gradient_table: list[dict]) -> list[dict]:
     Orders the gradient table by Time.
     """
     return sorted(
-        gradient_table,
-        key=lambda entry: (entry["Time"] != "Initial", entry["Time"])
+        gradient_table, key=lambda entry: (entry["Time"] != "Initial", entry["Time"])
     )
 
 
