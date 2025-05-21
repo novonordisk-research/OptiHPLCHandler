@@ -27,14 +27,17 @@ def generate_condense_gradient_table(
         {key: str(value) for key, value in row.items()} for row in gradient_table
     ]  # convert all values to strings
 
+    # if method is isocratic, add new_method_time to the list
+    if len(gradient_table) == 1:
+        # make new row in gradient with new_method_time so run time can be determined
+        row = gradient_table[0].copy()
+        row["Time"] = str(new_method_time)
+        row["Curve"] = 6  # Curve numebr doesn't matter in this context as only 2 points
+        gradient_table.append(row)
+
     # get list of times in gradient table
     times = [float(x["Time"]) if x["Time"] != "Initial" else 0 for x in gradient_table]
 
-    # if method is isocratic, return the method, no need to condense
-    if len(times) == 1:
-        return method
-    
-    # if method is gradient, condense the gradient table
     final_time = times[-1]
     scale_factor = new_method_time / final_time
     times = [x * scale_factor for x in times]
