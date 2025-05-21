@@ -31,9 +31,13 @@ def generate_condense_gradient_table(
     times = [float(x["Time"]) if x["Time"] != "Initial" else 0 for x in gradient_table]
 
     # scale the times to the new final time
-    final_time = times[-1]
-    scale_factor = new_method_time / final_time
-    times = [x * scale_factor for x in times]
+    if len(times) == 1:
+        # Method is isocratic, only need to change run time in sampleset
+        times[0] = new_method_time
+    else:
+        final_time = times[-1]
+        scale_factor = new_method_time / final_time
+        times = [x * scale_factor for x in times]
 
     # replace 0 with 'Initial'
     times[0] = "Initial"
