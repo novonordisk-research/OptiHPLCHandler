@@ -2,11 +2,12 @@ import numpy as np
 import plotly.graph_objects as go
 
 
-def plot_gradient_table(x, y, fill=True) -> go.Figure:
+def plot_gradient_table(x, y, fill=True, fig=None) -> go.Figure:
     """
-    Plots a gradient table. Doesn't take into account curve.
+    Plots a gradient table.
     """
-    fig = go.Figure()
+    if fig is None:
+        fig = go.Figure()
 
     if fill:
         fig.add_trace(go.Scatter(x=x, y=y, mode="lines", name="Flow", fill="tozeroy"))
@@ -16,7 +17,22 @@ def plot_gradient_table(x, y, fill=True) -> go.Figure:
     return fig
 
 
+def order_gradient_table(gradient_table: list[dict]) -> list[dict]:
+    """
+    Orders the gradient table by Time.
+    """
+    return sorted(
+        gradient_table, key=lambda entry: (entry["Time"] != "Initial", entry["Time"])
+    )
+
+
 def standardise_gradient_table_types(gradient_table: list[dict]) -> list[dict]:
+    """
+    Standardises the types in the gradient table.
+    Converts all values to floats, except for Time and Curve, which are converted to int
+    """
+
+    gradient_table = order_gradient_table(gradient_table)
     for row in gradient_table:
         for key, value in row.items():
             if key == "Time":
