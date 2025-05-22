@@ -1,6 +1,10 @@
 import unittest
-from OptiHPLCHandler.plotting.gradient_plot import order_gradient_table
-from OptiHPLCHandler.plotting.gradient_plot import standardise_gradient_table_types
+
+from OptiHPLCHandler.plotting.gradient_plot import (
+    order_gradient_table,
+    standardise_gradient_table_types,
+)
+
 
 class TestOrderGradientTable(unittest.TestCase):
     def setUp(self):
@@ -23,7 +27,9 @@ class TestOrderGradientTable(unittest.TestCase):
         self.assertEqual([row["Time"] for row in ordered[1:]], [5.0, 10.0, 20.0])
 
     def test_order_gradient_table_handles_no_initial(self):
-        table = [row for row in self.unordered_gradient_table if row["Time"] != "Initial"]
+        table = [
+            row for row in self.unordered_gradient_table if row["Time"] != "Initial"
+        ]
         ordered = order_gradient_table(table)
         self.assertEqual([row["Time"] for row in ordered], [5.0, 10.0, 20.0])
 
@@ -40,6 +46,7 @@ class TestOrderGradientTable(unittest.TestCase):
         ordered = order_gradient_table(table)
         self.assertEqual(ordered[0]["Time"], "Initial")
         self.assertEqual([row["Time"] for row in ordered[1:]], [5.0, 10.0, 20.0])
+
 
 class TestStandardiseGradientTableTypes(unittest.TestCase):
     def test_standardises_types_with_initial(self):
@@ -95,7 +102,12 @@ class TestStandardiseGradientTableTypes(unittest.TestCase):
 
     def test_standardises_types_with_multiple_keys(self):
         table = [
-            {"Time": "Initial", "CompositionA": "10", "CompositionB": "20", "Curve": "Initial"},
+            {
+                "Time": "Initial",
+                "CompositionA": "10",
+                "CompositionB": "20",
+                "Curve": "Initial",
+            },
             {"Time": "5", "CompositionA": "15.5", "CompositionB": "25.5", "Curve": "1"},
         ]
         result = standardise_gradient_table_types(table)
@@ -107,6 +119,7 @@ class TestStandardiseGradientTableTypes(unittest.TestCase):
         self.assertEqual(result[1]["CompositionA"], 15.5)
         self.assertEqual(result[1]["CompositionB"], 25.5)
         self.assertEqual(result[1]["Curve"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
