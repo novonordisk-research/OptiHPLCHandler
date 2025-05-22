@@ -1,5 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
+
 from OptiHPLCHandler.plotting.gradient_utils import standardise_gradient_table_types
 
 
