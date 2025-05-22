@@ -1,6 +1,6 @@
 import unittest
 
-from OptiHPLCHandler.plotting.gradient_plot import (
+from OptiHPLCHandler.plotting.gradient_utils import (
     order_gradient_table,
     standardise_gradient_table_types,
 )
