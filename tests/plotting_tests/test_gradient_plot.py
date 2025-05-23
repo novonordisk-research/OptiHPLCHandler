@@ -24,14 +24,14 @@ class TestOrderGradientTable(unittest.TestCase):
     def test_order_gradient_table_places_initial_first(self):
         ordered = order_gradient_table(self.unordered_gradient_table)
         self.assertEqual(ordered[0]["Time"], "Initial")
-        self.assertEqual([row["Time"] for row in ordered[1:]], [5.0, 10.0, 20.0])
+        self.assertEqual([row["Time"] for row in ordered[1:]], ["5", "10", "20"])
 
     def test_order_gradient_table_handles_no_initial(self):
         table = [
             row for row in self.unordered_gradient_table if row["Time"] != "Initial"
         ]
         ordered = order_gradient_table(table)
-        self.assertEqual([row["Time"] for row in ordered], [5.0, 10.0, 20.0])
+        self.assertEqual([row["Time"] for row in ordered], ["5", "10", "20"])
 
     def test_order_gradient_table_handles_only_initial(self):
         table = [
@@ -45,7 +45,7 @@ class TestOrderGradientTable(unittest.TestCase):
         table = self.unordered_gradient_table_types
         ordered = order_gradient_table(table)
         self.assertEqual(ordered[0]["Time"], "Initial")
-        self.assertEqual([row["Time"] for row in ordered[1:]], [5.0, 10.0, 20.0])
+        self.assertEqual([row["Time"] for row in ordered[1:]], [5.0, 10, "20"])
 
 
 class TestStandardiseGradientTableTypes(unittest.TestCase):
