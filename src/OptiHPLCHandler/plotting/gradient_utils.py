@@ -2,25 +2,12 @@ def order_gradient_table(gradient_table: list[dict]) -> list[dict]:
     """
     Orders the gradient table by Time.
     """
-    initial_row = None
-    other_rows = []
-other_rows = [row for row in gradient_table if row["Time"] != "Initial"]
-other_rows.sort(key=lambda row: float(row["Time"])
-initial_row = [row for row in gradient_table if row["Time"] == "Initial"]
-result=[]
-result.extend(initial_row)
-result.extend(other_rows)
-        if row["Time"] == "Initial":
-            initial_row = row  # Save to add to start later
-        else:
-            other_rows.append(row)
-    for row in other_rows:
-        row["Time"] = float(row["Time"])  # ensure float
-    other_rows.sort(key=lambda entry: entry["Time"])  # order list by
+    other_rows = [row for row in gradient_table if row["Time"] != "Initial"]
+    other_rows.sort(key=lambda row: float(row["Time"]))
+    initial_row = [row for row in gradient_table if row["Time"] == "Initial"]
     result = []
-    if initial_row is not None:
-        result.append(initial_row)  # Adds initial to start of results list
-    result.extend(other_rows)  # Adds rest of the rows after
+    result.extend(initial_row)
+    result.extend(other_rows)
     return result
 
 
