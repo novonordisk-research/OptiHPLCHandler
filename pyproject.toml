@@ -37,7 +37,8 @@ dev = [
 ]
 test = [
   "pytest==8.0.0",
-  "pytest-cov==4.1.0"
+  "pytest-cov==4.1.0",
+  "numpy==1.26.1"
 ]
 lint = [
   "black[jupyter]==23.3.0",
