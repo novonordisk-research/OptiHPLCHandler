@@ -4,7 +4,12 @@ def order_gradient_table(gradient_table: list[dict]) -> list[dict]:
     """
     initial_row = None
     other_rows = []
-    for row in gradient_table:
+other_rows = [row for row in gradient_table if row["Time"] != "Initial"]
+other_rows.sort(key=lambda row: float(row["Time"])
+initial_row = [row for row in gradient_table if row["Time"] == "Initial"]
+result=[]
+result.extend(initial_row)
+result.extend(other_rows)
         if row["Time"] == "Initial":
             initial_row = row  # Save to add to start later
         else:
