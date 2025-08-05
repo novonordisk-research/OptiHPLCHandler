@@ -12,6 +12,8 @@ running samples. It will not feature changing data already in Empower.
 
 ## Using the package
 
+For full documentation, see [read the docs](https://optihplchandler.readthedocs.io/en/stable/)
+
 The package can be installed into a Python environment with the command
 
 ```
