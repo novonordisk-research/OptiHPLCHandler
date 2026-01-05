@@ -53,7 +53,7 @@ build = [
 ]
 doc = [
   "pylint==3.0.2",
-  "sphinx==7.2.6",
+  "sphinx==9.1.0",
 ]
 examples = [
   "python-dotenv==1.0.1",
