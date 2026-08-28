@@ -4,7 +4,14 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
-from .utils.default_data import BUILTIN_ALLOWED_VALUES, RUN_MODES, SYNONYMS
+from .utils.default_data import (
+    BUILTIN_ALLOWED_VALUES,
+    BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3,
+    FIELD_DATA_TYPE_MAP_LEGACY,
+    FIELD_DATA_TYPE_MAP_V3,
+    RUN_MODES,
+    SYNONYMS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +41,7 @@ class EmpowerHandler:
         username: Optional[str] = None,
         allow_login_without_context_manager: bool = False,
         auto_login: bool = True,
+        api_version: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -52,10 +60,18 @@ class EmpowerHandler:
         :param auto_login: If `True` (default), the handler will log in automatically
             when you start a context manager. If `False`, you will have to call
             `login()` manually. This will allow you to give the password manually.
+        :param api_version: Version of the Empower Web API to use. If not given
+            (default), the version starts at "1.0" and is automatically upgraded to the
+            newest version the server reports supporting once you log in. If given
+            explicitly, that version is used as-is and never auto-upgraded.
         """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
-            project=project, address=address, service=service, username=username
+            project=project,
+            address=address,
+            service=service,
+            username=username,
+            api_version=api_version,
         )
         self.allow_login_without_context_manager = allow_login_without_context_manager
         self.auto_login = auto_login
@@ -242,16 +258,14 @@ class EmpowerHandler:
                     {
                         "id": i,
                         "fields": [
-                            {
-                                "name": "Component",
-                                "value": component_name,
-                                "dataType": "String",
-                            },
-                            {
-                                "name": "Value",
-                                "value": component_value,
-                                "dataType": "Double",
-                            },
+                            self._set_data_type(
+                                {"name": "Component", "value": component_name},
+                                force_legacy=True,
+                            ),
+                            self._set_data_type(
+                                {"name": "Value", "value": component_value},
+                                force_legacy=True,
+                            ),
                         ],
                     }
                 )
@@ -262,30 +276,15 @@ class EmpowerHandler:
                 # be necessary, but we want to be able to use the handler by logging in
                 # elsewhere.
                 if key in self._samplesetline_enum_dict:
-                    if isinstance(value, dict):
-                        # If the value is a dict, it is already in the correct format.
-                        # We will unpack it for the check, and then pack it again.
-                        warnings.warn(
-                            "You are using a dict as a value for an enumerated field. "
-                            "This is deprecated and will be removed, "
-                            "please use the value directly.",
-                            DeprecationWarning,
-                        )
-                        value = value["member"]
-                    if (
-                        len(self._samplesetline_enum_dict[key])
-                        != 0  # Empty tuple means no validation
-                        and value not in self._samplesetline_enum_dict[key]
-                    ):
-                        raise ValueError(
-                            f"Value {value} not in enumerated values for field {key}. "
-                            f"Available values: {self._samplesetline_enum_dict[key]}"
-                        )
-                    value = {"member": value}
-                logger.debug("Adding field %s with value %s to sample.", key, value)
-                field_list.append(self._set_data_type({"name": key, "value": value}))
+                    field = self._build_enum_field(key, value)
+                else:
+                    field = self._set_data_type({"name": key, "value": value})
+                logger.debug(
+                    "Adding field %s with value %s to sample.", key, field["value"]
+                )
+                field_list.append(field)
             empower_sample_list.append(
-                {"components": component_list, "id": num, "fields": field_list}
+                self._build_sample_set_line(num, component_list, field_list)
             )
         sampleset_object["sampleSetLines"] = empower_sample_list
         endpoint = "project/methods/sample-set-method"
@@ -551,21 +550,73 @@ class EmpowerHandler:
                 logger.debug("Logging out of session %s", session["id"])
                 connection.logout()
 
-    def _set_data_type(self, field: Mapping[str, Any]):
-        """Find and set the data type of the field, based on the type of `value`"""
-        data_type_dict = {
-            str: "String",
-            int: "Double",
-            float: "Double",
-            dict: "Enumerator",
-        }
-        for key, value in data_type_dict.items():
-            if isinstance(field["value"], key):
+    def _build_enum_field(self, key: str, value: Any) -> dict:
+        """
+        Validate an enumerated SampleSetLine field's value and build its
+        RecordFieldRequest dict. v1/v2 wraps the value as {"member": value} with
+        dataType "Enumerator"; v3 sends the raw value with dataType "Enum".
+        """
+        if isinstance(value, dict):
+            # If the value is a dict, it is already in the correct format.
+            # We will unpack it for the check, and then pack it again.
+            warnings.warn(
+                "You are using a dict as a value for an enumerated field. "
+                "This is deprecated and will be removed, "
+                "please use the value directly.",
+                DeprecationWarning,
+            )
+            value = value["member"]
+        if (
+            len(self._samplesetline_enum_dict[key])
+            != 0  # Empty tuple means no validation
+            and value not in self._samplesetline_enum_dict[key]
+        ):
+            raise ValueError(
+                f"Value {value} not in enumerated values for field {key}. "
+                f"Available values: {self._samplesetline_enum_dict[key]}"
+            )
+        if self.connection.api_version == "3.0":
+            return {"name": key, "value": value, "dataType": "Enum"}
+        return {"name": key, "value": {"member": value}, "dataType": "Enumerator"}
+
+    def _build_sample_set_line(
+        self, num: int, component_list: List[dict], field_list: List[dict]
+    ) -> dict:
+        """Build a SampleSetLineRequest, using the row/insertMode contract on v3."""
+        if self.connection.api_version == "3.0":
+            return {
+                "components": component_list,
+                "row": num + 1,  # v3 rows are 1-indexed, unlike legacy "id"
+                "fields": field_list,
+                "insertMode": "Append",
+            }
+        return {"components": component_list, "id": num, "fields": field_list}
+
+    def _set_data_type(self, field: Mapping[str, Any], force_legacy: bool = False):
+        """
+        Find and set the data type of the field, based on the type of `value`.
+
+        :param force_legacy: Use the legacy (pre-v3) data type names even on v3. This is
+            needed for `Components` sub-fields, which keep using the legacy
+            `RecordFieldRequest` contract on v3.
+        """
+        use_v3 = self.connection.api_version == "3.0" and not force_legacy
+        if use_v3 and field["name"] in BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3:
+            # These builtin fields have a fixed Empower dataType that can't be told
+            # apart from the Python type of the value (e.g. RunTime is always "Real",
+            # even given as a whole number, which Python can't distinguish from a true
+            # Integer).
+            field["dataType"] = BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3[field["name"]]
+            return field
+        type_map = FIELD_DATA_TYPE_MAP_V3 if use_v3 else FIELD_DATA_TYPE_MAP_LEGACY
+        for value_type, data_type in type_map:
+            if isinstance(field["value"], value_type):
                 logger.debug(
-                    "Setting data type of field %s to %s.", field["name"], value
+                    "Setting data type of field %s to %s.", field["name"], data_type
                 )
-                field["dataType"] = value
-        if "dataType" not in field:
+                field["dataType"] = data_type
+                break
+        else:
             raise ValueError(
                 "No data type found for field "
                 f"{field['name']} with value {field['value']}."

@@ -438,3 +438,73 @@ class TestEmpowerConnection(unittest.TestCase):
         assert isinstance(response, EmpowerResponse)
         assert response.content[0]["test_key"] == "test_value"
         assert response.message == "test_message"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_negotiate_api_version_picks_highest_known(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "results": [{"token": "test_token", "id": "test_id"}]
+        }
+        mock_response.status_code = 200
+        mock_response.headers = {"api-supported-versions": "1.0,2.0,3.0"}
+        mock_requests.post.return_value = mock_response
+        connection = EmpowerConnection(
+            project="test_project",
+            address="https://test_address/",
+            service="test_service",
+        )
+        assert connection.api_version == "1.0"
+        connection.login(username="test_username", password="test_password")
+        assert connection.api_version == "3.0"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_negotiate_api_version_limited_by_server(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "results": [{"token": "test_token", "id": "test_id"}]
+        }
+        mock_response.status_code = 200
+        mock_response.headers = {"api-supported-versions": "1.0,2.0"}
+        mock_requests.post.return_value = mock_response
+        connection = EmpowerConnection(
+            project="test_project",
+            address="https://test_address/",
+            service="test_service",
+        )
+        connection.login(username="test_username", password="test_password")
+        assert connection.api_version == "2.0"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_negotiate_api_version_no_header(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "results": [{"token": "test_token", "id": "test_id"}]
+        }
+        mock_response.status_code = 200
+        mock_response.headers = {}
+        mock_requests.post.return_value = mock_response
+        connection = EmpowerConnection(
+            project="test_project",
+            address="https://test_address/",
+            service="test_service",
+        )
+        connection.login(username="test_username", password="test_password")
+        assert connection.api_version == "1.0"
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_negotiate_api_version_respects_explicit_pin(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "data": {"token": "test_token", "id": "test_id"}
+        }
+        mock_response.status_code = 200
+        mock_response.headers = {"api-supported-versions": "1.0,2.0,3.0"}
+        mock_requests.post.return_value = mock_response
+        connection = EmpowerConnection(
+            project="test_project",
+            address="https://test_address/",
+            service="test_service",
+            api_version="2.0",
+        )
+        connection.login(username="test_username", password="test_password")
+        assert connection.api_version == "2.0"
