@@ -845,13 +845,48 @@ class TestSampleSetLineFields(unittest.TestCase):
         self.assertIn(
             {
                 "name": "EnumField",
-                "value": {"member": "Value1"},
+                "value": "Value1",
                 "dataType": "Enum",
             },
             posted_sampleset_fields,
         )
 
+    def test_enum_deprecated_dict_value_v3(self):
+        self.handler.connection.api_version = "3.0"
+        with self.assertWarns(DeprecationWarning):
+            self.handler.PostExperiment(
+                sample_set_method_name="test",
+                sample_list=[{"EnumField": {"member": "Value1"}}],
+                plates={},
+            )
+        posted_sampleset_fields = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ][0]["fields"]
+        self.assertIn(
+            {"name": "EnumField", "value": "Value1", "dataType": "Enum"},
+            posted_sampleset_fields,
+        )
+
     def test_explicitly_setting_allowed_values(self):
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "EnumField", ("Value1", "Value2")
+        )
+        sample_list_without_failed_field = [{"EnumField": "Value1"}]
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=sample_list_without_failed_field,
+            plates={},
+        )
+        sample_list_with_failed_field = [{"EnumField": "Value3"}]
+        with self.assertRaises(ValueError):
+            self.handler.PostExperiment(
+                sample_set_method_name="test",
+                sample_list=sample_list_with_failed_field,
+                plates={},
+            )
+
+    def test_explicitly_setting_allowed_values_v3(self):
+        self.handler.connection.api_version = "3.0"
         self.handler.SetAllowedSamplesetLineFieldValues(
             "EnumField", ("Value1", "Value2")
         )

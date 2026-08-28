@@ -273,28 +273,13 @@ class EmpowerHandler:
                 # be necessary, but we want to be able to use the handler by logging in
                 # elsewhere.
                 if key in self._samplesetline_enum_dict:
-                    if isinstance(value, dict):
-                        # If the value is a dict, it is already in the correct format.
-                        # We will unpack it for the check, and then pack it again.
-                        warnings.warn(
-                            "You are using a dict as a value for an enumerated field. "
-                            "This is deprecated and will be removed, "
-                            "please use the value directly.",
-                            DeprecationWarning,
-                        )
-                        value = value["member"]
-                    if (
-                        len(self._samplesetline_enum_dict[key])
-                        != 0  # Empty tuple means no validation
-                        and value not in self._samplesetline_enum_dict[key]
-                    ):
-                        raise ValueError(
-                            f"Value {value} not in enumerated values for field {key}. "
-                            f"Available values: {self._samplesetline_enum_dict[key]}"
-                        )
-                    value = {"member": value}
-                logger.debug("Adding field %s with value %s to sample.", key, value)
-                field_list.append(self._set_data_type({"name": key, "value": value}))
+                    field = self._build_enum_field(key, value)
+                else:
+                    field = self._set_data_type({"name": key, "value": value})
+                logger.debug(
+                    "Adding field %s with value %s to sample.", key, field["value"]
+                )
+                field_list.append(field)
             empower_sample_list.append(
                 self._build_sample_set_line(num, component_list, field_list)
             )
@@ -561,6 +546,35 @@ class EmpowerHandler:
                 connection.session_id = session["id"]
                 logger.debug("Logging out of session %s", session["id"])
                 connection.logout()
+
+    def _build_enum_field(self, key: str, value: Any) -> dict:
+        """
+        Validate an enumerated SampleSetLine field's value and build its
+        RecordFieldRequest dict. v1/v2 wraps the value as {"member": value} with
+        dataType "Enumerator"; v3 sends the raw value with dataType "Enum".
+        """
+        if isinstance(value, dict):
+            # If the value is a dict, it is already in the correct format.
+            # We will unpack it for the check, and then pack it again.
+            warnings.warn(
+                "You are using a dict as a value for an enumerated field. "
+                "This is deprecated and will be removed, "
+                "please use the value directly.",
+                DeprecationWarning,
+            )
+            value = value["member"]
+        if (
+            len(self._samplesetline_enum_dict[key])
+            != 0  # Empty tuple means no validation
+            and value not in self._samplesetline_enum_dict[key]
+        ):
+            raise ValueError(
+                f"Value {value} not in enumerated values for field {key}. "
+                f"Available values: {self._samplesetline_enum_dict[key]}"
+            )
+        if self.connection.api_version == "3.0":
+            return {"name": key, "value": value, "dataType": "Enum"}
+        return {"name": key, "value": {"member": value}, "dataType": "Enumerator"}
 
     def _build_sample_set_line(
         self, num: int, component_list: List[dict], field_list: List[dict]
