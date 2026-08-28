@@ -383,11 +383,11 @@ class TestSampleList(unittest.TestCase):
         ]
         first_line = sample_set_lines[0]
         assert "id" not in first_line
-        assert first_line["row"] == 0
+        assert first_line["row"] == 1
         assert first_line["insertMode"] == "Append"
         fields_by_name = {field["name"]: field for field in first_line["fields"]}
         assert fields_by_name["SampleName"]["dataType"] == "Text"
-        assert fields_by_name["InjVol"]["dataType"] == "Integer"
+        assert fields_by_name["InjVol"]["dataType"] == "Real"
         assert fields_by_name["test_int_field"]["dataType"] == "Integer"
         assert fields_by_name["test_float_field"]["dataType"] == "Real"
         assert fields_by_name["test_bool_field"]["dataType"] == "Boolean"
@@ -395,9 +395,44 @@ class TestSampleList(unittest.TestCase):
         assert {
             "name": "Component",
             "value": "test_component_name_1",
-            "dataType": "Text",
+            "dataType": "String",
         } in component_fields
-        assert {"name": "Value", "value": 1, "dataType": "Integer"} in component_fields
+        assert {"name": "Value", "value": 1, "dataType": "Double"} in component_fields
+
+    def test_post_sample_list_v3_builtin_numeric_fields(self):
+        """
+        Builtin fields like RunTime are always "Real" in Empower, even when given as a
+        whole number, which Python can't tell apart from a true Integer field.
+        """
+        self.handler.connection.api_version = "3.0"
+        sample_list = [
+            {
+                "SampleName": "test_sample_name_1",
+                "RunTime": 10,
+                "Dilution": 1,
+                "DataStart": 0,
+                "NextInjDelay": 0,
+                "SampleWeight": 1,
+                "NumOfInjs": 1,
+                "OriginalVialId": 0,
+            },
+        ]
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=sample_list,
+            plates={},
+        )
+        first_line = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ][0]
+        fields_by_name = {field["name"]: field for field in first_line["fields"]}
+        assert fields_by_name["RunTime"]["dataType"] == "Real"
+        assert fields_by_name["Dilution"]["dataType"] == "Real"
+        assert fields_by_name["DataStart"]["dataType"] == "Real"
+        assert fields_by_name["NextInjDelay"]["dataType"] == "Real"
+        assert fields_by_name["SampleWeight"]["dataType"] == "Real"
+        assert fields_by_name["NumOfInjs"]["dataType"] == "Integer"
+        assert fields_by_name["OriginalVialId"]["dataType"] == "Integer"
 
 
 class TestGetMethods(unittest.TestCase):

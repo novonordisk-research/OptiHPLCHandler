@@ -6,6 +6,7 @@ from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
 from .utils.default_data import (
     BUILTIN_ALLOWED_VALUES,
+    BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3,
     FIELD_DATA_TYPE_MAP_LEGACY,
     FIELD_DATA_TYPE_MAP_V3,
     RUN_MODES,
@@ -258,10 +259,12 @@ class EmpowerHandler:
                         "id": i,
                         "fields": [
                             self._set_data_type(
-                                {"name": "Component", "value": component_name}
+                                {"name": "Component", "value": component_name},
+                                force_legacy=True,
                             ),
                             self._set_data_type(
-                                {"name": "Value", "value": component_value}
+                                {"name": "Value", "value": component_value},
+                                force_legacy=True,
                             ),
                         ],
                     }
@@ -583,19 +586,29 @@ class EmpowerHandler:
         if self.connection.api_version == "3.0":
             return {
                 "components": component_list,
-                "row": num,
+                "row": num + 1,  # v3 rows are 1-indexed, unlike legacy "id"
                 "fields": field_list,
                 "insertMode": "Append",
             }
         return {"components": component_list, "id": num, "fields": field_list}
 
-    def _set_data_type(self, field: Mapping[str, Any]):
-        """Find and set the data type of the field, based on the type of `value`"""
-        type_map = (
-            FIELD_DATA_TYPE_MAP_V3
-            if self.connection.api_version == "3.0"
-            else FIELD_DATA_TYPE_MAP_LEGACY
-        )
+    def _set_data_type(self, field: Mapping[str, Any], force_legacy: bool = False):
+        """
+        Find and set the data type of the field, based on the type of `value`.
+
+        :param force_legacy: Use the legacy (pre-v3) data type names even on v3. This is
+            needed for `Components` sub-fields, which keep using the legacy
+            `RecordFieldRequest` contract on v3.
+        """
+        use_v3 = self.connection.api_version == "3.0" and not force_legacy
+        if use_v3 and field["name"] in BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3:
+            # These builtin fields have a fixed Empower dataType that can't be told
+            # apart from the Python type of the value (e.g. RunTime is always "Real",
+            # even given as a whole number, which Python can't distinguish from a true
+            # Integer).
+            field["dataType"] = BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3[field["name"]]
+            return field
+        type_map = FIELD_DATA_TYPE_MAP_V3 if use_v3 else FIELD_DATA_TYPE_MAP_LEGACY
         for value_type, data_type in type_map:
             if isinstance(field["value"], value_type):
                 logger.debug(

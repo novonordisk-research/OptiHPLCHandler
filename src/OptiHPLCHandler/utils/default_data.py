@@ -125,6 +125,23 @@ FIELD_DATA_TYPE_MAP_V3: tuple = (
     (dict, "Enum"),
 )
 
+# Builtin SampleSetLine fields whose Empower dataType is fixed and can't be inferred
+# from the Python type of the value (e.g. `RunTime` is always "Real" server-side, even
+# when given as a whole number, so a plain Python `int` would otherwise be misread as
+# "Integer").
+BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3: Mapping[str, str] = MappingProxyType(
+    {
+        "OriginalVialId": "Integer",
+        "NumOfInjs": "Integer",
+        "Dilution": "Real",
+        "RunTime": "Real",
+        "DataStart": "Real",
+        "NextInjDelay": "Real",
+        "InjVol": "Real",
+        "SampleWeight": "Real",
+    }
+)
+
 SYNONYMS: Mapping[str, str] = MappingProxyType(
     {
         "Method": "MethodSetOrReportMethod",
