@@ -11,6 +11,9 @@ from urllib3.exceptions import InsecureRequestWarning
 
 logger = logging.getLogger(__name__)
 
+KNOWN_API_VERSIONS = ("1.0", "2.0", "3.0")
+# The API versions this SDK knows how to build requests for, oldest first.
+
 
 class EmpowerResponse(NamedTuple):
     """
@@ -62,7 +65,7 @@ class EmpowerConnection:
         project: Optional[str] = None,
         service: Optional[str] = None,
         verify: Union[bool, str] = True,
-        api_version: str = "1.0",
+        api_version: Optional[str] = None,
     ) -> None:
         """
         Initialize the EmpowerConnection.
@@ -78,7 +81,10 @@ class EmpowerConnection:
             is done when connecting via HTTPS. If it is a string, it should be the
             path to the CA_BUNDLE file or directory with certificates of trusted CAs-
             If true, the built-in list of trusted CAs will be used.
-        :param api_version: The version of the API to use. Default is "1.0".
+        :param api_version: The version of the API to use. If None (default), the
+            connection starts at "1.0" and automatically upgrades to the newest version
+            reported as supported by the server in the login response, once logged in.
+            If given explicitly, that version is used as-is and never auto-upgraded.
         """
         if not address:
             raise ValueError(
@@ -91,7 +97,12 @@ class EmpowerConnection:
             self.username = username
         self.token = None
         self.verify = verify
-        self.api_version = api_version
+        if api_version is None:
+            self.api_version = "1.0"
+            self._api_version_pinned = False
+        else:
+            self.api_version = api_version
+            self._api_version_pinned = True
         if service is None:
             logger.debug("No service specified, getting service from Empower")
             try:
@@ -180,6 +191,34 @@ class EmpowerConnection:
             self.token = response.json()[self.content_key]["token"]
             self.session_id = response.json()[self.content_key]["id"]
         logger.debug("Login successful, keeping token")
+        self._negotiate_api_version(response)
+
+    def _negotiate_api_version(self, response: requests.Response) -> None:
+        """
+        Upgrade `api_version` to the newest version both this SDK and the server know
+        about, based on the (undocumented) "api-supported-versions" response header.
+
+        Does nothing if `api_version` was explicitly given when the connection was
+        created, or if the header is missing or unparseable.
+        """
+        if self._api_version_pinned:
+            return
+        try:
+            header_value = response.headers.get("api-supported-versions", "")
+            supported = [version.strip() for version in header_value.split(",")]
+            candidates = [
+                version for version in supported if version in KNOWN_API_VERSIONS
+            ]
+            if candidates:
+                negotiated = max(candidates, key=float)
+                logger.debug(
+                    "Negotiated api_version %s from supported versions %s",
+                    negotiated,
+                    supported,
+                )
+                self.api_version = negotiated
+        except Exception:
+            logger.debug("Could not parse api-supported-versions header", exc_info=True)
 
     def logout(self) -> None:
         """Log out of Empower."""

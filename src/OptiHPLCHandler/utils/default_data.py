@@ -107,6 +107,24 @@ BUILTIN_ALLOWED_VALUES: Mapping[str, tuple[str, ...]] = MappingProxyType(
     }
 )
 
+# The dataType string to use for a SampleSetLine field's RecordFieldRequest, based on
+# the Python type of its value. Ordered: first matching type wins.
+FIELD_DATA_TYPE_MAP_LEGACY: tuple = (
+    (str, "String"),
+    (int, "Double"),
+    (float, "Double"),
+    (dict, "Enumerator"),
+)
+# Empower Web API v3 splits "Double" into "Integer"/"Real" and adds "Boolean". "bool"
+# must precede "int" since bool is a subclass of int.
+FIELD_DATA_TYPE_MAP_V3: tuple = (
+    (bool, "Boolean"),
+    (int, "Integer"),
+    (float, "Real"),
+    (str, "Text"),
+    (dict, "Enum"),
+)
+
 SYNONYMS: Mapping[str, str] = MappingProxyType(
     {
         "Method": "MethodSetOrReportMethod",

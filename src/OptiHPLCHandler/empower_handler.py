@@ -4,7 +4,13 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
-from .utils.default_data import BUILTIN_ALLOWED_VALUES, RUN_MODES, SYNONYMS
+from .utils.default_data import (
+    BUILTIN_ALLOWED_VALUES,
+    FIELD_DATA_TYPE_MAP_LEGACY,
+    FIELD_DATA_TYPE_MAP_V3,
+    RUN_MODES,
+    SYNONYMS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +40,7 @@ class EmpowerHandler:
         username: Optional[str] = None,
         allow_login_without_context_manager: bool = False,
         auto_login: bool = True,
+        api_version: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -52,10 +59,18 @@ class EmpowerHandler:
         :param auto_login: If `True` (default), the handler will log in automatically
             when you start a context manager. If `False`, you will have to call
             `login()` manually. This will allow you to give the password manually.
+        :param api_version: Version of the Empower Web API to use. If not given
+            (default), the version starts at "1.0" and is automatically upgraded to the
+            newest version the server reports supporting once you log in. If given
+            explicitly, that version is used as-is and never auto-upgraded.
         """
         super().__init__(**kwargs)
         self.connection = EmpowerConnection(
-            project=project, address=address, service=service, username=username
+            project=project,
+            address=address,
+            service=service,
+            username=username,
+            api_version=api_version,
         )
         self.allow_login_without_context_manager = allow_login_without_context_manager
         self.auto_login = auto_login
@@ -242,16 +257,12 @@ class EmpowerHandler:
                     {
                         "id": i,
                         "fields": [
-                            {
-                                "name": "Component",
-                                "value": component_name,
-                                "dataType": "String",
-                            },
-                            {
-                                "name": "Value",
-                                "value": component_value,
-                                "dataType": "Double",
-                            },
+                            self._set_data_type(
+                                {"name": "Component", "value": component_name}
+                            ),
+                            self._set_data_type(
+                                {"name": "Value", "value": component_value}
+                            ),
                         ],
                     }
                 )
@@ -285,7 +296,7 @@ class EmpowerHandler:
                 logger.debug("Adding field %s with value %s to sample.", key, value)
                 field_list.append(self._set_data_type({"name": key, "value": value}))
             empower_sample_list.append(
-                {"components": component_list, "id": num, "fields": field_list}
+                self._build_sample_set_line(num, component_list, field_list)
             )
         sampleset_object["sampleSetLines"] = empower_sample_list
         endpoint = "project/methods/sample-set-method"
@@ -551,21 +562,34 @@ class EmpowerHandler:
                 logger.debug("Logging out of session %s", session["id"])
                 connection.logout()
 
+    def _build_sample_set_line(
+        self, num: int, component_list: List[dict], field_list: List[dict]
+    ) -> dict:
+        """Build a SampleSetLineRequest, using the row/insertMode contract on v3."""
+        if self.connection.api_version == "3.0":
+            return {
+                "components": component_list,
+                "row": num,
+                "fields": field_list,
+                "insertMode": "Append",
+            }
+        return {"components": component_list, "id": num, "fields": field_list}
+
     def _set_data_type(self, field: Mapping[str, Any]):
         """Find and set the data type of the field, based on the type of `value`"""
-        data_type_dict = {
-            str: "String",
-            int: "Double",
-            float: "Double",
-            dict: "Enumerator",
-        }
-        for key, value in data_type_dict.items():
-            if isinstance(field["value"], key):
+        type_map = (
+            FIELD_DATA_TYPE_MAP_V3
+            if self.connection.api_version == "3.0"
+            else FIELD_DATA_TYPE_MAP_LEGACY
+        )
+        for value_type, data_type in type_map:
+            if isinstance(field["value"], value_type):
                 logger.debug(
-                    "Setting data type of field %s to %s.", field["name"], value
+                    "Setting data type of field %s to %s.", field["name"], data_type
                 )
-                field["dataType"] = value
-        if "dataType" not in field:
+                field["dataType"] = data_type
+                break
+        else:
             raise ValueError(
                 "No data type found for field "
                 f"{field['name']} with value {field['value']}."
