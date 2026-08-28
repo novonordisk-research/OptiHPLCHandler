@@ -137,6 +137,15 @@ class TestEmpowerHandler(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.handler.address = "test_address"
 
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def test_api_version_forwarded_to_connection(self, mock_connection):
+        EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+            api_version="3.0",
+        )
+        assert mock_connection.call_args[1]["api_version"] == "3.0"
+
 
 class TestSampleList(unittest.TestCase):
     # We need to patch the EmpowerConnection class, because it is used in the
@@ -347,6 +356,48 @@ class TestSampleList(unittest.TestCase):
             "value": "test_custom_field_value",
             "dataType": "String",
         } in sample_set_lines[0]["fields"]
+
+    def test_post_sample_list_v3(self):
+        self.handler.connection.api_version = "3.0"
+        component_dict = {"test_component_name_1": 1}
+        sample_list = [
+            {
+                "Method": "test_method_1",
+                "SamplePos": "test_sample_pos_1",
+                "SampleName": "test_sample_name_1",
+                "InjectionVolume": 1,
+                "test_int_field": 2,
+                "test_float_field": 2.3,
+                "test_bool_field": True,
+                "Components": component_dict,
+            },
+        ]
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=sample_list,
+            plates={},
+            audit_trail_message="test_audit_trail_message",
+        )
+        sample_set_lines = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ]
+        first_line = sample_set_lines[0]
+        assert "id" not in first_line
+        assert first_line["row"] == 0
+        assert first_line["insertMode"] == "Append"
+        fields_by_name = {field["name"]: field for field in first_line["fields"]}
+        assert fields_by_name["SampleName"]["dataType"] == "Text"
+        assert fields_by_name["InjVol"]["dataType"] == "Integer"
+        assert fields_by_name["test_int_field"]["dataType"] == "Integer"
+        assert fields_by_name["test_float_field"]["dataType"] == "Real"
+        assert fields_by_name["test_bool_field"]["dataType"] == "Boolean"
+        component_fields = first_line["components"][0]["fields"]
+        assert {
+            "name": "Component",
+            "value": "test_component_name_1",
+            "dataType": "Text",
+        } in component_fields
+        assert {"name": "Value", "value": 1, "dataType": "Integer"} in component_fields
 
 
 class TestGetMethods(unittest.TestCase):
@@ -777,6 +828,25 @@ class TestSampleSetLineFields(unittest.TestCase):
                 "name": "EnumField",
                 "value": {"member": "Value1"},
                 "dataType": "Enumerator",
+            },
+            posted_sampleset_fields,
+        )
+
+    def test_enum_v3(self):
+        self.handler.connection.api_version = "3.0"
+        self.handler.PostExperiment(
+            sample_set_method_name="test",
+            sample_list=[{"EnumField": "Value1"}],
+            plates={},
+        )
+        posted_sampleset_fields = self.handler.connection.post.call_args[1]["body"][
+            "sampleSetLines"
+        ][0]["fields"]
+        self.assertIn(
+            {
+                "name": "EnumField",
+                "value": {"member": "Value1"},
+                "dataType": "Enum",
             },
             posted_sampleset_fields,
         )
