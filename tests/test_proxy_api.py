@@ -395,9 +395,9 @@ class TestSampleList(unittest.TestCase):
         assert {
             "name": "Component",
             "value": "test_component_name_1",
-            "dataType": "String",
+            "dataType": "Text",
         } in component_fields
-        assert {"name": "Value", "value": 1, "dataType": "Double"} in component_fields
+        assert {"name": "Value", "value": 1, "dataType": "Integer"} in component_fields
 
     def test_post_sample_list_v3_builtin_numeric_fields(self):
         """
