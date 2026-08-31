@@ -29,7 +29,7 @@ jobs:
             pyreverse $file -A -S --output html --output-directory docs/class_diagrams
             mv docs/class_diagrams/classes.html _build/images/$(basename $file).html
           done
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: class_diagrams
           path: docs/class_diagrams
