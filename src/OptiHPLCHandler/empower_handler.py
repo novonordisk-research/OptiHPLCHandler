@@ -259,12 +259,10 @@ class EmpowerHandler:
                         "id": i,
                         "fields": [
                             self._set_data_type(
-                                {"name": "Component", "value": component_name},
-                                force_legacy=True,
+                                {"name": "Component", "value": component_name}
                             ),
                             self._set_data_type(
-                                {"name": "Value", "value": component_value},
-                                force_legacy=True,
+                                {"name": "Value", "value": component_value}
                             ),
                         ],
                     }
@@ -592,15 +590,9 @@ class EmpowerHandler:
             }
         return {"components": component_list, "id": num, "fields": field_list}
 
-    def _set_data_type(self, field: Mapping[str, Any], force_legacy: bool = False):
-        """
-        Find and set the data type of the field, based on the type of `value`.
-
-        :param force_legacy: Use the legacy (pre-v3) data type names even on v3. This is
-            needed for `Components` sub-fields, which keep using the legacy
-            `RecordFieldRequest` contract on v3.
-        """
-        use_v3 = self.connection.api_version == "3.0" and not force_legacy
+    def _set_data_type(self, field: Mapping[str, Any]):
+        """Find and set the data type of the field, based on the type of `value`."""
+        use_v3 = self.connection.api_version == "3.0"
         if use_v3 and field["name"] in BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3:
             # These builtin fields have a fixed Empower dataType that can't be told
             # apart from the Python type of the value (e.g. RunTime is always "Real",
