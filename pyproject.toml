@@ -38,9 +38,7 @@ test = [
   "numpy>=2.5.3",
 ]
 lint = [
-  "black[jupyter]==23.3.0",
-  "flake8==7.0.0",
-  "isort==5.12.0",
+  "ruff>=0.16.10",
 ]
 release = [
   "bumpver==2023.1125",
@@ -85,9 +83,11 @@ omit = [
 ]
 
 
-[tool.isort]
-profile = "black"
-skip = [".gitignore",".git",".env","venv","env","ENV","env.bak","venv.bak"]
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "S", "B"]
 
 [tool.pytest.ini_options]
 pythonpath = [
