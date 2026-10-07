@@ -2,7 +2,7 @@ import getpass
 import logging
 import time
 import warnings
-from typing import NamedTuple, Optional, Union
+from typing import NamedTuple
 
 import keyring
 import requests
@@ -27,7 +27,7 @@ class EmpowerResponse(NamedTuple):
     :ivar message_from_api: Whether the message was received from the API.
     """
 
-    content: Union[dict, list]
+    content: dict | list
     message: str
     content_from_api: bool
     message_from_api: bool
@@ -61,11 +61,11 @@ class EmpowerConnection:
     def __init__(
         self,
         address: str,
-        username: Optional[str] = None,
-        project: Optional[str] = None,
-        service: Optional[str] = None,
-        verify: Union[bool, str] = True,
-        api_version: Optional[str] = None,
+        username: str | None = None,
+        project: str | None = None,
+        service: str | None = None,
+        verify: bool | str = True,
+        api_version: str | None = None,
     ) -> None:
         """
         Initialize the EmpowerConnection.
@@ -143,9 +143,7 @@ class EmpowerConnection:
             return "results"
         return "data"
 
-    def login(
-        self, username: Optional[str] = None, password: Optional[str] = None
-    ) -> None:
+    def login(self, username: str | None = None, password: str | None = None) -> None:
         """
         Log into Empower.
 
@@ -248,7 +246,7 @@ class EmpowerConnection:
         logger.debug("Logout successful")
 
     def _requests_wrapper(
-        self, method: str, endpoint: str, body: Optional[dict], timeout: int
+        self, method: str, endpoint: str, body: dict | None, timeout: int
     ) -> EmpowerResponse:
         """
         Wrapper for requests.
@@ -268,7 +266,7 @@ class EmpowerConnection:
             header: dict,
             body: dict,
             timeout: int,
-            verify: Union[bool, str],
+            verify: bool | str,
         ) -> requests.Response:
             try:
                 return requests.request(
@@ -348,7 +346,7 @@ class EmpowerConnection:
             message_from_api=message_from_api,
         )
 
-    def get(self, endpoint: str, timeout: Optional[int] = None) -> EmpowerResponse:
+    def get(self, endpoint: str, timeout: int | None = None) -> EmpowerResponse:
         """
         Get data from Empower.
 
@@ -374,7 +372,7 @@ class EmpowerConnection:
         return response
 
     def post(
-        self, endpoint: str, body: dict, timeout: Optional[int] = None
+        self, endpoint: str, body: dict, timeout: int | None = None
     ) -> EmpowerResponse:
         """
         Post data to Empower.
@@ -440,7 +438,7 @@ class EmpowerConnection:
         """
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError as error:
+        except requests.exceptions.HTTPError:
             body = response.json()
             if "message" in body and "id" in body:
                 error = requests.exceptions.HTTPError(

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
 
 
@@ -98,7 +96,7 @@ def determine_last_high_flow_time(gradient_table: list[dict]) -> float:
     return last_high_flow_time
 
 
-def determine_strong_eluent(gradient_table: list[dict]) -> Optional[str]:
+def determine_strong_eluent(gradient_table: list[dict]) -> str | None:
     """
     Determine the strong eluent in the gradient table. Assuming there is only one
     strong eluent. Deprecated in favor of classify_eluents.

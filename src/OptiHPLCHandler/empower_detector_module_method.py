@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, Union
 from xml.etree import ElementTree as ET
 
 from .empower_module_method import EmpowerModuleMethod
@@ -12,7 +11,7 @@ class NoWavelengthError(NotImplementedError):
     pass
 
 
-def to_bool(bool_string: Union[str, bool]) -> bool:
+def to_bool(bool_string: str | bool) -> bool:
     if bool_string == "true" or bool_string is True:
         return True
     elif bool_string == "false" or bool_string is False:
@@ -21,7 +20,7 @@ def to_bool(bool_string: Union[str, bool]) -> bool:
         raise ValueError(f"Invalid bool string: {bool_string}")
 
 
-def xml_compatible(value: Union[str, bool]) -> str:
+def xml_compatible(value: str | bool) -> str:
     if value is True:
         value = "true"
     elif value is False:
@@ -32,7 +31,7 @@ def xml_compatible(value: Union[str, bool]) -> str:
 class Channel:
     def __iter__(self):
         yield "channel_type", self.__class__.__name__
-        for attr, value in self.__dict__.items():
+        for attr, value in self.__dict__.items():  # noqa: UP028
             yield attr, value
 
     def __getitem__(self, item):
@@ -65,7 +64,7 @@ class Detector(EmpowerModuleMethod):
         raise NoWavelengthError("Detector method does not have a wavelength setting.")
 
     @property
-    def spectral_channel(self) -> Optional[Channel]:
+    def spectral_channel(self) -> Channel | None:
         raise NoWavelengthError(
             "Detector method does not have a spectral channel setting."
         )
@@ -272,7 +271,7 @@ class PDAMethod(Detector):
         ]
 
     @property
-    def spectral_channel(self) -> Optional[PDASpectralChannel]:
+    def spectral_channel(self) -> PDASpectralChannel | None:
         spectral_channel_xml = self["SpectralChannel"]
         spectral_channel_xml = "<xml>" + spectral_channel_xml + "</xml>"  # give root
         spectral_channel = ET.fromstring(spectral_channel_xml)

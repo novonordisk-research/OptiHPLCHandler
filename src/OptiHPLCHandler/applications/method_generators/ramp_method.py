@@ -1,17 +1,15 @@
-from typing import Optional
-
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
 
 
 def generate_ramp_method(
     method: EmpowerInstrumentMethod,
-    ramp_time: Optional[float] = None,
+    ramp_time: float | None = None,
     low_flow_rate: float = 0.05,
     flow_curve: int = 6,
     ramp_type: str = "rampup",
     reduce_column_temperature: bool = False,
-    suffix: Optional[str] = None,
+    suffix: str | None = None,
 ) -> EmpowerInstrumentMethod:
     """Generate a ramp-up or ramp-down method from an existing method.
 

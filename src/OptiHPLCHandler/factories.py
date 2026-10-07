@@ -1,5 +1,5 @@
 import logging
-from typing import Mapping
+from collections.abc import Mapping
 from xml.etree import ElementTree as ET
 
 from .empower_detector_module_method import FLRMethod, PDAMethod, TUVMethod
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def module_method_factory(  # noqa: C901 This method is allowed to be "complex"
-    method_definition: Mapping[str, str]
+    method_definition: Mapping[str, str],
 ) -> EmpowerModuleMethod:
     """
     Factory function for creating an EmpowerModuleMethod from a method definition. The

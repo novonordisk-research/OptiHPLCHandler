@@ -1,6 +1,7 @@
 import logging
 import warnings
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
@@ -36,12 +37,12 @@ class EmpowerHandler:
     def __init__(
         self,
         address: str,
-        project: Optional[str] = None,
+        project: str | None = None,
         service: str = None,
-        username: Optional[str] = None,
+        username: str | None = None,
         allow_login_without_context_manager: bool = False,
         auto_login: bool = True,
-        api_version: Optional[str] = None,
+        api_version: str | None = None,
         **kwargs,
     ):
         """
@@ -119,8 +120,8 @@ class EmpowerHandler:
 
     def login(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
     ):
         """
         Log into Empower.
@@ -184,7 +185,7 @@ class EmpowerHandler:
         logger.debug("Logging out of Empower")
         self.connection.logout()
 
-    def GetEmpowerProjects(self) -> list[Dict[str, str]]:
+    def GetEmpowerProjects(self) -> list[dict[str, str]]:
         """
         Assuming that the user has logged in in one project for example
         project = Mobile, this method fetches all available projectName that
@@ -197,8 +198,8 @@ class EmpowerHandler:
         self,
         sample_set_method_name: str,
         sample_list: Iterable[dict[str, Any]],
-        plates: Dict[str, str],
-        audit_trail_message: Optional[str] = None,
+        plates: dict[str, str],
+        audit_trail_message: str | None = None,
         component_key: str = "Components",
     ):
         """
@@ -248,7 +249,7 @@ class EmpowerHandler:
                 num,
             )
             component_list = []
-            component_dict: dict[str, Union[str, float]] = sample.pop(component_key, {})
+            component_dict: dict[str, str | float] = sample.pop(component_key, {})
             # The key "Components" is treated differently, as Empower needs the
             # components separately, not as a field.
             for i, (component_name, component_value) in enumerate(
@@ -297,7 +298,7 @@ class EmpowerHandler:
         sample_set_method: str,
         node: str,
         system: str,  # TODO: Allow for none, in that case, use the only entry
-        sample_set_name: Optional[str] = None,
+        sample_set_name: str | None = None,
         run_mode: str = "RunOnly",
     ) -> None:
         """
@@ -335,7 +336,7 @@ class EmpowerHandler:
             endpoint="acquisition/run-sample-set-method", body=parameters, timeout=60
         )
 
-    def GetMethodList(self, method_type: str = "MethodSetMethod") -> List[str]:
+    def GetMethodList(self, method_type: str = "MethodSetMethod") -> list[str]:
         """
         Get the list of methods.
 
@@ -407,11 +408,11 @@ class EmpowerHandler:
         endpoint = "project/methods/method-set"
         self.connection.post(endpoint=endpoint, body=method)
 
-    def GetNodeNames(self) -> List[str]:
+    def GetNodeNames(self) -> list[str]:
         """Get the list of node names."""
         return self.connection.get(endpoint="acquisition/nodes").content
 
-    def GetSystemNames(self, node: str) -> List[str]:
+    def GetSystemNames(self, node: str) -> list[str]:
         """
         Get the list of names of chromatographic systems on a node.
 
@@ -420,13 +421,13 @@ class EmpowerHandler:
         endpoint = f"acquisition/chromatographic-systems?nodeName={node}"
         return self.connection.get(endpoint=endpoint).content
 
-    def GetSampleSetMethods(self) -> List[str]:
+    def GetSampleSetMethods(self) -> list[str]:
         """Get the list of sample set methods in project."""
         return self.connection.get(
             endpoint="project/methods/sample-set-method-list"
         ).content
 
-    def GetPlateTypeNames(self, filter_string: Optional[str] = None) -> List[str]:
+    def GetPlateTypeNames(self, filter_string: str | None = None) -> list[str]:
         """
         Get the list of names of available plate types
 
@@ -449,9 +450,9 @@ class EmpowerHandler:
     def SetAllowedSamplesetLineFieldValues(
         self,
         field_name: str,
-        allowed_values: Optional[List[str]] = None,
+        allowed_values: list[str] | None = None,
         overwrite: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Set the list of allowed values for a field in SampleSetLine.
 
@@ -501,8 +502,8 @@ class EmpowerHandler:
         cls,
         address: str,
         password: str,
-        service: Optional[str] = None,
-        username: Optional[str] = None,
+        service: str | None = None,
+        username: str | None = None,
     ):
         """
         Logout all sessions of the user.
@@ -578,7 +579,7 @@ class EmpowerHandler:
         return {"name": key, "value": {"member": value}, "dataType": "Enumerator"}
 
     def _build_sample_set_line(
-        self, num: int, component_list: List[dict], field_list: List[dict]
+        self, num: int, component_list: list[dict], field_list: list[dict]
     ) -> dict:
         """Build a SampleSetLineRequest, using the row/insertMode contract on v3."""
         if self.connection.api_version == "3.0":

@@ -3,7 +3,7 @@ name = "Opti_HPLC_Handler"
 version = "5.0.1"
 description = "SDK for interacting with the Waters Empower Web API."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 authors = [
   { name="Søren Furbo", email="srfu@novonordisk.com" },
@@ -15,10 +15,10 @@ classifiers = [
   "License :: OSI Approved :: BSD License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Software Development :: Libraries :: Python Modules"
 ]
@@ -30,20 +30,15 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "black==23.3.0",
-  "black[jupyter]==23.3.0",
-  "flake8==7.0.0",
-  "isort==5.12.0",
+  "ruff>=0.16.10",
 ]
 test = [
   "pytest==8.0.0",
   "pytest-cov==4.1.0",
-  "numpy==1.26.1"
+  "numpy>=2.5.3",
 ]
 lint = [
-  "black[jupyter]==23.3.0",
-  "flake8==7.0.0",
-  "isort==5.12.0",
+  "ruff>=0.16.10",
 ]
 release = [
   "bumpver==2023.1125",
@@ -88,9 +83,17 @@ omit = [
 ]
 
 
-[tool.isort]
-profile = "black"
-skip = [".gitignore",".git",".env","venv","env","ENV","env.bak","venv.bak"]
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "C901"]
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["E402", "E501", "F821"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.pytest.ini_options]
 pythonpath = [
