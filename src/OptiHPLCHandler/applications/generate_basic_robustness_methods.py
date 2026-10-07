@@ -49,7 +49,7 @@ def _post_and_revert_instrument_methodset_method(
 def generate_basic_robustness_instrument_methods(
     handler: EmpowerHandler,
     method: EmpowerInstrumentMethod,
-    settings: dict = None,
+    settings: dict | None = None,
 ):
     if settings is None:
         settings = {
@@ -186,12 +186,15 @@ def sample_set_namer(method_name: str) -> str:
     return f"{method_name}_robustness"
 
 
-def get_name_and_run_time(dict_methods_method: dict) -> str | str:
+def get_name_and_run_time(dict_methods_method: dict) -> tuple[str, str]:
     return dict_methods_method["method_name"], dict_methods_method["run_time"]
 
 
 def condition_or_equilibrate_column_sampleset_line(
-    column_position: int, dict_methods_method: dict, function: str, runtime: str = None
+    column_position: int | str,
+    dict_methods_method: dict,
+    function: str,
+    runtime: str | None = None,
 ) -> dict:
     if function not in ["Condition Column", "Equilibrate"]:
         raise ValueError("Function must be 'Condition Column' or 'Equilibrate'")
@@ -279,34 +282,32 @@ def post_and_run_experiment(
 
 
 def generate_basic_robustness_sampleset(
-    dict_methods: dict, input_settings: dict = None
+    dict_methods: dict, input_settings: dict | None = None
 ) -> list[dict]:
     # Initialise settings
-    if input_settings is None:
-        settings = {
-            "column_position": ["Position 1"],
-            "blank_vial_position": "1:A,1",
-            "sample_vial_position": "1:A,2",
-            "sample_name": "Sample",
-            "injection_volume": 3,
-            "linearity_volumes": [0.7, 1, 3, 5, 7, 10],
-            "equilibration_time": "10.0",
-            "repeat_injections_number": 5,
-        }
-    else:
-        for setting in input_settings:
-            settings[setting] = input_settings[setting]
+    settings: dict = {
+        "column_position": ["Position 1"],
+        "blank_vial_position": "1:A,1",
+        "sample_vial_position": "1:A,2",
+        "sample_name": "Sample",
+        "injection_volume": 3,
+        "linearity_volumes": [0.7, 1, 3, 5, 7, 10],
+        "equilibration_time": "10.0",
+        "repeat_injections_number": 5,
+    }
+    if input_settings is not None:
+        settings.update(input_settings)
 
     # Initialisation
-    sample_list = []
-    column_positions = settings["column_position"]
-    blank_vial_position = settings["blank_vial_position"]
-    sample_vial_position = settings["sample_vial_position"]
-    sample_name = settings["sample_name"]
-    injection_volume = settings["injection_volume"]
-    linearity_volumes = settings["linearity_volumes"]
-    equilibration_time = settings["equilibration_time"]
-    repeat_injections_number = settings["repeat_injections_number"]
+    sample_list: list = []
+    column_positions: list = settings["column_position"]
+    blank_vial_position: str = settings["blank_vial_position"]
+    sample_vial_position: str = settings["sample_vial_position"]
+    sample_name: str = settings["sample_name"]
+    injection_volume: float = settings["injection_volume"]
+    linearity_volumes: list = settings["linearity_volumes"]
+    equilibration_time: str = settings["equilibration_time"]
+    repeat_injections_number: int = settings["repeat_injections_number"]
 
     for column_position in column_positions:
         # Startup
