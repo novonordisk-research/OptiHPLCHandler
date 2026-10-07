@@ -41,7 +41,7 @@ lint = [
   "ruff>=0.16.10",
 ]
 release = [
-  "bumpver==2023.1125",
+  "bumpver==2026.1132",
 ]
 build = [
   "build==1.0.3",
