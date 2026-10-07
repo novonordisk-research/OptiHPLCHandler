@@ -33,7 +33,7 @@ dev = [
   "ruff>=0.16.10",
 ]
 test = [
-  "pytest==8.0.0",
+  "pytest==9.1.1",
   "pytest-cov==7.1.0",
   "numpy>=2.5.3",
 ]
