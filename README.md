@@ -1,10 +1,10 @@
 # OptiHPLCHandler
 
-<a href="https://pypi.python.org/pypi/Opti-HPLC-Handler"><img src="https://img.shields.io/pypi/v/Opti-HPLC-Handler.svg" alt="PyPI Version"></a>
-<a href="https://zenodo.org/doi/10.5281/zenodo.8386699"><img src="https://zenodo.org/badge/673355902.svg" alt="Zenodo DOI"></a>
-<a href="https://github.com/novonordisk-research/OptiHPLCHandler/blob/main/LICENSE"><img src="https://img.shields.io/pypi/l/Opti-HPLC-Handler.svg" alt="License"></a>
-<a href="https://pepy.tech/project/opti-hplc-handler"><img src="https://img.shields.io/pypi/dm/Opti-HPLC-Handler.svg" alt="PyPI Downloads"></a>
-<a href="https://github.com/novonordisk-research/OptiHPLCHandler"><img src="https://img.shields.io/github/last-commit/novonordisk-research/OptiHPLCHandler.svg" alt="Source code on GitHub"></a>
+[![PyPI Version](https://img.shields.io/pypi/v/Opti-HPLC-Handler.svg)](https://pypi.python.org/pypi/Opti-HPLC-Handler)
+[![Zenodo DOI](https://zenodo.org/badge/673355902.svg)](https://zenodo.org/doi/10.5281/zenodo.8386699)
+[![License](https://img.shields.io/pypi/l/Opti-HPLC-Handler.svg)](https://github.com/novonordisk-research/OptiHPLCHandler/blob/main/LICENSE)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/Opti-HPLC-Handler.svg)](https://pepy.tech/project/opti-hplc-handler)
+[![Source code on GitHub](https://img.shields.io/github/last-commit/novonordisk-research/OptiHPLCHandler.svg)](https://github.com/novonordisk-research/OptiHPLCHandler)
 
 Software development kit (SDK) for interacting with the Waters Empower Web API. It aims to make
 putting data into and getting data out of Empower easy, with the aim of automating
@@ -26,7 +26,8 @@ that project, and the project `Mobile`.
 
 ```python
 from OptiHPLCHandler import EmpowerHandler
-handler=EmpowerHandler(
+
+handler = EmpowerHandler(
     project="project",
     address="https://API_url.com:3076",
     allow_login_without_context_manager=True,
@@ -45,7 +46,7 @@ When the token runs out, you will have to input your password again.
 To log in, use the `EmpowerHandler` with a context manager:
 
 ```python
-handler=EmpowerHandler(
+handler = EmpowerHandler(
     project="project",
     address="https://API_url.com:3076",
 )
@@ -58,7 +59,7 @@ log in with the password. In order to use this with a context manger, you
 need set `EmpowerHandler` to not log in when entering the context:
 
 ```python
-handler=EmpowerHandler(
+handler = EmpowerHandler(
     project="project",
     address="https://API_url.com:3076",
     auto_login=False,
@@ -133,9 +134,9 @@ for step in gradient_table:
 full_method.gradient_table = gradient_table
 full_method.valve_position = ["A2", "B1"]
 full_method.column_temperature = 40
-full_method.method_name ="New method name"
+full_method.method_name = "New method name"
 with handler:
-    handler.PostInstrumentMethod(full_method) # Post the updated method to Empower
+    handler.PostInstrumentMethod(full_method)  # Post the updated method to Empower
 ```
 
 ## Sampleset method
