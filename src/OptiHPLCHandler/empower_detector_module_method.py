@@ -31,8 +31,8 @@ def xml_compatible(value: str | bool) -> str:
 class Channel:
     def __iter__(self):
         yield "channel_type", self.__class__.__name__
-        for attr, value in self.__dict__.items():
-            yield from ((attr, value),)
+        for attr, value in self.__dict__.items():  # noqa: UP028
+            yield attr, value
 
     def __getitem__(self, item):
         return getattr(self, item)
