@@ -1,4 +1,3 @@
-
 from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
 from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
     determine_last_high_flow_time,
@@ -365,7 +364,7 @@ def generate_basic_robustness_sampleset(
                 injection_sampleset_line(
                     column_position,
                     sample_vial_position,
-                    f"{sample_name}_rep{i+1}",
+                    f"{sample_name}_rep{i + 1}",
                     dict_methods["input_method"],
                     injection_volume,
                 )

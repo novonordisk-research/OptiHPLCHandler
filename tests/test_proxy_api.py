@@ -45,18 +45,21 @@ class TestEmpowerHandler(unittest.TestCase):
             == "acquisition/run-sample-set-method"
         )  # Check that the correct URl is used.
         assert (
-            self.handler.connection.post.call_args[1]["body"]["sampleSetMethodName"]
-        ) == "test_sample_set_method"
+            (self.handler.connection.post.call_args[1]["body"]["sampleSetMethodName"])
+            == "test_sample_set_method"
+        )
         # Check that the correct sample set method is used.
         assert (
-            self.handler.connection.post.call_args[1]["body"]["nodeName"]
-        ) == "test_node"  # Check that the correct node is used.
+            (self.handler.connection.post.call_args[1]["body"]["nodeName"])
+            == "test_node"
+        )  # Check that the correct node is used.
         assert (
-            self.handler.connection.post.call_args[1]["body"]["systemName"]
-        ) == "test_hplc"  # Check that the correct HPLC is used.
+            (self.handler.connection.post.call_args[1]["body"]["systemName"])
+            == "test_hplc"
+        )  # Check that the correct HPLC is used.
         assert (
-            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
-        ) is None  # Check that no sample set name is given
+            (self.handler.connection.post.call_args[1]["body"]["sampleSetName"]) is None
+        )  # Check that no sample set name is given
         self.handler.RunExperiment(
             sample_set_method="test_sample_set_method",
             node="test_node",
@@ -64,8 +67,9 @@ class TestEmpowerHandler(unittest.TestCase):
             sample_set_name="test_sample_set_name",
         )
         assert (
-            self.handler.connection.post.call_args[1]["body"]["sampleSetName"]
-        ) == "test_sample_set_name"  # Check that the correct sample set name is given
+            (self.handler.connection.post.call_args[1]["body"]["sampleSetName"])
+            == "test_sample_set_name"
+        )  # Check that the correct sample set name is given
 
     def test_explicit_run_mode(self):
         self.handler.RunExperiment(
@@ -722,8 +726,7 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
         minimal_module = {
             "name": "test",
             "nativeXml": (
-                "<test_tag1>test_value1</test_tag1>"
-                "<test_tag2>test_value2</test_tag2>"
+                "<test_tag1>test_value1</test_tag1><test_tag2>test_value2</test_tag2>"
             ),
         }
 

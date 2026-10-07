@@ -143,9 +143,7 @@ class EmpowerConnection:
             return "results"
         return "data"
 
-    def login(
-        self, username: str | None = None, password: str | None = None
-    ) -> None:
+    def login(self, username: str | None = None, password: str | None = None) -> None:
         """
         Log into Empower.
 

@@ -249,9 +249,9 @@ class SolventManagerMethod(EmpowerModuleMethod):
                     f"Invalid valve position {position}, "
                     f"must start with one of {self.solvent_lines}"
                 )
-            self[
-                self.valve_tag_prefix + position[0] + self.valve_tag_suffix
-            ] = position[1:]
+            self[self.valve_tag_prefix + position[0] + self.valve_tag_suffix] = (
+                position[1:]
+            )
 
     @property
     def gradient_table(self) -> list[dict[str, str]]:
@@ -288,12 +288,12 @@ class SolventManagerMethod(EmpowerModuleMethod):
         for i, gradient_row in enumerate(new_gradient_table[1:]):
             if gradient_row["Time"] == "Initial":
                 raise ValueError(
-                    f"Time cannot be 'Initial' for row {i+2} of gradient table, "
+                    f"Time cannot be 'Initial' for row {i + 2} of gradient table, "
                     "only for the first row."
                 )
             if "Curve" in gradient_row and gradient_row["Curve"] == "Initial":
                 raise ValueError(
-                    f"Curve cannot be 'Initial' for row {i+2} of gradient table, "
+                    f"Curve cannot be 'Initial' for row {i + 2} of gradient table, "
                     "only for the first row."
                 )
         if new_gradient_table[0]["Time"] != "Initial":

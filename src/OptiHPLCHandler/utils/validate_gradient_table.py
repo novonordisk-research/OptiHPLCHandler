@@ -1,5 +1,3 @@
-
-
 def validate_gradient_table(gradient_table: list[dict]) -> bool:  # noqa:C901
     # Move to Empower_module_method
     """

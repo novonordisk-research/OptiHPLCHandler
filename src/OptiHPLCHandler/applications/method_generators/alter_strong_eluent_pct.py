@@ -1,4 +1,3 @@
-
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
     determine_if_isocratic_method,
