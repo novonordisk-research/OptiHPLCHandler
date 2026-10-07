@@ -32,7 +32,7 @@ class Channel:
     def __iter__(self):
         yield "channel_type", self.__class__.__name__
         for attr, value in self.__dict__.items():
-            yield attr, value
+            yield from ((attr, value),)
 
     def __getitem__(self, item):
         return getattr(self, item)
