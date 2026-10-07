@@ -7,8 +7,8 @@ SYNONYMS contains the hard-coded synonyms for sampleset line fields.
 RUN_MODES contains the allowed values for the RunMode when starting a run in Empower.
 """
 
+from collections.abc import Mapping
 from types import MappingProxyType  # Pythons name for a frozen dict
-from typing import Mapping
 
 # The allowed values for builtin SampleSetLine fields
 BUILTIN_ALLOWED_VALUES: Mapping[str, tuple[str, ...]] = MappingProxyType(

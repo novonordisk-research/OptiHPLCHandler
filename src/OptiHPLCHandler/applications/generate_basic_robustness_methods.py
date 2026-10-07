@@ -1,4 +1,3 @@
-from typing import Dict, List, Union
 
 from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod
 from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
@@ -188,7 +187,7 @@ def sample_set_namer(method_name: str) -> str:
     return f"{method_name}_robustness"
 
 
-def get_name_and_run_time(dict_methods_method: dict) -> Union[str, str]:
+def get_name_and_run_time(dict_methods_method: dict) -> str | str:
     return dict_methods_method["method_name"], dict_methods_method["run_time"]
 
 
@@ -242,8 +241,8 @@ def injection_sampleset_line(
 def post_and_run_experiment(
     handler: EmpowerHandler,
     sample_set_method_name: str,
-    sample_list: List[Dict[str, str]],
-    plates: Dict[str, str],
+    sample_list: list[dict[str, str]],
+    plates: dict[str, str],
     system: str,
     node: str,
     post: bool = False,
@@ -282,7 +281,7 @@ def post_and_run_experiment(
 
 def generate_basic_robustness_sampleset(
     dict_methods: dict, input_settings: dict = None
-) -> List[dict]:
+) -> list[dict]:
     # Initialise settings
     if input_settings is None:
         settings = {

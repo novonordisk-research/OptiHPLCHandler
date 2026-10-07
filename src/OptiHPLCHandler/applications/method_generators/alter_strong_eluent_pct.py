@@ -1,4 +1,3 @@
-from typing import Optional
 
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.applications.empower_implementation.empower_tools import (
@@ -13,7 +12,7 @@ def generate_altered_strong_eluent_method_pct(
     method: EmpowerInstrumentMethod,
     strong_eluent_delta: float = 1,
     maintain_wash_pct: bool = True,
-    suffix: Optional[str] = None,
+    suffix: str | None = None,
 ) -> EmpowerInstrumentMethod:
     """
     Alter the strong eluent composition in a gradient method by a specified percentage.
@@ -34,7 +33,7 @@ def generate_altered_strong_eluent_method_pct(
 
     # Variables
     if suffix is None:
-        suffix = "_{:.1f}pct".format(strong_eluent_delta)
+        suffix = f"_{strong_eluent_delta:.1f}pct"
 
     # generate method name
     method.method_name = append_truncate_method_name(method.method_name, suffix)

@@ -1,7 +1,7 @@
 import logging
 import re
 import warnings
-from typing import Dict, List, Mapping, Tuple, Union
+from collections.abc import Mapping
 from xml.etree import ElementTree as ET
 
 from .utils.data_types import EmpowerModuleMethodModel as DataModel
@@ -42,7 +42,7 @@ class EmpowerModuleMethod:
             extracted.
         """
         self.original_method = DataModel(method_definition, mutable=False)
-        self._change_list: List[Tuple[str, str]] = []
+        self._change_list: list[tuple[str, str]] = []
 
     def replace(self, original: str, new: str) -> None:
         """
@@ -104,7 +104,7 @@ class EmpowerModuleMethod:
 
     @staticmethod
     def alter_method(
-        original_method: Mapping[str, str], change_list: List[Tuple[str, str]]
+        original_method: Mapping[str, str], change_list: list[tuple[str, str]]
     ) -> DataModel:
         """
         Alter the a method definition by applying the changes in the change list.
@@ -137,7 +137,7 @@ class EmpowerModuleMethod:
         return method
 
     @staticmethod
-    def _round(value: Union[str, float], decimal_digits: int = 3) -> str:
+    def _round(value: str | float, decimal_digits: int = 3) -> str:
         try:
             value = float(value)
         except ValueError:
@@ -179,7 +179,7 @@ class ColumnOvenMethod(EmpowerModuleMethod):
         return self[self.column_temperature_key]
 
     @column_temperature.setter
-    def column_temperature(self, value: Union[str, float]) -> None:
+    def column_temperature(self, value: str | float) -> None:
         self[self.column_temperature_key] = self._round(value, decimal_digits=1)
 
 
@@ -196,7 +196,7 @@ class SampleManagerMethod(ColumnOvenMethod):
         return self[self.sample_temperature_key]
 
     @sample_temperature.setter
-    def sample_temperature(self, value: Union[str, float]) -> None:
+    def sample_temperature(self, value: str | float) -> None:
         self[self.sample_temperature_key] = self._round(value, decimal_digits=1)
 
 
@@ -221,10 +221,10 @@ class SolventManagerMethod(EmpowerModuleMethod):
 
     valve_tag_prefix: str
     valve_tag_suffix: str
-    solvent_lines: List[str]
+    solvent_lines: list[str]
 
     @property
-    def valve_position(self) -> List[str]:
+    def valve_position(self) -> list[str]:
         """
         The current valve position for each solvent line. When setting, the value can be
         a list of strings. Each string should should be of the form `XY`, where `X`
@@ -242,7 +242,7 @@ class SolventManagerMethod(EmpowerModuleMethod):
         return f"{type(self).__name__} with valve positions {self.valve_position}"
 
     @valve_position.setter
-    def valve_position(self, value: List[str]) -> None:
+    def valve_position(self, value: list[str]) -> None:
         for position in value:
             if position[0] not in self.solvent_lines:
                 raise ValueError(
@@ -254,7 +254,7 @@ class SolventManagerMethod(EmpowerModuleMethod):
             ] = position[1:]
 
     @property
-    def gradient_table(self) -> List[Dict[str, str]]:
+    def gradient_table(self) -> list[dict[str, str]]:
         """
         The gradient table for the method. It is a list of dicts, one for each row.
 
@@ -283,7 +283,7 @@ class SolventManagerMethod(EmpowerModuleMethod):
 
     @gradient_table.setter
     def gradient_table(
-        self, new_gradient_table: List[Dict[str, Union[str, float, int]]]
+        self, new_gradient_table: list[dict[str, str | float | int]]
     ) -> None:
         for i, gradient_row in enumerate(new_gradient_table[1:]):
             if gradient_row["Time"] == "Initial":

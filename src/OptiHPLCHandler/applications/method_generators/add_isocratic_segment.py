@@ -1,4 +1,3 @@
-from typing import Optional
 
 from OptiHPLCHandler import EmpowerInstrumentMethod
 from OptiHPLCHandler.utils.validate_method_name import append_truncate_method_name
@@ -8,7 +7,7 @@ def generate_add_isocratic_segment_to_method(
     method: EmpowerInstrumentMethod,
     isocratic_duration: float,
     index_of_isocratic_segment: int,
-    suffix: Optional[str] = None,
+    suffix: str | None = None,
 ):
     """
     Add an isocratic segment to an existing gradient method.

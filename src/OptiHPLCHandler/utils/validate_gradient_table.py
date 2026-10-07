@@ -1,7 +1,6 @@
-from typing import List
 
 
-def validate_gradient_table(gradient_table: List[dict]) -> bool:  # noqa:C901
+def validate_gradient_table(gradient_table: list[dict]) -> bool:  # noqa:C901
     # Move to Empower_module_method
     """
     Validates the gradient table to ensure the sum of compositions in each row is 100.

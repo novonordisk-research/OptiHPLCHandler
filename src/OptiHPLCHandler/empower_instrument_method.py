@@ -1,6 +1,5 @@
 import logging
 import re
-from typing import List, Optional, Union
 
 from .empower_detector_module_method import Channel, Detector, NoWavelengthError
 from .empower_module_method import (
@@ -44,7 +43,7 @@ class EmpowerInstrumentMethod:
 
     def __init__(
         self,
-        method_definition: Union[dict, list],
+        method_definition: dict | list,
         use_sample_manager_oven: bool = False,
     ):
         """
@@ -79,7 +78,7 @@ class EmpowerInstrumentMethod:
         ]
 
     @property
-    def sample_handler_method(self) -> Optional[SampleManagerMethod]:
+    def sample_handler_method(self) -> SampleManagerMethod | None:
         """The sample manager module method."""
         sample_handler_method = [
             module
@@ -93,7 +92,7 @@ class EmpowerInstrumentMethod:
         return sample_handler_method[0]
 
     @property
-    def solvent_handler_method(self) -> Optional[SolventManagerMethod]:
+    def solvent_handler_method(self) -> SolventManagerMethod | None:
         """The sample manager module method."""
         solvent_handler_method = [
             module
@@ -107,7 +106,7 @@ class EmpowerInstrumentMethod:
         return solvent_handler_method[0]
 
     @property
-    def column_oven_method_list(self) -> List[ColumnOvenMethod]:
+    def column_oven_method_list(self) -> list[ColumnOvenMethod]:
         """A list of column ovens in the instrument method."""
         if self.use_sample_manager_oven:
             oven_type_tuple = (ColumnManagerMethod, SampleManagerMethod)
@@ -162,7 +161,7 @@ class EmpowerInstrumentMethod:
         self.sample_handler_method.sample_temperature = temperature
 
     @property
-    def gradient_table(self) -> List[dict]:
+    def gradient_table(self) -> list[dict]:
         """The gradient table, if a solvent manager module method is present."""
         if self.solvent_handler_method is None:
             raise ValueError(
@@ -172,7 +171,7 @@ class EmpowerInstrumentMethod:
         return self.solvent_handler_method.gradient_table
 
     @gradient_table.setter
-    def gradient_table(self, gradient_table: List[dict]):
+    def gradient_table(self, gradient_table: list[dict]):
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set gradient table, "
@@ -195,7 +194,7 @@ class EmpowerInstrumentMethod:
         return self.solvent_handler_method.valve_position
 
     @valve_position.setter
-    def valve_position(self, valve_position: Union[str, List[str]]):
+    def valve_position(self, valve_position: str | list[str]):
         if self.solvent_handler_method is None:
             raise ValueError(
                 "Can't set valve position, "
