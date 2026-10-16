@@ -345,6 +345,25 @@ class TestEmpowerConnection(unittest.TestCase):
         assert "ID test_id" in str(context.exception)
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_http_error_without_empower_message(self, mock_requests):
+        mock_requests.exceptions.HTTPError = requests.exceptions.HTTPError
+        mock_requests.request.return_value = mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "404 Client Error: Not Found for url: test_url", response=mock_response
+        )
+        for body in ({}, {"title": "Not Found"}, []):
+            mock_response.json.side_effect = None
+            mock_response.json.return_value = body
+            with self.assertRaises(requests.exceptions.HTTPError) as context:
+                self.connection.get("test_url")
+            assert "404 Client Error" in str(context.exception)
+        mock_response.json.side_effect = ValueError("No JSON body")
+        with self.assertRaises(requests.exceptions.HTTPError) as context:
+            self.connection.get("test_url")
+        assert "404 Client Error" in str(context.exception)
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_incomplete_json(self, mock_requests):
         mock_response = MagicMock()
         mock_response.json.return_value = {}

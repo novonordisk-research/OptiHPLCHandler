@@ -439,16 +439,23 @@ class EmpowerConnection:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError:
-            body = response.json()
+            try:
+                body = response.json()
+            except ValueError:
+                body = {}
+            if not isinstance(body, dict):
+                body = {}
             if "message" in body and "id" in body:
                 error = requests.exceptions.HTTPError(
                     f"HTTP error {response.status_code} "
-                    f"with message '{response.json()['message']}' "
-                    f"and ID {response.json()['id']}"
+                    f"with message '{body['message']}' "
+                    f"and ID {body['id']}"
                 )
             elif "errors" in body:
                 error = requests.exceptions.HTTPError(
-                    f"HTTP error {response.status_code} "
-                    f"with errors '{response.json()['errors']}'"
+                    f"HTTP error {response.status_code} with errors '{body['errors']}'"
                 )
+            else:
+                # No Empower message (e.g. a 404), so keep the requests error and URL
+                raise
             raise error from None
