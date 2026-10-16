@@ -168,3 +168,39 @@ FIELD_TYPES: tuple[str, ...] = (
     "SampleSetLine",
     "SSQEntry",
 )
+
+# The peak fields EmpowerHandler.GetPeaks returns when none are given.
+DEFAULT_PEAK_FIELDS: tuple[str, ...] = (
+    "Area",
+    "PctArea",
+    "StartTime",
+    "EndTime",
+    "Height",
+    "Name",
+    "RetentionTime",
+    "AsymAt10",
+    "WidthAt50Pct",
+    "WidthAtBaseline",
+)
+
+# The result fields EmpowerHandler.GetResults returns when none are given.
+DEFAULT_RESULT_FIELDS: tuple[str, ...] = (
+    "SampleName",
+    "ResultId",
+    "InjectionId",
+    "ChannelName",
+    "DateAcquired",
+    "DateProcessed",
+    "ProcessingMethod",
+)
+
+# The sample set fields EmpowerHandler.GetSampleSets returns when none are given.
+DEFAULT_SAMPLE_SET_FIELDS: tuple[str, ...] = (
+    "SampleSetName",
+    "SampleSetId",
+    "SampleSetMethod",
+    "SampleSetStartDate",
+    "SampleSetFinishDate",
+    "SystemName",
+    "Node",
+)

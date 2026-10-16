@@ -1,6 +1,6 @@
 import logging
 import warnings
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 from urllib.parse import urlencode
 
@@ -9,6 +9,9 @@ from .empower_instrument_method import EmpowerInstrumentMethod
 from .utils.default_data import (
     BUILTIN_ALLOWED_VALUES,
     BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3,
+    DEFAULT_PEAK_FIELDS,
+    DEFAULT_RESULT_FIELDS,
+    DEFAULT_SAMPLE_SET_FIELDS,
     FIELD_DATA_TYPE_MAP_LEGACY,
     FIELD_DATA_TYPE_MAP_V3,
     FIELD_TYPES,
@@ -570,47 +573,36 @@ class EmpowerHandler:
     def GetPeaks(
         self,
         result_ids: list[int],
-        returned_fields: list[str] | None = [
-            "Area",
-            "PctArea",
-            "StartTime",
-            "EndTime",
-            "Height",
-            "Name",
-            "RetentionTime",
-            "AsymAt10",
-            "WidthAt50Pct",
-            "WidthAtBaseline",
-        ],
+        returned_fields: Sequence[str] | None = DEFAULT_PEAK_FIELDS,
     ) -> list[dict[str, Any]]:
         """
         Get peak data for results, with one flat dict per peak.
 
         :param result_ids: List of result IDs to get peak data for.
-        :param returned_fields: List of peak fields to return. If None (default), all
-            available peak fields are returned.
+        :param returned_fields: List of peak fields to return. Defaults to
+            `DEFAULT_PEAK_FIELDS` ("Area", "PctArea", "StartTime", "EndTime",
+            "Height", "Name", "RetentionTime", "AsymAt10", "WidthAt50Pct",
+            "WidthAtBaseline"). If None, all available peak fields are returned.
 
         :return: One dict per peak, with a value per returned field and None for
             fields without a value.
         """
         if returned_fields is None:
             returned_fields = [field["name"] for field in self.GetFieldNames("Peak")]
-        peaks = self.GetPeaksRaw(result_ids, returned_fields)
+        peaks = self.GetPeaksRaw(result_ids, list(returned_fields))
         return [self._flatten_record(peak, id_key=None) for peak in peaks]
 
-    def GetSampleSets(
+    def GetSampleSetsRaw(
         self,
         search_field: str,
         operator: str,
         condition: str,
-        returned_fields: list[str],
+        returned_fields: Sequence[str],
         order_by: str = "OrderNone",
     ) -> list[dict]:
         """
-        Get sample set data.
+        Search sample sets, as returned by Empower.
 
-        :param returned_fields: List of sample set fields to return. `search_field` is
-            added if not already in the list, as the server requires it.
         :param search_field: Sample set field to search on, used the same way as the
             ViewFilter cells in the Project window, together with `operator` and
             `condition`.
@@ -618,6 +610,8 @@ class EmpowerHandler:
             `self.allowed_result_operators` ("EQ", "NEQ", "LT", "LTE", "GT", "GTE").
         :param condition: Condition to filter `search_field` on. Use "*" to ignore the
             condition and return all sample sets.
+        :param returned_fields: List of sample set fields to return. `search_field` is
+            added if not already in the list, as the server requires it.
         :param order_by: Sort order of the results. Must be one of
             `self.allowed_order_by_options` ("OrderNone", "Ascending", "Descending").
             Default "OrderNone".
@@ -628,11 +622,39 @@ class EmpowerHandler:
             search_field,
             operator,
             condition,
-            returned_fields,
+            list(returned_fields),
             order_by,
         )
         endpoint = "project/sample-sets?" + urlencode(params)
         return self.connection.get(endpoint=endpoint).content
+
+    def GetSampleSets(
+        self,
+        search_field: str,
+        operator: str,
+        condition: str,
+        returned_fields: Sequence[str] | None = DEFAULT_SAMPLE_SET_FIELDS,
+        order_by: str = "OrderNone",
+    ) -> list[dict[str, Any]]:
+        """
+        Search sample sets, with one flat dict per sample set.
+
+        Takes the same parameters as `GetSampleSetsRaw`, except `returned_fields`
+        defaults to `DEFAULT_SAMPLE_SET_FIELDS` ("SampleSetName", "SampleSetId",
+        "SampleSetMethod", "SampleSetStartDate", "SampleSetFinishDate", "SystemName",
+        "Node"). If None, all available sample set fields are returned.
+
+        :return: One dict per sample set, with its "id" and a value per returned field,
+            and None for fields without a value.
+        """
+        if returned_fields is None:
+            returned_fields = [
+                field["name"] for field in self.GetFieldNames("SampleSet")
+            ]
+        sample_sets = self.GetSampleSetsRaw(
+            search_field, operator, condition, returned_fields, order_by
+        )
+        return [self._flatten_record(sample_set) for sample_set in sample_sets]
 
     def GetSampleSet(self, sample_set_name: str) -> list[dict[str, Any]]:
         """
@@ -644,27 +666,25 @@ class EmpowerHandler:
             Empower. Each dict has the sample set "id" and every sample set field,
             with None for fields without a value.
         """
-        field_names = [field["name"] for field in self.GetFieldNames("SampleSet")]
-        sample_sets = self.GetSampleSets(
-            returned_fields=field_names,
+        return self.GetSampleSets(
             search_field="SampleSetName",
             operator="EQ",
             condition=sample_set_name,
+            returned_fields=None,
         )
-        return [self._flatten_record(sample_set) for sample_set in sample_sets]
 
-    def GetResults(
+    def GetResultsRaw(
         self,
         search_field: str,
         operator: str,
         condition: str,
-        returned_fields: list[str],
+        returned_fields: Sequence[str],
         order_by: str = "OrderNone",
         page_number: int = 1,
         page_size: int = 50,
     ) -> list[dict]:
         """
-        Search result records.
+        Search result records, as returned by Empower.
 
         :param search_field: Result field to search on, used the same way as the
             ViewFilter cells in the Project window, together with `operator` and
@@ -689,12 +709,46 @@ class EmpowerHandler:
             search_field,
             operator,
             condition,
-            returned_fields,
+            list(returned_fields),
             order_by,
         )
         params += [("PageNumber", page_number), ("PageSize", page_size)]
         endpoint = "project/results?" + urlencode(params)
         return self.connection.get(endpoint=endpoint).content
+
+    def GetResults(
+        self,
+        search_field: str,
+        operator: str,
+        condition: str,
+        returned_fields: Sequence[str] | None = DEFAULT_RESULT_FIELDS,
+        order_by: str = "OrderNone",
+        page_number: int = 1,
+        page_size: int = 50,
+    ) -> list[dict[str, Any]]:
+        """
+        Search result records, with one flat dict per result.
+
+        Takes the same parameters as `GetResultsRaw`, except `returned_fields`
+        defaults to `DEFAULT_RESULT_FIELDS` ("SampleName", "ResultId", "InjectionId",
+        "ChannelName", "DateAcquired", "DateProcessed", "ProcessingMethod"). If None,
+        all available result fields are returned.
+
+        :return: One dict per result, with its "id" and a value per returned field,
+            and None for fields without a value.
+        """
+        if returned_fields is None:
+            returned_fields = [field["name"] for field in self.GetFieldNames("Result")]
+        results = self.GetResultsRaw(
+            search_field,
+            operator,
+            condition,
+            returned_fields,
+            order_by,
+            page_number,
+            page_size,
+        )
+        return [self._flatten_record(result) for result in results]
 
     def GetResult(self, result_id: int) -> dict[str, Any]:
         """
