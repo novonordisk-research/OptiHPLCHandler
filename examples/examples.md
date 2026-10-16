@@ -113,7 +113,7 @@ Here outlines an example of how one could conduct a stability study. With a samp
 Here outlines how to query sample set data in a project.
 
 - GetFieldNames() to find available sample set fields
-- GetSampleSets() with filtering and sorting
+- GetSampleSets() with filtering and sorting, and GetSampleSetsRaw() for the raw response
 
 ## Example: [Getting Results and Peaks](example_results_and_peaks.ipynb)
 
@@ -121,5 +121,5 @@ Here outlines how to query processed results and their peak data.
 
 - GetFieldNames() to find available result and peak fields
 - GetResult() for all fields of one result ID
-- GetResults() by searching on a result field, with paging
+- GetResults() by searching on a result field, with paging, and GetResultsRaw() for the raw response
 - GetPeaks() for a list of result IDs
