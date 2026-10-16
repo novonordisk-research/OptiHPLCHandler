@@ -1001,12 +1001,35 @@ class TestGetPeaks(unittest.TestCase):
         )
 
     def test_get_peaks(self):
-        self.handler.connection.get.side_effect = [self.field_names, self.peaks]
+        default_fields = [
+            "Area",
+            "PctArea",
+            "StartTime",
+            "EndTime",
+            "Height",
+            "Name",
+            "RetentionTime",
+            "AsymAt10",
+            "WidthAt50Pct",
+            "WidthAtBaseline",
+        ]
+        field_names = create_empower_response(
+            [{"type": "Name", "name": name} for name in [*default_fields, "Asym"]]
+        )
+        self.handler.connection.get.side_effect = [field_names, self.peaks]
         result = self.handler.GetPeaks(result_ids=[1, 2])
         assert result == [
             {"Area": 123.0, "Height": 4.5},
             {"Area": 678.0, "Height": None},
         ]
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/peaks?resultIds=1&resultIds=2&"
+            + "&".join(f"peakFields={field}" for field in default_fields)
+        )
+
+    def test_get_peaks_all_fields(self):
+        self.handler.connection.get.side_effect = [self.field_names, self.peaks]
+        self.handler.GetPeaks(result_ids=[1, 2], returned_fields=None)
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
             "project/peaks?resultIds=1&resultIds=2&peakFields=Area&peakFields=Height"
         )
