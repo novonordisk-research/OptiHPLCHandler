@@ -1061,12 +1061,12 @@ class TestGetSampleSets(unittest.TestCase):
             {"type": "Name", "name": "SystemCreateDate"},
         ]
 
-    def test_get_sample_sets(self):
+    def test_get_sample_sets_raw(self):
         self.handler.connection.get.side_effect = [
             create_empower_response(self.field_names),
             create_empower_response([{"Name": "test_sample_set"}]),
         ]
-        result = self.handler.GetSampleSets(
+        result = self.handler.GetSampleSetsRaw(
             returned_fields=["SampleSetName", "SystemCreateDate"],
             search_field="SystemCreateDate",
             operator="GT",
@@ -1078,6 +1078,61 @@ class TestGetSampleSets(unittest.TestCase):
             "project/sample-sets?samplesetFields=SampleSetName"
             "&samplesetFields=SystemCreateDate&searchField=SystemCreateDate"
             "&operator=GT&condition=01%2F10%2F2026&orderBy=Descending"
+        )
+
+    def test_get_sample_sets(self):
+        default_fields = [
+            "SampleSetName",
+            "SampleSetId",
+            "SampleSetMethod",
+            "SampleSetStartDate",
+            "SampleSetFinishDate",
+            "SystemName",
+            "Node",
+        ]
+        field_names = [
+            {"type": "Name", "name": name}
+            for name in [*default_fields, "SystemComments"]
+        ]
+        self.handler.connection.get.side_effect = [
+            create_empower_response(field_names),
+            create_empower_response(
+                [
+                    {
+                        "id": 1531,
+                        "fields": [
+                            {"name": "SampleSetName", "value": "clean"},
+                            {"name": "Node"},
+                        ],
+                    }
+                ]
+            ),
+        ]
+        result = self.handler.GetSampleSets(
+            search_field="SampleSetName", operator="EQ", condition="clean"
+        )
+        assert result == [{"id": 1531, "SampleSetName": "clean", "Node": None}]
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/sample-sets?"
+            + "&".join(f"samplesetFields={field}" for field in default_fields)
+            + "&searchField=SampleSetName&operator=EQ&condition=clean"
+            "&orderBy=OrderNone"
+        )
+
+    def test_get_sample_sets_all_fields(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([]),
+        ]
+        self.handler.GetSampleSets(
+            search_field="SampleSetName",
+            operator="EQ",
+            condition="*",
+            returned_fields=None,
+        )
+        assert self.handler.connection.get.call_args[1]["endpoint"].startswith(
+            "project/sample-sets?samplesetFields=SampleSetName"
+            "&samplesetFields=SystemCreateDate&searchField"
         )
 
     def test_get_sample_sets_adds_search_field(self):
@@ -1195,13 +1250,13 @@ class TestGetResults(unittest.TestCase):
             {"type": "Name", "name": "DateAcquired"},
         ]
 
-    def test_get_results(self):
+    def test_get_results_raw(self):
         self.handler.connection.get.side_effect = [
             create_empower_response(self.field_names),
             create_empower_response([{"id": 1}]),
         ]
         returned_fields = ["SampleName"]
-        result = self.handler.GetResults(
+        result = self.handler.GetResultsRaw(
             returned_fields=returned_fields,
             search_field="DateAcquired",
             operator="GT",
@@ -1216,6 +1271,62 @@ class TestGetResults(unittest.TestCase):
             "&orderBy=Descending&PageNumber=1&PageSize=10"
         )
         assert returned_fields == ["SampleName"]
+
+    def test_get_results(self):
+        default_fields = [
+            "SampleName",
+            "ResultId",
+            "InjectionId",
+            "ChannelName",
+            "DateAcquired",
+            "DateProcessed",
+            "ProcessingMethod",
+        ]
+        field_names = [
+            {"type": "Name", "name": name} for name in [*default_fields, "Label"]
+        ]
+        self.handler.connection.get.side_effect = [
+            create_empower_response(field_names),
+            create_empower_response(
+                [
+                    {
+                        "id": 1862,
+                        "fields": [
+                            {"name": "SampleName", "value": "test_sample"},
+                            {"name": "DateProcessed"},
+                        ],
+                    }
+                ]
+            ),
+        ]
+        result = self.handler.GetResults(
+            search_field="SampleName", operator="EQ", condition="test_sample"
+        )
+        assert result == [
+            {"id": 1862, "SampleName": "test_sample", "DateProcessed": None}
+        ]
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/results?"
+            + "&".join(f"resultFields={field}" for field in default_fields)
+            + "&searchField=SampleName&operator=EQ&condition=test_sample"
+            "&orderBy=OrderNone&PageNumber=1&PageSize=50"
+        )
+
+    def test_get_results_all_fields(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([]),
+        ]
+        self.handler.GetResults(
+            search_field="SampleName",
+            operator="EQ",
+            condition="*",
+            returned_fields=None,
+        )
+        assert self.handler.connection.get.call_args[1]["endpoint"].startswith(
+            "project/results?resultFields=SampleName&resultFields=DateAcquired"
+            "&searchField"
+        )
 
     def test_get_results_invalid_operator_raises(self):
         with self.assertRaises(ValueError):
