@@ -2,7 +2,6 @@ import logging
 import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
-from urllib.parse import urlencode
 
 from .empower_api_core import EmpowerConnection
 from .empower_instrument_method import EmpowerInstrumentMethod
@@ -179,7 +178,9 @@ class EmpowerHandler:
         set the values manually with `SetAllowedSamplesetLineFieldValues` by not giving
         the `allowed_values` parameter.
         """
-        fields = self.connection.get("/project/fields?fieldType=SampleSetLine")[0]
+        fields = self.connection.get(
+            endpoint="/project/fields", params={"fieldType": "SampleSetLine"}
+        )[0]
         for field in fields:
             self.synonym_dict[field["displayName"]] = field["name"]
         enum_field_name_list = [
@@ -358,7 +359,7 @@ class EmpowerHandler:
         if not method_type.endswith("Method"):
             method_type += "Method"
         method_list = self.connection.get(
-            endpoint="project/methods?methodTypes=" + method_type
+            endpoint="project/methods", params={"methodTypes": method_type}
         ).content
         method_name_dict_list = [
             [name_dict for name_dict in method["fields"] if name_dict["name"] == "Name"]
@@ -385,7 +386,7 @@ class EmpowerHandler:
             manager oven will be used. If False, only column manager oven will be used.
         """
         response = self.connection.get(
-            endpoint=f"project/methods/instrument-method?name={method_name}"
+            endpoint="project/methods/instrument-method", params={"name": method_name}
         )
         if self.connection.api_version == "1.0":
             return EmpowerInstrumentMethod(response.content[0], use_sample_manager_oven)
@@ -406,7 +407,7 @@ class EmpowerHandler:
         :param method_name: Name of the method set method to get.
         """
         response = self.connection.get(
-            endpoint=f"project/methods/method-set?name={method_name}"
+            endpoint="project/methods/method-set", params={"name": method_name}
         )
         if self.connection.api_version == "1.0":
             return response.content[0]
@@ -430,8 +431,9 @@ class EmpowerHandler:
 
         :param node: Name of the node to get the systems from.
         """
-        endpoint = f"acquisition/chromatographic-systems?nodeName={node}"
-        return self.connection.get(endpoint=endpoint).content
+        return self.connection.get(
+            endpoint="acquisition/chromatographic-systems", params={"nodeName": node}
+        ).content
 
     def GetSampleSetMethods(self) -> list[str]:
         """Deprecated. Get the list of sample set methods in project."""
@@ -453,10 +455,9 @@ class EmpowerHandler:
 
         :param method_name: Name of the sample set method to get.
         """
-        endpoint = "project/methods/sample-set-method?" + urlencode(
-            {"name": method_name}
+        response = self.connection.get(
+            endpoint="project/methods/sample-set-method", params={"name": method_name}
         )
-        response = self.connection.get(endpoint=endpoint)
         if self.connection.api_version == "1.0":
             return response.content[0]
         return response.content
@@ -513,17 +514,17 @@ class EmpowerHandler:
         :param filter_string: String to filter the list of plate types on. Only plate
             types whose name contains this string will be returned.
         """
-        endpoint = "configuration/plate-types-list"
-        if filter_string:
-            endpoint += f"?stringFilter={filter_string}"
-        return self.connection.get(endpoint=endpoint).content
+        params = {"stringFilter": filter_string} if filter_string else None
+        return self.connection.get(
+            endpoint="configuration/plate-types-list", params=params
+        ).content
 
     def GetStatus(self, node: str, system: str):
-        endpoint = (
-            "acquisition/chromatographic-system-status"
-            f"?nodeName={node}&systemName={system}"
-        )
-        result_list = self.connection.get(endpoint=endpoint, timeout=120).content
+        result_list = self.connection.get(
+            endpoint="acquisition/chromatographic-system-status",
+            params={"nodeName": node, "systemName": system},
+            timeout=120,
+        ).content
         return {entry["name"]: entry["value"] for entry in result_list}
 
     def GetFieldNames(self, field_type: str, refresh: bool = False) -> list[dict]:
@@ -544,9 +545,8 @@ class EmpowerHandler:
                 f"available field types: {self.allowed_field_types}."
             )
         if refresh or field_type not in self._field_names_cache:
-            endpoint = f"project/fields?fieldType={field_type}"
             self._field_names_cache[field_type] = self.connection.get(
-                endpoint=endpoint
+                endpoint="project/fields", params={"fieldType": field_type}
             ).content
         return list(self._field_names_cache[field_type])
 
@@ -567,8 +567,7 @@ class EmpowerHandler:
             ("resultIds", result_id) for result_id in result_ids
         ]
         params += [("peakFields", field) for field in returned_fields]
-        endpoint = "project/peaks?" + urlencode(params)
-        return self.connection.get(endpoint=endpoint).content
+        return self.connection.get(endpoint="project/peaks", params=params).content
 
     def GetPeaks(
         self,
@@ -625,8 +624,9 @@ class EmpowerHandler:
             list(returned_fields),
             order_by,
         )
-        endpoint = "project/sample-sets?" + urlencode(params)
-        return self.connection.get(endpoint=endpoint).content
+        return self.connection.get(
+            endpoint="project/sample-sets", params=params
+        ).content
 
     def GetSampleSets(
         self,
@@ -713,8 +713,7 @@ class EmpowerHandler:
             order_by,
         )
         params += [("PageNumber", page_number), ("PageSize", page_size)]
-        endpoint = "project/results?" + urlencode(params)
-        return self.connection.get(endpoint=endpoint).content
+        return self.connection.get(endpoint="project/results", params=params).content
 
     def GetResults(
         self,
@@ -763,8 +762,7 @@ class EmpowerHandler:
             ("resultFields", field["name"]) for field in self.GetFieldNames("Result")
         ]
         params.append(("resultIDs", result_id))
-        endpoint = "project/results?" + urlencode(params)
-        results = self.connection.get(endpoint=endpoint).content
+        results = self.connection.get(endpoint="project/results", params=params).content
         if not results:
             raise ValueError(f"No result found with ID {result_id}.")
         return self._flatten_record(results[0])
@@ -878,9 +876,8 @@ class EmpowerHandler:
             )
         if allowed_values is None:
             fields = self.connection.get(
-                "/project/field-enumerated-values"
-                "?fieldType=SampleSetLine"
-                f"&field={field_name}"
+                endpoint="/project/field-enumerated-values",
+                params={"fieldType": "SampleSetLine", "field": field_name},
             )[0]
             allowed_values = [field["member"] for field in fields]
         self._samplesetline_enum_dict[field_name] = allowed_values

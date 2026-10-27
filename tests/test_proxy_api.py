@@ -108,9 +108,12 @@ class TestEmpowerHandler(unittest.TestCase):
         system_name_list = self.handler.GetSystemNames("test_node_name")
         assert system_name_list == ["test_system_name_1"]
         assert (
-            "acquisition/chromatographic-systems?nodeName=test_node_name"
+            "acquisition/chromatographic-systems"
             == self.handler.connection.get.call_args[1]["endpoint"]
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "nodeName": "test_node_name"
+        }
 
     def test_get_empower_projects(self):
         self.handler.connection.get.return_value = (
@@ -471,10 +474,9 @@ class TestGetMethods(unittest.TestCase):
 
         method_list = self.handler.GetMethodList()
         assert method_list == ["test_method_name_1", "test_method_name_2"]
-        assert (
-            "methodTypes=MethodSetMethod"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )  # Check that the correct parameters are passed to the request
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "methodTypes": "MethodSetMethod"
+        }  # Check that the correct parameters are passed to the request
 
     def test_method_with_no_name(self):
         self.handler.connection.get.return_value = create_empower_response(
@@ -529,17 +531,15 @@ class TestGetMethods(unittest.TestCase):
 
     def test_get_other_method(self):
         self.handler.GetMethodList(method_type="OtherMethod")
-        assert (
-            "methodTypes=OtherMethod"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "methodTypes": "OtherMethod"
+        }
 
     def test_implicit_method_name(self):
         self.handler.GetMethodList(method_type="Other")
-        assert (
-            "methodTypes=OtherMethod"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "methodTypes": "OtherMethod"
+        }
 
 
 class TestGetPlateTypes(unittest.TestCase):
@@ -569,10 +569,9 @@ class TestGetPlateTypes(unittest.TestCase):
 
     def test_get_plate_type_names_filter(self):
         self.handler.GetPlateTypeNames(filter_string="test_filter_text")
-        assert (
-            "?stringFilter=test_filter_text"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "stringFilter": "test_filter_text"
+        }
 
 
 class TestLogin(unittest.TestCase):
@@ -697,8 +696,11 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
         )
         method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/instrument-method?name=test_method_name"
+            "project/methods/instrument-method"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert isinstance(method, EmpowerInstrumentMethod)
         assert len(method.module_method_list) == 1
         assert isinstance(method.module_method_list[0], EmpowerModuleMethod)
@@ -715,8 +717,11 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
         )
         method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/instrument-method?name=test_method_name"
+            "project/methods/instrument-method"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert isinstance(method, EmpowerInstrumentMethod)
         assert len(method.module_method_list) == 1
         assert isinstance(method.module_method_list[0], EmpowerModuleMethod)
@@ -762,8 +767,11 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         self.handler.connection.api_version = "1.0"
         method = self.handler.GetMethodSetMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/method-set?name=test_method_name"
+            "project/methods/method-set"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert method["name"] == "test_method_return_name"
 
     def test_get_api_version_two(self):
@@ -773,8 +781,11 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         self.handler.connection.api_version = "2.0"
         method = self.handler.GetMethodSetMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/method-set?name=test_method_name"
+            "project/methods/method-set"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert method["name"] == "test_method_return_name"
 
     def test_post(self):
@@ -804,8 +815,11 @@ class TestSampleSetMethodInteraction(unittest.TestCase):
         self.handler.connection.api_version = "1.0"
         method = self.handler.GetSampleSetMethodRaw("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/sample-set-method?name=test_method_name"
+            "project/methods/sample-set-method"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert method["name"] == "test_method_return_name"
 
     def test_get_api_version_two(self):
@@ -815,8 +829,11 @@ class TestSampleSetMethodInteraction(unittest.TestCase):
         self.handler.connection.api_version = "2.0"
         method = self.handler.GetSampleSetMethodRaw("test method/name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/sample-set-method?name=test+method%2Fname"
+            "project/methods/sample-set-method"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test method/name"
+        }
         assert method["name"] == "test_method_return_name"
 
     def test_get_experiment(self):
@@ -911,8 +928,11 @@ class TestStatus(unittest.TestCase):
         result = self.handler.GetStatus(node="test_node", system="test_system")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
             "acquisition/chromatographic-system-status"
-            "?nodeName=test_node&systemName=test_system"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "nodeName": "test_node",
+            "systemName": "test_system",
+        }
         assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
 
 
@@ -930,10 +950,10 @@ class TestGetFieldNames(unittest.TestCase):
         )
         result = self.handler.GetFieldNames("Result")
         assert result == [{"name": "SampleName", "type": "Text"}]
-        assert (
-            self.handler.connection.get.call_args[1]["endpoint"]
-            == "project/fields?fieldType=Result"
-        )
+        assert self.handler.connection.get.call_args[1]["endpoint"] == "project/fields"
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "fieldType": "Result"
+        }
 
     def test_get_field_names_invalid_field_type(self):
         with self.assertRaises(ValueError):
@@ -996,9 +1016,13 @@ class TestGetPeaks(unittest.TestCase):
             result_ids=[1, 2], returned_fields=["Area", "Height"]
         )
         assert result == self.peaks.content
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/peaks?resultIds=1&resultIds=2&peakFields=Area&peakFields=Height"
-        )
+        assert self.handler.connection.get.call_args[1]["endpoint"] == "project/peaks"
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("resultIds", 2),
+            ("peakFields", "Area"),
+            ("peakFields", "Height"),
+        ]
 
     def test_get_peaks(self):
         default_fields = [
@@ -1022,24 +1046,29 @@ class TestGetPeaks(unittest.TestCase):
             {"Area": 123.0, "Height": 4.5},
             {"Area": 678.0, "Height": None},
         ]
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/peaks?resultIds=1&resultIds=2&"
-            + "&".join(f"peakFields={field}" for field in default_fields)
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("resultIds", 2),
+            *[("peakFields", field) for field in default_fields],
+        ]
 
     def test_get_peaks_all_fields(self):
         self.handler.connection.get.side_effect = [self.field_names, self.peaks]
         self.handler.GetPeaks(result_ids=[1, 2], returned_fields=None)
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/peaks?resultIds=1&resultIds=2&peakFields=Area&peakFields=Height"
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("resultIds", 2),
+            ("peakFields", "Area"),
+            ("peakFields", "Height"),
+        ]
 
     def test_get_peaks_returned_fields(self):
         self.handler.connection.get.side_effect = [self.field_names, self.peaks]
         self.handler.GetPeaks(result_ids=[1], returned_fields=["Area"])
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/peaks?resultIds=1&peakFields=Area"
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("peakFields", "Area"),
+        ]
 
     def test_get_peaks_raw_invalid_field_raises(self):
         self.handler.connection.get.return_value = self.field_names
@@ -1074,11 +1103,18 @@ class TestGetSampleSets(unittest.TestCase):
             order_by="Descending",
         )
         assert result == [{"Name": "test_sample_set"}]
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/sample-sets?samplesetFields=SampleSetName"
-            "&samplesetFields=SystemCreateDate&searchField=SystemCreateDate"
-            "&operator=GT&condition=01%2F10%2F2026&orderBy=Descending"
+        assert (
+            self.handler.connection.get.call_args[1]["endpoint"]
+            == "project/sample-sets"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("samplesetFields", "SampleSetName"),
+            ("samplesetFields", "SystemCreateDate"),
+            ("searchField", "SystemCreateDate"),
+            ("operator", "GT"),
+            ("condition", "01/10/2026"),
+            ("orderBy", "Descending"),
+        ]
 
     def test_get_sample_sets(self):
         default_fields = [
@@ -1112,12 +1148,13 @@ class TestGetSampleSets(unittest.TestCase):
             search_field="SampleSetName", operator="EQ", condition="clean"
         )
         assert result == [{"id": 1531, "SampleSetName": "clean", "Node": None}]
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/sample-sets?"
-            + "&".join(f"samplesetFields={field}" for field in default_fields)
-            + "&searchField=SampleSetName&operator=EQ&condition=clean"
-            "&orderBy=OrderNone"
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            *[("samplesetFields", field) for field in default_fields],
+            ("searchField", "SampleSetName"),
+            ("operator", "EQ"),
+            ("condition", "clean"),
+            ("orderBy", "OrderNone"),
+        ]
 
     def test_get_sample_sets_all_fields(self):
         self.handler.connection.get.side_effect = [
@@ -1130,10 +1167,10 @@ class TestGetSampleSets(unittest.TestCase):
             condition="*",
             returned_fields=None,
         )
-        assert self.handler.connection.get.call_args[1]["endpoint"].startswith(
-            "project/sample-sets?samplesetFields=SampleSetName"
-            "&samplesetFields=SystemCreateDate&searchField"
-        )
+        assert self.handler.connection.get.call_args[1]["params"][:2] == [
+            ("samplesetFields", "SampleSetName"),
+            ("samplesetFields", "SystemCreateDate"),
+        ]
 
     def test_get_sample_sets_adds_search_field(self):
         self.handler.connection.get.side_effect = [
@@ -1147,9 +1184,9 @@ class TestGetSampleSets(unittest.TestCase):
             operator="EQ",
             condition="*",
         )
-        endpoint = self.handler.connection.get.call_args[1]["endpoint"]
-        assert "samplesetFields=SystemCreateDate" in endpoint
-        assert "orderBy=OrderNone" in endpoint
+        params = self.handler.connection.get.call_args[1]["params"]
+        assert ("samplesetFields", "SystemCreateDate") in params
+        assert ("orderBy", "OrderNone") in params
         assert returned_fields == ["SampleSetName"]
 
     def test_get_sample_sets_invalid_search_field(self):
@@ -1230,12 +1267,15 @@ class TestGetSampleSets(unittest.TestCase):
                 "SampleSetComments": None,
             }
         ]
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/sample-sets?samplesetFields=SampleSetName"
-            "&samplesetFields=SampleSetType&samplesetFields=SampleSetComments"
-            "&searchField=SampleSetName&operator=EQ&condition=test+name"
-            "&orderBy=OrderNone"
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("samplesetFields", "SampleSetName"),
+            ("samplesetFields", "SampleSetType"),
+            ("samplesetFields", "SampleSetComments"),
+            ("searchField", "SampleSetName"),
+            ("operator", "EQ"),
+            ("condition", "test name"),
+            ("orderBy", "OrderNone"),
+        ]
 
 
 class TestGetResults(unittest.TestCase):
@@ -1266,10 +1306,18 @@ class TestGetResults(unittest.TestCase):
         )
         assert result == [{"id": 1}]
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/results?resultFields=SampleName&resultFields=DateAcquired"
-            "&searchField=DateAcquired&operator=GT&condition=01%2F01%2F2025"
-            "&orderBy=Descending&PageNumber=1&PageSize=10"
+            "project/results"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultFields", "SampleName"),
+            ("resultFields", "DateAcquired"),
+            ("searchField", "DateAcquired"),
+            ("operator", "GT"),
+            ("condition", "01/01/2025"),
+            ("orderBy", "Descending"),
+            ("PageNumber", 1),
+            ("PageSize", 10),
+        ]
         assert returned_fields == ["SampleName"]
 
     def test_get_results(self):
@@ -1305,12 +1353,15 @@ class TestGetResults(unittest.TestCase):
         assert result == [
             {"id": 1862, "SampleName": "test_sample", "DateProcessed": None}
         ]
-        assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/results?"
-            + "&".join(f"resultFields={field}" for field in default_fields)
-            + "&searchField=SampleName&operator=EQ&condition=test_sample"
-            "&orderBy=OrderNone&PageNumber=1&PageSize=50"
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            *[("resultFields", field) for field in default_fields],
+            ("searchField", "SampleName"),
+            ("operator", "EQ"),
+            ("condition", "test_sample"),
+            ("orderBy", "OrderNone"),
+            ("PageNumber", 1),
+            ("PageSize", 50),
+        ]
 
     def test_get_results_all_fields(self):
         self.handler.connection.get.side_effect = [
@@ -1323,10 +1374,10 @@ class TestGetResults(unittest.TestCase):
             condition="*",
             returned_fields=None,
         )
-        assert self.handler.connection.get.call_args[1]["endpoint"].startswith(
-            "project/results?resultFields=SampleName&resultFields=DateAcquired"
-            "&searchField"
-        )
+        assert self.handler.connection.get.call_args[1]["params"][:2] == [
+            ("resultFields", "SampleName"),
+            ("resultFields", "DateAcquired"),
+        ]
 
     def test_get_results_invalid_operator_raises(self):
         with self.assertRaises(ValueError):
@@ -1376,9 +1427,13 @@ class TestGetResults(unittest.TestCase):
         result = self.handler.GetResult(1862)
         assert result == {"id": 1862, "SampleName": "test_sample", "DateAcquired": None}
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/results?resultFields=SampleName&resultFields=DateAcquired"
-            "&resultIDs=1862"
+            "project/results"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultFields", "SampleName"),
+            ("resultFields", "DateAcquired"),
+            ("resultIDs", 1862),
+        ]
 
     def test_get_result_not_found_raises(self):
         self.handler.connection.get.side_effect = [
@@ -1415,8 +1470,11 @@ class TestSampleSetLineFields(unittest.TestCase):
 
     def test_called_on_login(self):
         self.assertEqual(
-            self.handler.connection.get.call_args[0][0],
-            "/project/fields?fieldType=SampleSetLine",
+            self.handler.connection.get.call_args[1]["endpoint"], "/project/fields"
+        )
+        self.assertEqual(
+            self.handler.connection.get.call_args[1]["params"],
+            {"fieldType": "SampleSetLine"},
         )
 
     def test_synonym(self):
