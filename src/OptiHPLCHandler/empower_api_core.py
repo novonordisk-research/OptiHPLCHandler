@@ -478,7 +478,8 @@ class EmpowerConnection:
                 )
             elif "errors" in body:
                 error = requests.exceptions.HTTPError(
-                    f"HTTP error {response.status_code} with errors '{body.get('errors', '')}'"
+                    f"HTTP error {response.status_code} "
+                    f"with errors '{body.get('errors', '')}'"
                 )
             else:
                 # No Empower message (e.g. a 404), so keep the requests error and URL
