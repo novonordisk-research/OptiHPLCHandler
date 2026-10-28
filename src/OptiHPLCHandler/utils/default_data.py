@@ -5,6 +5,10 @@ allowed values.
 SYNONYMS contains the hard-coded synonyms for sampleset line fields.
 
 RUN_MODES contains the allowed values for the RunMode when starting a run in Empower.
+
+RESULT_OPERATORS, ORDER_BY_OPTIONS, and FIELD_TYPES contain the
+allowed values for the corresponding parameters of the project/results,
+project/peaks, project/sample-sets, and project/fields endpoints.
 """
 
 from collections.abc import Mapping
@@ -151,3 +155,52 @@ SYNONYMS: Mapping[str, str] = MappingProxyType(
 )
 
 RUN_MODES: tuple[str, ...] = ("RunOnly", "RunAndProcess", "RunAndReport")
+
+RESULT_OPERATORS: tuple[str, ...] = ("EQ", "NEQ", "LT", "LTE", "GT", "GTE")
+
+ORDER_BY_OPTIONS: tuple[str, ...] = ("OrderNone", "Ascending", "Descending")
+
+FIELD_TYPES: tuple[str, ...] = (
+    "AuditTrail",
+    "Peak",
+    "Result",
+    "SampleSet",
+    "SampleSetLine",
+    "SSQEntry",
+)
+
+# The peak fields EmpowerHandler.GetPeaks returns when none are given.
+DEFAULT_PEAK_FIELDS: tuple[str, ...] = (
+    "Area",
+    "PctArea",
+    "StartTime",
+    "EndTime",
+    "Height",
+    "Name",
+    "RetentionTime",
+    "AsymAt10",
+    "WidthAt50Pct",
+    "WidthAtBaseline",
+)
+
+# The result fields EmpowerHandler.GetResults returns when none are given.
+DEFAULT_RESULT_FIELDS: tuple[str, ...] = (
+    "SampleName",
+    "ResultId",
+    "InjectionId",
+    "ChannelName",
+    "DateAcquired",
+    "DateProcessed",
+    "ProcessingMethod",
+)
+
+# The sample set fields EmpowerHandler.GetSampleSets returns when none are given.
+DEFAULT_SAMPLE_SET_FIELDS: tuple[str, ...] = (
+    "SampleSetName",
+    "SampleSetId",
+    "SampleSetMethod",
+    "SampleSetStartDate",
+    "SampleSetFinishDate",
+    "SystemName",
+    "Node",
+)

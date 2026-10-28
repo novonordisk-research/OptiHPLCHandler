@@ -138,6 +138,40 @@ class TestEmpowerConnection(unittest.TestCase):
         assert mock_requests.request.call_args[0][1] == "https://test_address/test_url"
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_params(self, mock_requests):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": []}
+        mock_requests.request.return_value = mock_response
+        params = [("resultIds", 1), ("resultIds", 2), ("name", "a&b c")]
+        self.connection.get("test_url", params=params)
+        assert mock_requests.request.call_args[0][1] == "https://test_address/test_url"
+        assert mock_requests.request.call_args[1]["params"] == params
+        self.connection.get("test_url")
+        assert mock_requests.request.call_args[1]["params"] is None
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_get_params_kept_on_token_refresh(self, mock_requests):
+        self.connection.api_version = "2.0"
+        expired_response = MagicMock()
+        expired_response.status_code = 401
+        refresh_response = MagicMock()
+        refresh_response.status_code = 200
+        refresh_response.json.return_value = {"data": {"token": "test_token_refresh"}}
+        ok_response = MagicMock()
+        ok_response.status_code = 200
+        ok_response.json.return_value = {"data": []}
+        mock_requests.request.side_effect = [
+            expired_response,
+            refresh_response,
+            ok_response,
+        ]
+        self.connection.get("test_url", params={"name": "test_name"})
+        retry_call = mock_requests.request.call_args_list[2]
+        assert retry_call[0][1] == "https://test_address/test_url"
+        assert retry_call[1]["params"] == {"name": "test_name"}
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_get_http_error(self, mock_requests):
         mock_response = MagicMock()
         mock_response.status_code = 400
@@ -343,6 +377,25 @@ class TestEmpowerConnection(unittest.TestCase):
         assert "HTTP error 400" in str(context.exception)
         assert "message 'test_message'" in str(context.exception)
         assert "ID test_id" in str(context.exception)
+
+    @patch("OptiHPLCHandler.empower_api_core.requests")
+    def test_http_error_without_empower_message(self, mock_requests):
+        mock_requests.exceptions.HTTPError = requests.exceptions.HTTPError
+        mock_requests.request.return_value = mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "404 Client Error: Not Found for url: test_url", response=mock_response
+        )
+        for body in ({}, {"title": "Not Found"}, []):
+            mock_response.json.side_effect = None
+            mock_response.json.return_value = body
+            with self.assertRaises(requests.exceptions.HTTPError) as context:
+                self.connection.get("test_url")
+            assert "404 Client Error" in str(context.exception)
+        mock_response.json.side_effect = ValueError("No JSON body")
+        with self.assertRaises(requests.exceptions.HTTPError) as context:
+            self.connection.get("test_url")
+        assert "404 Client Error" in str(context.exception)
 
     @patch("OptiHPLCHandler.empower_api_core.requests")
     def test_incomplete_json(self, mock_requests):

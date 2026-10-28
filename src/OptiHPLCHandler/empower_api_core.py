@@ -2,7 +2,7 @@ import getpass
 import logging
 import time
 import warnings
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import keyring
 import requests
@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 KNOWN_API_VERSIONS = ("1.0", "2.0", "3.0")
 # The API versions this SDK knows how to build requests for, oldest first.
+
+QueryParams = dict[str, Any] | list[tuple[str, Any]]
+# A list of tuples allows repeating a key, e.g. [("resultIds", 1), ("resultIds", 2)].
 
 
 class EmpowerResponse(NamedTuple):
@@ -246,7 +249,12 @@ class EmpowerConnection:
         logger.debug("Logout successful")
 
     def _requests_wrapper(
-        self, method: str, endpoint: str, body: dict | None, timeout: int
+        self,
+        method: str,
+        endpoint: str,
+        body: dict | None,
+        timeout: int,
+        params: QueryParams | None = None,
     ) -> EmpowerResponse:
         """
         Wrapper for requests.
@@ -255,6 +263,7 @@ class EmpowerConnection:
         :param endpoint: The endpoint to use.
         :param body: The body to use.
         :param timeout: The timeout to use.
+        :param params: Query parameters, URL encoded by requests.
 
         :return: The results and message from the response.
         """
@@ -262,9 +271,9 @@ class EmpowerConnection:
         def _request_with_timeout(
             method: str,
             endpoint: str,
-            params: dict,
+            params: QueryParams | None,
             header: dict,
-            body: dict,
+            body: dict | None,
             timeout: int,
             verify: bool | str,
         ) -> requests.Response:
@@ -289,7 +298,12 @@ class EmpowerConnection:
         log_header = self.header.copy()
         log_header.pop("Authorization", None)  # Remove the token from the log
         logger.debug(
-            "%sing header %s and body %s to %s", method, log_header, body, address
+            "%sing header %s, params %s and body %s to %s",
+            method,
+            log_header,
+            params,
+            body,
+            address,
         )
         response = _request_with_timeout(
             method=method,
@@ -298,7 +312,7 @@ class EmpowerConnection:
             body=body,
             timeout=timeout,
             verify=self.verify,
-            params={},
+            params=params,
         )
         if response.status_code == 401:
             logger.debug("Token expired, refreshing token and %sing again", method)
@@ -323,7 +337,7 @@ class EmpowerConnection:
                 body=body,
                 timeout=timeout,
                 verify=self.verify,
-                params={},
+                params=params,
             )
         logger.debug("Got response %s from %s", response.text, address)
         self.raise_for_status(response)
@@ -346,12 +360,19 @@ class EmpowerConnection:
             message_from_api=message_from_api,
         )
 
-    def get(self, endpoint: str, timeout: int | None = None) -> EmpowerResponse:
+    def get(
+        self,
+        endpoint: str,
+        timeout: int | None = None,
+        params: QueryParams | None = None,
+    ) -> EmpowerResponse:
         """
         Get data from Empower.
 
-        :param endpoint: The endpoint to get data from.
+        :param endpoint: The endpoint to get data from, without query string.
         :param timeout: The timeout to use. If None, the default timeout is used.
+        :param params: Query parameters, as a dict or a list of (key, value) tuples
+            to repeat a key. They are URL encoded by requests.
 
         :return: The results and message from the response.
         """
@@ -365,7 +386,11 @@ class EmpowerConnection:
             )
         logger.debug("Getting data from %s with timeout %s", endpoint, timeout)
         response = self._requests_wrapper(
-            method="get", endpoint=endpoint, body=None, timeout=timeout
+            method="get",
+            endpoint=endpoint,
+            body=None,
+            timeout=timeout,
+            params=params,
         )
         if response[1]:
             logger.debug("Got message from Empower %s", response[1])
@@ -439,16 +464,24 @@ class EmpowerConnection:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError:
-            body = response.json()
+            try:
+                body = response.json()
+            except ValueError:
+                body = {}
+            if not isinstance(body, dict):
+                body = {}
             if "message" in body and "id" in body:
                 error = requests.exceptions.HTTPError(
                     f"HTTP error {response.status_code} "
-                    f"with message '{response.json()['message']}' "
-                    f"and ID {response.json()['id']}"
+                    f"with message '{body.get('message', '')}' "
+                    f"and ID {body.get('id', '')}"
                 )
             elif "errors" in body:
                 error = requests.exceptions.HTTPError(
                     f"HTTP error {response.status_code} "
-                    f"with errors '{response.json()['errors']}'"
+                    f"with errors '{body.get('errors', '')}'"
                 )
+            else:
+                # No Empower message (e.g. a 404), so keep the requests error and URL
+                raise
             raise error from None

@@ -1,6 +1,6 @@
 import logging
 import warnings
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from .empower_api_core import EmpowerConnection
@@ -8,8 +8,14 @@ from .empower_instrument_method import EmpowerInstrumentMethod
 from .utils.default_data import (
     BUILTIN_ALLOWED_VALUES,
     BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3,
+    DEFAULT_PEAK_FIELDS,
+    DEFAULT_RESULT_FIELDS,
+    DEFAULT_SAMPLE_SET_FIELDS,
     FIELD_DATA_TYPE_MAP_LEGACY,
     FIELD_DATA_TYPE_MAP_V3,
+    FIELD_TYPES,
+    ORDER_BY_OPTIONS,
+    RESULT_OPERATORS,
     RUN_MODES,
     SYNONYMS,
 )
@@ -80,6 +86,10 @@ class EmpowerHandler:
         self._samplesetline_enum_dict = dict(BUILTIN_ALLOWED_VALUES)
         self.synonym_dict = dict(SYNONYMS)
         self.allowed_run_modes = RUN_MODES
+        self.allowed_field_types = FIELD_TYPES
+        self.allowed_result_operators = RESULT_OPERATORS
+        self.allowed_order_by_options = ORDER_BY_OPTIONS
+        self._field_names_cache: dict[str, list[dict]] = {}
 
     def __enter__(self):
         """Start the context manager."""
@@ -101,6 +111,7 @@ class EmpowerHandler:
     @project.setter
     def project(self, project: str) -> None:
         self.connection.project = project
+        self._field_names_cache.clear()  # Custom fields differ between projects
 
     @property
     def address(self) -> str:
@@ -167,7 +178,9 @@ class EmpowerHandler:
         set the values manually with `SetAllowedSamplesetLineFieldValues` by not giving
         the `allowed_values` parameter.
         """
-        fields = self.connection.get("/project/fields?fieldType=SampleSetLine")[0]
+        fields = self.connection.get(
+            endpoint="/project/fields", params={"fieldType": "SampleSetLine"}
+        )[0]
         for field in fields:
             self.synonym_dict[field["displayName"]] = field["name"]
         enum_field_name_list = [
@@ -346,7 +359,7 @@ class EmpowerHandler:
         if not method_type.endswith("Method"):
             method_type += "Method"
         method_list = self.connection.get(
-            endpoint="project/methods?methodTypes=" + method_type
+            endpoint="project/methods", params={"methodTypes": method_type}
         ).content
         method_name_dict_list = [
             [name_dict for name_dict in method["fields"] if name_dict["name"] == "Name"]
@@ -373,7 +386,7 @@ class EmpowerHandler:
             manager oven will be used. If False, only column manager oven will be used.
         """
         response = self.connection.get(
-            endpoint=f"project/methods/instrument-method?name={method_name}"
+            endpoint="project/methods/instrument-method", params={"name": method_name}
         )
         if self.connection.api_version == "1.0":
             return EmpowerInstrumentMethod(response.content[0], use_sample_manager_oven)
@@ -394,7 +407,7 @@ class EmpowerHandler:
         :param method_name: Name of the method set method to get.
         """
         response = self.connection.get(
-            endpoint=f"project/methods/method-set?name={method_name}"
+            endpoint="project/methods/method-set", params={"name": method_name}
         )
         if self.connection.api_version == "1.0":
             return response.content[0]
@@ -418,14 +431,81 @@ class EmpowerHandler:
 
         :param node: Name of the node to get the systems from.
         """
-        endpoint = f"acquisition/chromatographic-systems?nodeName={node}"
-        return self.connection.get(endpoint=endpoint).content
+        return self.connection.get(
+            endpoint="acquisition/chromatographic-systems", params={"nodeName": node}
+        ).content
 
     def GetSampleSetMethods(self) -> list[str]:
+        """Deprecated. Get the list of sample set methods in project."""
+        warnings.warn(
+            "GetSampleSetMethods is deprecated, use GetSampleSetMethodList instead.",
+            DeprecationWarning,
+        )
+        return self.GetSampleSetMethodList()
+
+    def GetSampleSetMethodList(self) -> list[str]:
         """Get the list of sample set methods in project."""
         return self.connection.get(
             endpoint="project/methods/sample-set-method-list"
         ).content
+
+    def GetSampleSetMethodRaw(self, method_name: str) -> dict:
+        """
+        Get a sample set method.
+
+        :param method_name: Name of the sample set method to get.
+        """
+        response = self.connection.get(
+            endpoint="project/methods/sample-set-method", params={"name": method_name}
+        )
+        if self.connection.api_version == "1.0":
+            return response.content[0]
+        return response.content
+
+    def GetSampleSetMethod(
+        self, sample_set_method_name: str, component_key: str = "Components"
+    ) -> tuple[list[dict[str, Any]], dict[str, str]]:
+        """
+        Get a sample set method in the format used by `PostExperiment`.
+
+        :param sample_set_method_name: Name of the sample set method to get.
+        :param component_key: Key to put the components of each sample under.
+
+        :return: A tuple of the sample list and the plates dict, which can be passed
+            to `PostExperiment` as `sample_list` and `plates`. Sample keys are the
+            Empower field names, and fields without a value are left out.
+        """
+        method = self.GetSampleSetMethodRaw(sample_set_method_name)
+        plates = {
+            plate["plateLayoutPosition"]: plate["plateTypeName"]
+            for plate in method["plates"]
+        }
+        sample_list = []
+        for line in method["sampleSetLines"]:
+            sample = {}
+            for field in line["fields"]:
+                if field.get("value") is None:
+                    continue
+                value = field["value"]
+                if isinstance(value, dict) and "member" in value:
+                    value = value["member"]
+                elif isinstance(value, bool) and field["dataType"] in (
+                    "Enumerator",
+                    "Enum",
+                ):
+                    # Yes/No enumerators are returned as bools but posted as strings
+                    value = "Yes" if value else "No"
+                sample[field["name"]] = value
+            components = {}
+            for component in line.get("components", []):
+                component_fields = {
+                    field["name"]: field.get("value") for field in component["fields"]
+                }
+                components[component_fields["Component"]] = component_fields["Value"]
+            if components:
+                sample[component_key] = components
+            sample_list.append(sample)
+        return sample_list, plates
 
     def GetPlateTypeNames(self, filter_string: str | None = None) -> list[str]:
         """
@@ -434,18 +514,325 @@ class EmpowerHandler:
         :param filter_string: String to filter the list of plate types on. Only plate
             types whose name contains this string will be returned.
         """
-        endpoint = "configuration/plate-types-list"
-        if filter_string:
-            endpoint += f"?stringFilter={filter_string}"
-        return self.connection.get(endpoint=endpoint).content
+        params = {"stringFilter": filter_string} if filter_string else None
+        return self.connection.get(
+            endpoint="configuration/plate-types-list", params=params
+        ).content
 
     def GetStatus(self, node: str, system: str):
-        endpoint = (
-            "acquisition/chromatographic-system-status"
-            f"?nodeName={node}&systemName={system}"
-        )
-        result_list = self.connection.get(endpoint=endpoint, timeout=120).content
+        result_list = self.connection.get(
+            endpoint="acquisition/chromatographic-system-status",
+            params={"nodeName": node, "systemName": system},
+            timeout=120,
+        ).content
         return {entry["name"]: entry["value"] for entry in result_list}
+
+    def GetFieldNames(self, field_type: str, refresh: bool = False) -> list[dict]:
+        """
+        Get the available field names and their data type for a given field type.
+
+        The result is cached per field type until the project is changed.
+
+        :param field_type: Type of field to get names for. Must be one of
+            `self.allowed_field_types` ("AuditTrail", "Peak", "Result", "SampleSet",
+            "SampleSetLine", "SSQEntry").
+        :param refresh: If True, get the field names from Empower even if they are
+            cached, e.g. after adding a custom field. Default False.
+        """
+        if field_type not in self.allowed_field_types:
+            raise ValueError(
+                f"Field type {field_type} not in "
+                f"available field types: {self.allowed_field_types}."
+            )
+        if refresh or field_type not in self._field_names_cache:
+            self._field_names_cache[field_type] = self.connection.get(
+                endpoint="project/fields", params={"fieldType": field_type}
+            ).content
+        return list(self._field_names_cache[field_type])
+
+    def GetPeaksRaw(
+        self, result_ids: list[int], returned_fields: list[str]
+    ) -> list[dict]:
+        """
+        Get peak data for results, as returned by Empower.
+
+        :param result_ids: List of result IDs to get peak data for.
+        :param returned_fields: List of peak fields to return.
+
+        :return: One record per peak. Its "id" is the ID of the result the peak
+            belongs to.
+        """
+        self._check_fields("Peak", returned_fields)
+        params: list[tuple[str, Any]] = [
+            ("resultIds", result_id) for result_id in result_ids
+        ]
+        params += [("peakFields", field) for field in returned_fields]
+        return self.connection.get(endpoint="project/peaks", params=params).content
+
+    def GetPeaks(
+        self,
+        result_ids: list[int],
+        returned_fields: Sequence[str] | None = DEFAULT_PEAK_FIELDS,
+    ) -> list[dict[str, Any]]:
+        """
+        Get peak data for results, with one flat dict per peak.
+
+        :param result_ids: List of result IDs to get peak data for.
+        :param returned_fields: List of peak fields to return. Defaults to
+            `DEFAULT_PEAK_FIELDS` ("Area", "PctArea", "StartTime", "EndTime",
+            "Height", "Name", "RetentionTime", "AsymAt10", "WidthAt50Pct",
+            "WidthAtBaseline"). If None, all available peak fields are returned.
+
+        :return: One dict per peak, with a value per returned field and None for
+            fields without a value.
+        """
+        if returned_fields is None:
+            returned_fields = [field["name"] for field in self.GetFieldNames("Peak")]
+        peaks = self.GetPeaksRaw(result_ids, list(returned_fields))
+        return [self._flatten_record(peak, id_key=None) for peak in peaks]
+
+    def GetSampleSetsRaw(
+        self,
+        search_field: str,
+        operator: str,
+        condition: str,
+        returned_fields: Sequence[str],
+        order_by: str = "OrderNone",
+    ) -> list[dict]:
+        """
+        Search sample sets, as returned by Empower.
+
+        :param search_field: Sample set field to search on, used the same way as the
+            ViewFilter cells in the Project window, together with `operator` and
+            `condition`.
+        :param operator: Logical operator to use with `condition`. Must be one of
+            `self.allowed_result_operators` ("EQ", "NEQ", "LT", "LTE", "GT", "GTE").
+        :param condition: Condition to filter `search_field` on. Use "*" to ignore the
+            condition and return all sample sets.
+        :param returned_fields: List of sample set fields to return. `search_field` is
+            added if not already in the list, as the server requires it.
+        :param order_by: Sort order of the results. Must be one of
+            `self.allowed_order_by_options` ("OrderNone", "Ascending", "Descending").
+            Default "OrderNone".
+        """
+        params = self._build_search_params(
+            "SampleSet",
+            "samplesetFields",
+            search_field,
+            operator,
+            condition,
+            list(returned_fields),
+            order_by,
+        )
+        return self.connection.get(
+            endpoint="project/sample-sets", params=params
+        ).content
+
+    def GetSampleSets(
+        self,
+        search_field: str,
+        operator: str,
+        condition: str,
+        returned_fields: Sequence[str] | None = DEFAULT_SAMPLE_SET_FIELDS,
+        order_by: str = "OrderNone",
+    ) -> list[dict[str, Any]]:
+        """
+        Search sample sets, with one flat dict per sample set.
+
+        Takes the same parameters as `GetSampleSetsRaw`, except `returned_fields`
+        defaults to `DEFAULT_SAMPLE_SET_FIELDS` ("SampleSetName", "SampleSetId",
+        "SampleSetMethod", "SampleSetStartDate", "SampleSetFinishDate", "SystemName",
+        "Node"). If None, all available sample set fields are returned.
+
+        :return: One dict per sample set, with its "id" and a value per returned field,
+            and None for fields without a value.
+        """
+        if returned_fields is None:
+            returned_fields = [
+                field["name"] for field in self.GetFieldNames("SampleSet")
+            ]
+        sample_sets = self.GetSampleSetsRaw(
+            search_field, operator, condition, returned_fields, order_by
+        )
+        return [self._flatten_record(sample_set) for sample_set in sample_sets]
+
+    def GetSampleSet(self, sample_set_name: str) -> list[dict[str, Any]]:
+        """
+        Get all available fields of the sample sets with a given name.
+
+        :param sample_set_name: Name of the sample set to get.
+
+        :return: One dict per sample set with that name, as names are not unique in
+            Empower. Each dict has the sample set "id" and every sample set field,
+            with None for fields without a value.
+        """
+        return self.GetSampleSets(
+            search_field="SampleSetName",
+            operator="EQ",
+            condition=sample_set_name,
+            returned_fields=None,
+        )
+
+    def GetResultsRaw(
+        self,
+        search_field: str,
+        operator: str,
+        condition: str,
+        returned_fields: Sequence[str],
+        order_by: str = "OrderNone",
+        page_number: int = 1,
+        page_size: int = 50,
+    ) -> list[dict]:
+        """
+        Search result records, as returned by Empower.
+
+        :param search_field: Result field to search on, used the same way as the
+            ViewFilter cells in the Project window, together with `operator` and
+            `condition`.
+        :param operator: Logical operator to use with `condition`. Must be one of
+            `self.allowed_result_operators` ("EQ", "NEQ", "LT", "LTE", "GT", "GTE").
+        :param condition: Condition to filter `search_field` on. Must evaluate to a
+            number for numeric fields. Dates can be given as e.g. "15 April 2025" or
+            "15/04/2025". Use "*" to ignore the condition, so `order_by` alone
+            determines the results.
+        :param returned_fields: List of result fields to return. `search_field` is
+            added if not already in the list.
+        :param order_by: Sort order of the results. Must be one of
+            `self.allowed_order_by_options` ("OrderNone", "Ascending", "Descending").
+            Default "OrderNone".
+        :param page_number: Page of results to return, starting at 1. Default 1.
+        :param page_size: Number of results per page. Default 50.
+        """
+        params = self._build_search_params(
+            "Result",
+            "resultFields",
+            search_field,
+            operator,
+            condition,
+            list(returned_fields),
+            order_by,
+        )
+        params += [("PageNumber", page_number), ("PageSize", page_size)]
+        return self.connection.get(endpoint="project/results", params=params).content
+
+    def GetResults(
+        self,
+        search_field: str,
+        operator: str,
+        condition: str,
+        returned_fields: Sequence[str] | None = DEFAULT_RESULT_FIELDS,
+        order_by: str = "OrderNone",
+        page_number: int = 1,
+        page_size: int = 50,
+    ) -> list[dict[str, Any]]:
+        """
+        Search result records, with one flat dict per result.
+
+        Takes the same parameters as `GetResultsRaw`, except `returned_fields`
+        defaults to `DEFAULT_RESULT_FIELDS` ("SampleName", "ResultId", "InjectionId",
+        "ChannelName", "DateAcquired", "DateProcessed", "ProcessingMethod"). If None,
+        all available result fields are returned.
+
+        :return: One dict per result, with its "id" and a value per returned field,
+            and None for fields without a value.
+        """
+        if returned_fields is None:
+            returned_fields = [field["name"] for field in self.GetFieldNames("Result")]
+        results = self.GetResultsRaw(
+            search_field,
+            operator,
+            condition,
+            returned_fields,
+            order_by,
+            page_number,
+            page_size,
+        )
+        return [self._flatten_record(result) for result in results]
+
+    def GetResult(self, result_id: int) -> dict[str, Any]:
+        """
+        Get all available fields of a result.
+
+        :param result_id: ID of the result to get.
+
+        :return: A dict with the result "id" and every result field, with None for
+            fields without a value.
+        """
+        params: list[tuple[str, Any]] = [
+            ("resultFields", field["name"]) for field in self.GetFieldNames("Result")
+        ]
+        params.append(("resultIDs", result_id))
+        results = self.connection.get(endpoint="project/results", params=params).content
+        if not results:
+            raise ValueError(f"No result found with ID {result_id}.")
+        return self._flatten_record(results[0])
+
+    def _build_search_params(
+        self,
+        field_type: str,
+        fields_param: str,
+        search_field: str,
+        operator: str,
+        condition: str,
+        returned_fields: list[str],
+        order_by: str,
+    ) -> list[tuple[str, Any]]:
+        """Validate a search and build its query parameters."""
+        if operator not in self.allowed_result_operators:
+            raise ValueError(
+                f"Operator {operator} not in "
+                f"available operators: {self.allowed_result_operators}."
+            )
+        if order_by not in self.allowed_order_by_options:
+            raise ValueError(
+                f"Order by {order_by} not in "
+                f"available order by options: {self.allowed_order_by_options}."
+            )
+        available_fields = self._check_fields(field_type, returned_fields)
+        if search_field not in available_fields:
+            raise ValueError(
+                f"Search field {search_field} not in "
+                f"available {field_type} fields: {available_fields}."
+            )
+        if search_field not in returned_fields:
+            returned_fields = [*returned_fields, search_field]
+        params: list[tuple[str, Any]] = [
+            (fields_param, field) for field in returned_fields
+        ]
+        params += [
+            ("searchField", search_field),
+            ("operator", operator),
+            ("condition", condition),
+            ("orderBy", order_by),
+        ]
+        return params
+
+    def _check_fields(self, field_type: str, fields: list[str]) -> list[str]:
+        """Raise if any field is not a `field_type` field, and return those fields."""
+        available_fields = [field["name"] for field in self.GetFieldNames(field_type)]
+        unknown_fields = [field for field in fields if field not in available_fields]
+        if unknown_fields:
+            raise ValueError(
+                f"Returned fields {unknown_fields} not in "
+                f"available {field_type} fields: {available_fields}."
+            )
+        return available_fields
+
+    @staticmethod
+    def _flatten_record(
+        record: Mapping[str, Any], id_key: str | None = "id"
+    ) -> dict[str, Any]:
+        """Flatten an Empower record to a value per field name, plus its id if
+        `id_key` is given."""
+        flat_record: dict[str, Any] = {}
+        if id_key is not None:
+            flat_record[id_key] = record["id"]
+        for field in record["fields"]:
+            value = field.get("value")
+            if isinstance(value, dict) and "member" in value:
+                value = value["member"]
+            flat_record[field["name"]] = value
+        return flat_record
 
     def SetAllowedSamplesetLineFieldValues(
         self,
@@ -489,9 +876,8 @@ class EmpowerHandler:
             )
         if allowed_values is None:
             fields = self.connection.get(
-                "/project/field-enumerated-values"
-                "?fieldType=SampleSetLine"
-                f"&field={field_name}"
+                endpoint="/project/field-enumerated-values",
+                params={"fieldType": "SampleSetLine", "field": field_name},
             )[0]
             allowed_values = [field["member"] for field in fields]
         self._samplesetline_enum_dict[field_name] = allowed_values

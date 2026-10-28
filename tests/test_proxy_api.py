@@ -108,9 +108,12 @@ class TestEmpowerHandler(unittest.TestCase):
         system_name_list = self.handler.GetSystemNames("test_node_name")
         assert system_name_list == ["test_system_name_1"]
         assert (
-            "acquisition/chromatographic-systems?nodeName=test_node_name"
+            "acquisition/chromatographic-systems"
             == self.handler.connection.get.call_args[1]["endpoint"]
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "nodeName": "test_node_name"
+        }
 
     def test_get_empower_projects(self):
         self.handler.connection.get.return_value = (
@@ -471,10 +474,9 @@ class TestGetMethods(unittest.TestCase):
 
         method_list = self.handler.GetMethodList()
         assert method_list == ["test_method_name_1", "test_method_name_2"]
-        assert (
-            "methodTypes=MethodSetMethod"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )  # Check that the correct parameters are passed to the request
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "methodTypes": "MethodSetMethod"
+        }  # Check that the correct parameters are passed to the request
 
     def test_method_with_no_name(self):
         self.handler.connection.get.return_value = create_empower_response(
@@ -529,17 +531,15 @@ class TestGetMethods(unittest.TestCase):
 
     def test_get_other_method(self):
         self.handler.GetMethodList(method_type="OtherMethod")
-        assert (
-            "methodTypes=OtherMethod"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "methodTypes": "OtherMethod"
+        }
 
     def test_implicit_method_name(self):
         self.handler.GetMethodList(method_type="Other")
-        assert (
-            "methodTypes=OtherMethod"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "methodTypes": "OtherMethod"
+        }
 
 
 class TestGetPlateTypes(unittest.TestCase):
@@ -569,10 +569,9 @@ class TestGetPlateTypes(unittest.TestCase):
 
     def test_get_plate_type_names_filter(self):
         self.handler.GetPlateTypeNames(filter_string="test_filter_text")
-        assert (
-            "?stringFilter=test_filter_text"
-            in self.handler.connection.get.call_args[1]["endpoint"]
-        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "stringFilter": "test_filter_text"
+        }
 
 
 class TestLogin(unittest.TestCase):
@@ -697,8 +696,11 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
         )
         method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/instrument-method?name=test_method_name"
+            "project/methods/instrument-method"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert isinstance(method, EmpowerInstrumentMethod)
         assert len(method.module_method_list) == 1
         assert isinstance(method.module_method_list[0], EmpowerModuleMethod)
@@ -715,8 +717,11 @@ class TestInstrumentMethodInteraction(unittest.TestCase):
         )
         method = self.handler.GetInstrumentMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/instrument-method?name=test_method_name"
+            "project/methods/instrument-method"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert isinstance(method, EmpowerInstrumentMethod)
         assert len(method.module_method_list) == 1
         assert isinstance(method.module_method_list[0], EmpowerModuleMethod)
@@ -762,8 +767,11 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         self.handler.connection.api_version = "1.0"
         method = self.handler.GetMethodSetMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/method-set?name=test_method_name"
+            "project/methods/method-set"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert method["name"] == "test_method_return_name"
 
     def test_get_api_version_two(self):
@@ -773,8 +781,11 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         self.handler.connection.api_version = "2.0"
         method = self.handler.GetMethodSetMethod("test_method_name")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
-            "project/methods/method-set?name=test_method_name"
+            "project/methods/method-set"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
         assert method["name"] == "test_method_return_name"
 
     def test_post(self):
@@ -786,6 +797,116 @@ class TestMethodSetMethodInteraction(unittest.TestCase):
         )
         assert self.handler.connection.post.call_args[1]["body"]["name"] == (
             "test_method_name"
+        )
+
+
+class TestSampleSetMethodInteraction(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+
+    def test_get_api_version_one(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            [{"name": "test_method_return_name"}],
+        )
+        self.handler.connection.api_version = "1.0"
+        method = self.handler.GetSampleSetMethodRaw("test_method_name")
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/methods/sample-set-method"
+        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test_method_name"
+        }
+        assert method["name"] == "test_method_return_name"
+
+    def test_get_api_version_two(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            {"name": "test_method_return_name"},
+        )
+        self.handler.connection.api_version = "2.0"
+        method = self.handler.GetSampleSetMethodRaw("test method/name")
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/methods/sample-set-method"
+        )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "name": "test method/name"
+        }
+        assert method["name"] == "test_method_return_name"
+
+    def test_get_experiment(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            {
+                "name": "test_method_name",
+                "plates": [
+                    {"plateTypeName": "test_plate", "plateLayoutPosition": "1"},
+                    {"plateTypeName": "test_plate", "plateLayoutPosition": "2"},
+                ],
+                "sampleSetLines": [
+                    {
+                        "id": 0,
+                        "components": [
+                            {
+                                "id": 0,
+                                "fields": [
+                                    {"name": "Component", "value": "compound_1"},
+                                    {"name": "Value", "value": 1.2},
+                                ],
+                            }
+                        ],
+                        "fields": [
+                            {
+                                "dataType": "Enumerator",
+                                "name": "Function",
+                                "value": {"value": 1, "member": "Inject Samples"},
+                            },
+                            {"dataType": "Enumerator", "name": "Processing"},
+                            {"dataType": "String", "name": "Vial", "value": "1:A,1"},
+                            {"dataType": "Enumerator", "name": "Blank", "value": False},
+                            {"dataType": "Double", "name": "InjVol", "value": 1.5},
+                        ],
+                    }
+                ],
+            }
+        )
+        self.handler.connection.api_version = "2.0"
+        sample_list, plates = self.handler.GetSampleSetMethod("test_method_name")
+        assert plates == {"1": "test_plate", "2": "test_plate"}
+        assert sample_list == [
+            {
+                "Function": "Inject Samples",
+                "Vial": "1:A,1",
+                "Blank": "No",
+                "InjVol": 1.5,
+                "Components": {"compound_1": 1.2},
+            }
+        ]
+
+    def test_get_experiment_round_trip(self):
+        sample_list = [
+            {
+                "Function": "Inject Samples",
+                "Processing": "Normal",
+                "Vial": "1:A,1",
+                "SampleName": "test_sample",
+                "InjVol": 1.5,
+                "Components": {"compound_1": 1.2},
+            }
+        ]
+        plates = {"1": "test_plate"}
+        self.handler.connection.api_version = "2.0"
+        self.handler.PostExperiment(
+            sample_set_method_name="test_method_name",
+            sample_list=[dict(sample) for sample in sample_list],
+            plates=plates,
+        )
+        posted = self.handler.connection.post.call_args[1]["body"]
+        self.handler.connection.get.return_value = create_empower_response(posted)
+        assert self.handler.GetSampleSetMethod("test_method_name") == (
+            sample_list,
+            plates,
         )
 
 
@@ -807,9 +928,520 @@ class TestStatus(unittest.TestCase):
         result = self.handler.GetStatus(node="test_node", system="test_system")
         assert self.handler.connection.get.call_args[1]["endpoint"] == (
             "acquisition/chromatographic-system-status"
-            "?nodeName=test_node&systemName=test_system"
         )
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "nodeName": "test_node",
+            "systemName": "test_system",
+        }
         assert result == {"FirstKey": "FirstValue", "SecondKey": "SecondValue"}
+
+
+class TestGetFieldNames(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+
+    def test_get_field_names(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            [{"name": "SampleName", "type": "Text"}]
+        )
+        result = self.handler.GetFieldNames("Result")
+        assert result == [{"name": "SampleName", "type": "Text"}]
+        assert self.handler.connection.get.call_args[1]["endpoint"] == "project/fields"
+        assert self.handler.connection.get.call_args[1]["params"] == {
+            "fieldType": "Result"
+        }
+
+    def test_get_field_names_invalid_field_type(self):
+        with self.assertRaises(ValueError):
+            self.handler.GetFieldNames("NotAFieldType")
+
+    def test_get_field_names_cached(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            [{"name": "SampleName", "type": "Text"}]
+        )
+        self.handler.GetFieldNames("Result")
+        self.handler.GetFieldNames("Result")
+        assert self.handler.connection.get.call_count == 1
+        self.handler.GetFieldNames("Peak")
+        assert self.handler.connection.get.call_count == 2
+        self.handler.GetFieldNames("Result", refresh=True)
+        assert self.handler.connection.get.call_count == 3
+
+    def test_get_field_names_cache_cleared_on_project_change(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            [{"name": "SampleName", "type": "Text"}]
+        )
+        self.handler.GetFieldNames("Result")
+        self.handler.project = "other_project"
+        self.handler.GetFieldNames("Result")
+        assert self.handler.connection.get.call_count == 2
+
+
+class TestGetPeaks(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+        self.field_names = create_empower_response(
+            [{"type": "Name", "name": "Area"}, {"type": "Name", "name": "Height"}]
+        )
+        self.peaks = create_empower_response(
+            [
+                {
+                    "id": 1,
+                    "fields": [
+                        {"dataType": "Double", "name": "Area", "value": 123.0},
+                        {"dataType": "Double", "name": "Height", "value": 4.5},
+                    ],
+                },
+                {
+                    "id": 2,
+                    "fields": [
+                        {"dataType": "Double", "name": "Area", "value": 678.0},
+                        {"dataType": "Double", "name": "Height"},
+                    ],
+                },
+            ]
+        )
+
+    def test_get_peaks_raw(self):
+        self.handler.connection.get.side_effect = [self.field_names, self.peaks]
+        result = self.handler.GetPeaksRaw(
+            result_ids=[1, 2], returned_fields=["Area", "Height"]
+        )
+        assert result == self.peaks.content
+        assert self.handler.connection.get.call_args[1]["endpoint"] == "project/peaks"
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("resultIds", 2),
+            ("peakFields", "Area"),
+            ("peakFields", "Height"),
+        ]
+
+    def test_get_peaks(self):
+        default_fields = [
+            "Area",
+            "PctArea",
+            "StartTime",
+            "EndTime",
+            "Height",
+            "Name",
+            "RetentionTime",
+            "AsymAt10",
+            "WidthAt50Pct",
+            "WidthAtBaseline",
+        ]
+        field_names = create_empower_response(
+            [{"type": "Name", "name": name} for name in [*default_fields, "Asym"]]
+        )
+        self.handler.connection.get.side_effect = [field_names, self.peaks]
+        result = self.handler.GetPeaks(result_ids=[1, 2])
+        assert result == [
+            {"Area": 123.0, "Height": 4.5},
+            {"Area": 678.0, "Height": None},
+        ]
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("resultIds", 2),
+            *[("peakFields", field) for field in default_fields],
+        ]
+
+    def test_get_peaks_all_fields(self):
+        self.handler.connection.get.side_effect = [self.field_names, self.peaks]
+        self.handler.GetPeaks(result_ids=[1, 2], returned_fields=None)
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("resultIds", 2),
+            ("peakFields", "Area"),
+            ("peakFields", "Height"),
+        ]
+
+    def test_get_peaks_returned_fields(self):
+        self.handler.connection.get.side_effect = [self.field_names, self.peaks]
+        self.handler.GetPeaks(result_ids=[1], returned_fields=["Area"])
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultIds", 1),
+            ("peakFields", "Area"),
+        ]
+
+    def test_get_peaks_raw_invalid_field_raises(self):
+        self.handler.connection.get.return_value = self.field_names
+        with self.assertRaises(ValueError) as context:
+            self.handler.GetPeaksRaw(result_ids=[1], returned_fields=["NotAField"])
+        assert "NotAField" in str(context.exception)
+        assert self.handler.connection.get.call_count == 1
+
+
+class TestGetSampleSets(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+        self.field_names = [
+            {"type": "Name", "name": "SampleSetName"},
+            {"type": "Name", "name": "SystemCreateDate"},
+        ]
+
+    def test_get_sample_sets_raw(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([{"Name": "test_sample_set"}]),
+        ]
+        result = self.handler.GetSampleSetsRaw(
+            returned_fields=["SampleSetName", "SystemCreateDate"],
+            search_field="SystemCreateDate",
+            operator="GT",
+            condition="01/10/2026",
+            order_by="Descending",
+        )
+        assert result == [{"Name": "test_sample_set"}]
+        assert (
+            self.handler.connection.get.call_args[1]["endpoint"]
+            == "project/sample-sets"
+        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("samplesetFields", "SampleSetName"),
+            ("samplesetFields", "SystemCreateDate"),
+            ("searchField", "SystemCreateDate"),
+            ("operator", "GT"),
+            ("condition", "01/10/2026"),
+            ("orderBy", "Descending"),
+        ]
+
+    def test_get_sample_sets(self):
+        default_fields = [
+            "SampleSetName",
+            "SampleSetId",
+            "SampleSetMethod",
+            "SampleSetStartDate",
+            "SampleSetFinishDate",
+            "SystemName",
+            "Node",
+        ]
+        field_names = [
+            {"type": "Name", "name": name}
+            for name in [*default_fields, "SystemComments"]
+        ]
+        self.handler.connection.get.side_effect = [
+            create_empower_response(field_names),
+            create_empower_response(
+                [
+                    {
+                        "id": 1531,
+                        "fields": [
+                            {"name": "SampleSetName", "value": "clean"},
+                            {"name": "Node"},
+                        ],
+                    }
+                ]
+            ),
+        ]
+        result = self.handler.GetSampleSets(
+            search_field="SampleSetName", operator="EQ", condition="clean"
+        )
+        assert result == [{"id": 1531, "SampleSetName": "clean", "Node": None}]
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            *[("samplesetFields", field) for field in default_fields],
+            ("searchField", "SampleSetName"),
+            ("operator", "EQ"),
+            ("condition", "clean"),
+            ("orderBy", "OrderNone"),
+        ]
+
+    def test_get_sample_sets_all_fields(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([]),
+        ]
+        self.handler.GetSampleSets(
+            search_field="SampleSetName",
+            operator="EQ",
+            condition="*",
+            returned_fields=None,
+        )
+        assert self.handler.connection.get.call_args[1]["params"][:2] == [
+            ("samplesetFields", "SampleSetName"),
+            ("samplesetFields", "SystemCreateDate"),
+        ]
+
+    def test_get_sample_sets_adds_search_field(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([]),
+        ]
+        returned_fields = ["SampleSetName"]
+        self.handler.GetSampleSets(
+            returned_fields=returned_fields,
+            search_field="SystemCreateDate",
+            operator="EQ",
+            condition="*",
+        )
+        params = self.handler.connection.get.call_args[1]["params"]
+        assert ("samplesetFields", "SystemCreateDate") in params
+        assert ("orderBy", "OrderNone") in params
+        assert returned_fields == ["SampleSetName"]
+
+    def test_get_sample_sets_invalid_search_field(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            self.field_names
+        )
+        with self.assertRaises(ValueError):
+            self.handler.GetSampleSets(
+                returned_fields=["SampleSetName"],
+                search_field="NotAField",
+                operator="EQ",
+                condition="*",
+            )
+
+    def test_get_sample_sets_invalid_returned_field(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            self.field_names
+        )
+        with self.assertRaises(ValueError) as context:
+            self.handler.GetSampleSets(
+                returned_fields=["SampleSetName", "NotAField"],
+                search_field="SampleSetName",
+                operator="EQ",
+                condition="*",
+            )
+        assert "NotAField" in str(context.exception)
+        assert self.handler.connection.get.call_count == 1
+
+    def test_get_sample_sets_invalid_operator(self):
+        with self.assertRaises(ValueError):
+            self.handler.GetSampleSets(
+                returned_fields=["SampleSetName"],
+                search_field="SampleSetName",
+                operator="INVALID",
+                condition="*",
+            )
+
+    def test_get_sample_sets_invalid_order_by(self):
+        with self.assertRaises(ValueError):
+            self.handler.GetSampleSets(
+                returned_fields=["SampleSetName"],
+                search_field="SampleSetName",
+                operator="EQ",
+                condition="*",
+                order_by="INVALID",
+            )
+
+    def test_get_sample_set(self):
+        field_names = [
+            {"type": "Name", "name": "SampleSetName"},
+            {"type": "Enumerator", "name": "SampleSetType"},
+            {"type": "Name", "name": "SampleSetComments"},
+        ]
+        self.handler.connection.get.side_effect = [
+            create_empower_response(field_names),
+            create_empower_response(
+                [
+                    {
+                        "id": 1531,
+                        "fields": [
+                            {"name": "SampleSetName", "value": "test name"},
+                            {
+                                "name": "SampleSetType",
+                                "value": {"value": 1, "member": "test_type"},
+                            },
+                            {"name": "SampleSetComments"},
+                        ],
+                    }
+                ]
+            ),
+        ]
+        result = self.handler.GetSampleSet("test name")
+        assert result == [
+            {
+                "id": 1531,
+                "SampleSetName": "test name",
+                "SampleSetType": "test_type",
+                "SampleSetComments": None,
+            }
+        ]
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("samplesetFields", "SampleSetName"),
+            ("samplesetFields", "SampleSetType"),
+            ("samplesetFields", "SampleSetComments"),
+            ("searchField", "SampleSetName"),
+            ("operator", "EQ"),
+            ("condition", "test name"),
+            ("orderBy", "OrderNone"),
+        ]
+
+
+class TestGetResults(unittest.TestCase):
+    @patch("OptiHPLCHandler.empower_handler.EmpowerConnection")
+    def setUp(self, _) -> None:
+        self.handler = EmpowerHandler(
+            project="test_project",
+            address="https://test_address/",
+        )
+        self.field_names = [
+            {"type": "Name", "name": "SampleName"},
+            {"type": "Name", "name": "DateAcquired"},
+        ]
+
+    def test_get_results_raw(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([{"id": 1}]),
+        ]
+        returned_fields = ["SampleName"]
+        result = self.handler.GetResultsRaw(
+            returned_fields=returned_fields,
+            search_field="DateAcquired",
+            operator="GT",
+            condition="01/01/2025",
+            order_by="Descending",
+            page_size=10,
+        )
+        assert result == [{"id": 1}]
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/results"
+        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultFields", "SampleName"),
+            ("resultFields", "DateAcquired"),
+            ("searchField", "DateAcquired"),
+            ("operator", "GT"),
+            ("condition", "01/01/2025"),
+            ("orderBy", "Descending"),
+            ("PageNumber", 1),
+            ("PageSize", 10),
+        ]
+        assert returned_fields == ["SampleName"]
+
+    def test_get_results(self):
+        default_fields = [
+            "SampleName",
+            "ResultId",
+            "InjectionId",
+            "ChannelName",
+            "DateAcquired",
+            "DateProcessed",
+            "ProcessingMethod",
+        ]
+        field_names = [
+            {"type": "Name", "name": name} for name in [*default_fields, "Label"]
+        ]
+        self.handler.connection.get.side_effect = [
+            create_empower_response(field_names),
+            create_empower_response(
+                [
+                    {
+                        "id": 1862,
+                        "fields": [
+                            {"name": "SampleName", "value": "test_sample"},
+                            {"name": "DateProcessed"},
+                        ],
+                    }
+                ]
+            ),
+        ]
+        result = self.handler.GetResults(
+            search_field="SampleName", operator="EQ", condition="test_sample"
+        )
+        assert result == [
+            {"id": 1862, "SampleName": "test_sample", "DateProcessed": None}
+        ]
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            *[("resultFields", field) for field in default_fields],
+            ("searchField", "SampleName"),
+            ("operator", "EQ"),
+            ("condition", "test_sample"),
+            ("orderBy", "OrderNone"),
+            ("PageNumber", 1),
+            ("PageSize", 50),
+        ]
+
+    def test_get_results_all_fields(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([]),
+        ]
+        self.handler.GetResults(
+            search_field="SampleName",
+            operator="EQ",
+            condition="*",
+            returned_fields=None,
+        )
+        assert self.handler.connection.get.call_args[1]["params"][:2] == [
+            ("resultFields", "SampleName"),
+            ("resultFields", "DateAcquired"),
+        ]
+
+    def test_get_results_invalid_operator_raises(self):
+        with self.assertRaises(ValueError):
+            self.handler.GetResults(
+                returned_fields=["SampleName"],
+                search_field="SampleName",
+                operator="INVALID",
+                condition="test",
+            )
+
+    def test_get_results_invalid_fields_raise(self):
+        self.handler.connection.get.return_value = create_empower_response(
+            self.field_names
+        )
+        with self.assertRaises(ValueError):
+            self.handler.GetResults(
+                returned_fields=["SampleName"],
+                search_field="NotAField",
+                operator="EQ",
+                condition="test",
+            )
+        with self.assertRaises(ValueError) as context:
+            self.handler.GetResults(
+                returned_fields=["SampleName", "NotAField"],
+                search_field="SampleName",
+                operator="EQ",
+                condition="test",
+            )
+        assert "NotAField" in str(context.exception)
+        assert self.handler.connection.get.call_count == 1
+
+    def test_get_result(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response(
+                [
+                    {
+                        "id": 1862,
+                        "fields": [
+                            {"name": "SampleName", "value": "test_sample"},
+                            {"name": "DateAcquired"},
+                        ],
+                    }
+                ]
+            ),
+        ]
+        result = self.handler.GetResult(1862)
+        assert result == {"id": 1862, "SampleName": "test_sample", "DateAcquired": None}
+        assert self.handler.connection.get.call_args[1]["endpoint"] == (
+            "project/results"
+        )
+        assert self.handler.connection.get.call_args[1]["params"] == [
+            ("resultFields", "SampleName"),
+            ("resultFields", "DateAcquired"),
+            ("resultIDs", 1862),
+        ]
+
+    def test_get_result_not_found_raises(self):
+        self.handler.connection.get.side_effect = [
+            create_empower_response(self.field_names),
+            create_empower_response([]),
+        ]
+        with self.assertRaises(ValueError):
+            self.handler.GetResult(1862)
 
 
 class TestSampleSetLineFields(unittest.TestCase):
@@ -838,8 +1470,11 @@ class TestSampleSetLineFields(unittest.TestCase):
 
     def test_called_on_login(self):
         self.assertEqual(
-            self.handler.connection.get.call_args[0][0],
-            "/project/fields?fieldType=SampleSetLine",
+            self.handler.connection.get.call_args[1]["endpoint"], "/project/fields"
+        )
+        self.assertEqual(
+            self.handler.connection.get.call_args[1]["params"],
+            {"fieldType": "SampleSetLine"},
         )
 
     def test_synonym(self):
