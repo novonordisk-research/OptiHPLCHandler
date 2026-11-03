@@ -1,4 +1,5 @@
 import unittest
+import uuid
 from unittest.mock import MagicMock, patch
 
 from OptiHPLCHandler import EmpowerHandler, EmpowerInstrumentMethod, EmpowerModuleMethod
@@ -440,6 +441,102 @@ class TestSampleList(unittest.TestCase):
         assert fields_by_name["SampleWeight"]["dataType"] == "Real"
         assert fields_by_name["NumOfInjs"]["dataType"] == "Integer"
         assert fields_by_name["OriginalVialId"]["dataType"] == "Integer"
+
+    def _post_and_get_fields(self, sample_list, api_version):
+        self.handler.connection.api_version = api_version
+        self.handler.PostExperiment(
+            sample_set_method_name="test_sampleset_name",
+            sample_list=sample_list,
+            plates={},
+        )
+        lines = self.handler.connection.post.call_args[1]["body"]["sampleSetLines"]
+        return [{field["name"]: field for field in line["fields"]} for line in lines]
+
+    def test_column_fields_are_text_on_v3(self):
+        column_name = uuid.uuid4().hex
+        serial_number = uuid.uuid4().hex
+        sample_list = [{"ColumnName": column_name, "ColumnSerialNumber": serial_number}]
+        fields = self._post_and_get_fields(sample_list, "3.0")[0]
+        assert fields["ColumnName"] == {
+            "name": "ColumnName",
+            "value": column_name,
+            "dataType": "Text",
+        }
+        assert fields["ColumnSerialNumber"]["dataType"] == "Text"
+
+    def test_column_fields_are_enumerator_on_v1_v2(self):
+        for version in ("1.0", "2.0"):
+            sample_list = [{"ColumnName": "col", "ColumnSerialNumber": "serial"}]
+            fields = self._post_and_get_fields(sample_list, version)[0]
+            assert fields["ColumnName"] == {
+                "name": "ColumnName",
+                "value": {"member": "col"},
+                "dataType": "Enumerator",
+            }
+            assert fields["ColumnSerialNumber"]["dataType"] == "Enumerator"
+
+    def test_none_values_omitted_on_v3(self):
+        sample_list = [
+            {"SampleName": "a", "ColumnSerialNumber": None, "Dilution": None}
+        ]
+        fields = self._post_and_get_fields(sample_list, "3.0")[0]
+        assert "ColumnSerialNumber" not in fields
+        assert "Dilution" not in fields
+        assert "SampleName" in fields
+
+    def test_none_values_not_omitted_before_v3(self):
+        sample_list = [{"ColumnSerialNumber": None}]
+        fields = self._post_and_get_fields(sample_list, "1.0")[0]
+        assert fields["ColumnSerialNumber"]["value"] == {"member": None}
+
+    def test_inject_defaults_on_v3(self):
+        for function in (
+            "Inject Samples",
+            "Inject Standards",
+            "Inject Controls",
+            "Inject RF Internal Standards",
+            "Inject Immediate Standards",
+            "Inject Immediate Samples",
+        ):
+            fields = self._post_and_get_fields([{"Function": function}], "3.0")[0]
+            assert fields["NumOfInjs"] == {
+                "name": "NumOfInjs",
+                "value": 1,
+                "dataType": "Integer",
+            }
+            assert fields["Processing"] == {
+                "name": "Processing",
+                "value": "Normal",
+                "dataType": "Enum",
+            }
+
+    def test_inject_defaults_do_not_override_on_v3(self):
+        sample_list = [
+            {
+                "Function": "Inject Samples",
+                "NumOfInjs": 3,
+                "Processing": "Don't Report",
+            }
+        ]
+        fields = self._post_and_get_fields(sample_list, "3.0")[0]
+        assert fields["NumOfInjs"]["value"] == 3
+        assert fields["Processing"]["value"] == "Don't Report"
+
+    def test_no_inject_defaults_for_other_functions_on_v3(self):
+        for function in (
+            "Condition Column",
+            "Equilibrate",
+            "Inject Narrow Standards",
+            "Inject Broad Standards",
+        ):
+            fields = self._post_and_get_fields([{"Function": function}], "3.0")[0]
+            assert "NumOfInjs" not in fields
+            assert "Processing" not in fields
+
+    def test_no_inject_defaults_before_v3(self):
+        fields = self._post_and_get_fields([{"Function": "Inject Samples"}], "2.0")[0]
+        assert "NumOfInjs" not in fields
+        assert "Processing" not in fields
 
 
 class TestGetMethods(unittest.TestCase):
