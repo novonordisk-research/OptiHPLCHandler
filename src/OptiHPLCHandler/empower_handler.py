@@ -18,6 +18,8 @@ from .utils.default_data import (
     RESULT_OPERATORS,
     RUN_MODES,
     SYNONYMS,
+    V3_FREE_TEXT_FIELDS,
+    V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -252,11 +254,20 @@ class EmpowerHandler:
         ]
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
+        is_v3 = self.connection.api_version == "3.0"
         for num, sample in enumerate(sample_list):
             if "Function" not in sample:
                 sample["Function"] = "Inject Samples"
                 if "Processing" not in sample:
                     sample["Processing"] = "Normal"
+            if is_v3 and sample["Function"] in V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS:
+                # v3 no longer defaults these server-side.
+                logger.debug(
+                    "Assuming default values for NumOfInjs and Processing. "
+                    "As of v3, these are no longer set server-side."
+                )
+                sample.setdefault("NumOfInjs", 1)
+                sample.setdefault("Processing", "Normal")
             logger.debug(
                 "Adding sampleset line number %s to sample list",
                 num,
@@ -283,11 +294,16 @@ class EmpowerHandler:
                 )
             field_list = []
             for key, value in sample.items():
+                if is_v3 and value is None:
+                    # v3 rejects null values; omitting the field leaves it empty.
+                    continue
                 key = self.synonym_dict.get(key, key)
                 # If you have logged in, the synonyms should be set, so this should not
                 # be necessary, but we want to be able to use the handler by logging in
                 # elsewhere.
-                if key in self._samplesetline_enum_dict:
+                if key in self._samplesetline_enum_dict and not (
+                    is_v3 and key in V3_FREE_TEXT_FIELDS
+                ):
                     field = self._build_enum_field(key, value)
                 else:
                     field = self._set_data_type({"name": key, "value": value})
