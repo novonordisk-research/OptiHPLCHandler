@@ -18,7 +18,6 @@ from .utils.default_data import (
     RESULT_OPERATORS,
     RUN_MODES,
     SYNONYMS,
-    V3_FREE_TEXT_FIELDS,
     V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS,
 )
 
@@ -122,6 +121,11 @@ class EmpowerHandler:
 
     # Changing the address would require a new lookup for the service, so it is not
     # allowed.
+
+    @property
+    def api_version(self) -> str:
+        """Get the version of the Empower Web API in use."""
+        return self.connection.api_version
 
     @property
     def username(self) -> str:
@@ -254,13 +258,15 @@ class EmpowerHandler:
         ]
         sampleset_object = {"plates": plate_list, "name": sample_set_method_name}
         empower_sample_list = []
-        is_v3 = self.connection.api_version == "3.0"
         for num, sample in enumerate(sample_list):
             if "Function" not in sample:
                 sample["Function"] = "Inject Samples"
                 if "Processing" not in sample:
                     sample["Processing"] = "Normal"
-            if is_v3 and sample["Function"] in V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS:
+            if (
+                self.api_version == "3.0"
+                and sample["Function"] in V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS
+            ):
                 # v3 no longer defaults these server-side.
                 logger.debug(
                     "Assuming default values for NumOfInjs and Processing. "
@@ -294,16 +300,14 @@ class EmpowerHandler:
                 )
             field_list = []
             for key, value in sample.items():
-                if is_v3 and value is None:
+                if self.api_version == "3.0" and value is None:
                     # v3 rejects null values; omitting the field leaves it empty.
                     continue
                 key = self.synonym_dict.get(key, key)
                 # If you have logged in, the synonyms should be set, so this should not
                 # be necessary, but we want to be able to use the handler by logging in
                 # elsewhere.
-                if key in self._samplesetline_enum_dict and not (
-                    is_v3 and key in V3_FREE_TEXT_FIELDS
-                ):
+                if key in self._samplesetline_enum_dict:
                     field = self._build_enum_field(key, value)
                 else:
                     field = self._set_data_type({"name": key, "value": value})
@@ -404,7 +408,7 @@ class EmpowerHandler:
         response = self.connection.get(
             endpoint="project/methods/instrument-method", params={"name": method_name}
         )
-        if self.connection.api_version == "1.0":
+        if self.api_version == "1.0":
             return EmpowerInstrumentMethod(response.content[0], use_sample_manager_oven)
         return EmpowerInstrumentMethod(response.content, use_sample_manager_oven)
 
@@ -425,7 +429,7 @@ class EmpowerHandler:
         response = self.connection.get(
             endpoint="project/methods/method-set", params={"name": method_name}
         )
-        if self.connection.api_version == "1.0":
+        if self.api_version == "1.0":
             return response.content[0]
         return response.content
 
@@ -474,7 +478,7 @@ class EmpowerHandler:
         response = self.connection.get(
             endpoint="project/methods/sample-set-method", params={"name": method_name}
         )
-        if self.connection.api_version == "1.0":
+        if self.api_version == "1.0":
             return response.content[0]
         return response.content
 
@@ -976,15 +980,19 @@ class EmpowerHandler:
                 f"Value {value} not in enumerated values for field {key}. "
                 f"Available values: {self._samplesetline_enum_dict[key]}"
             )
-        if self.connection.api_version == "3.0":
-            return {"name": key, "value": value, "dataType": "Enum"}
+        if self.api_version == "3.0":
+            if len(self._samplesetline_enum_dict[key]) > 0:
+                return {"name": key, "value": value, "dataType": "Enum"}
+            # On v3, free-text fields masquerading as enums must be sent as text, or
+            # new values can't be added.
+            return self._set_data_type({"name": key, "value": value})
         return {"name": key, "value": {"member": value}, "dataType": "Enumerator"}
 
     def _build_sample_set_line(
         self, num: int, component_list: list[dict], field_list: list[dict]
     ) -> dict:
         """Build a SampleSetLineRequest, using the row/insertMode contract on v3."""
-        if self.connection.api_version == "3.0":
+        if self.api_version == "3.0":
             return {
                 "components": component_list,
                 "row": num + 1,  # v3 rows are 1-indexed, unlike legacy "id"
@@ -995,7 +1003,7 @@ class EmpowerHandler:
 
     def _set_data_type(self, field: Mapping[str, Any]):
         """Find and set the data type of the field, based on the type of `value`."""
-        use_v3 = self.connection.api_version == "3.0"
+        use_v3 = self.api_version == "3.0"
         if use_v3 and field["name"] in BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3:
             # These builtin fields have a fixed Empower dataType that can't be told
             # apart from the Python type of the value (e.g. RunTime is always "Real",

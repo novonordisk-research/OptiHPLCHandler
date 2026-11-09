@@ -1604,6 +1604,9 @@ class TestSampleSetLineFields(unittest.TestCase):
 
     def test_enum_v3(self):
         self.handler.connection.api_version = "3.0"
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "EnumField", ("Value1", "Value2")
+        )
         self.handler.PostExperiment(
             sample_set_method_name="test",
             sample_list=[{"EnumField": "Value1"}],
@@ -1623,6 +1626,9 @@ class TestSampleSetLineFields(unittest.TestCase):
 
     def test_enum_deprecated_dict_value_v3(self):
         self.handler.connection.api_version = "3.0"
+        self.handler.SetAllowedSamplesetLineFieldValues(
+            "EnumField", ("Value1", "Value2")
+        )
         with self.assertWarns(DeprecationWarning):
             self.handler.PostExperiment(
                 sample_set_method_name="test",
