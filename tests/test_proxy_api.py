@@ -58,6 +58,8 @@ class TestEmpowerHandler(unittest.TestCase):
             (self.handler.connection.post.call_args[1]["body"]["systemName"])
             == "test_hplc"
         )  # Check that the correct HPLC is used.
+        # No explicit timeout, so the connection's default_post_timeout applies.
+        assert "timeout" not in self.handler.connection.post.call_args[1]
         assert (
             (self.handler.connection.post.call_args[1]["body"]["sampleSetName"]) is None
         )  # Check that no sample set name is given

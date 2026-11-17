@@ -135,7 +135,7 @@ class EmpowerConnection:
         self.project = project
         self.session_id = None
         self.default_get_timeout = 20
-        self.default_post_timeout = 40
+        self.default_post_timeout = 60
 
     @property
     def content_key(self):

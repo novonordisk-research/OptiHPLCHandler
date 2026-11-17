@@ -263,17 +263,8 @@ class EmpowerHandler:
                 sample["Function"] = "Inject Samples"
                 if "Processing" not in sample:
                     sample["Processing"] = "Normal"
-            if (
-                self.api_version == "3.0"
-                and sample["Function"] in V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS
-            ):
-                # v3 no longer defaults these server-side.
-                logger.debug(
-                    "Assuming default values for NumOfInjs and Processing. "
-                    "As of v3, these are no longer set server-side."
-                )
-                sample.setdefault("NumOfInjs", 1)
-                sample.setdefault("Processing", "Normal")
+            if self.api_version == "3.0":
+                self._set_v3_inject_defaults(sample)
             logger.debug(
                 "Adding sampleset line number %s to sample list",
                 num,
@@ -366,7 +357,7 @@ class EmpowerHandler:
         }
         logger.debug("Running experiment with parameters %s", parameters)
         self.connection.post(
-            endpoint="acquisition/run-sample-set-method", body=parameters, timeout=60
+            endpoint="acquisition/run-sample-set-method", body=parameters
         )
 
     def GetMethodList(self, method_type: str = "MethodSetMethod") -> list[str]:
@@ -955,6 +946,22 @@ class EmpowerHandler:
                 logger.debug("Logging out of session %s", session["id"])
                 connection.logout()
 
+    @staticmethod
+    def _set_v3_inject_defaults(sample: dict[str, Any]) -> None:
+        """Fill in NumOfInjs and Processing, which v3 no longer sets server-side."""
+        if sample["Function"] not in V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS:
+            return
+        defaults = {"NumOfInjs": 1, "Processing": "Normal"}
+        missing = [key for key in defaults if key not in sample]
+        if missing:
+            logger.debug(
+                "Assuming default values for %s. "
+                "As of v3, these are no longer set server-side.",
+                ", ".join(missing),
+            )
+        for key in missing:
+            sample[key] = defaults[key]
+
     def _build_enum_field(self, key: str, value: Any) -> dict:
         """
         Validate an enumerated SampleSetLine field's value and build its
@@ -962,8 +969,8 @@ class EmpowerHandler:
         dataType "Enumerator"; v3 sends the raw value with dataType "Enum".
         """
         if isinstance(value, dict):
-            # If the value is a dict, it is already in the correct format.
-            # We will unpack it for the check, and then pack it again.
+            # Legacy {"member": value} format. Unpack it for the check; the field is
+            # rebuilt below in the format required by the API version in use.
             warnings.warn(
                 "You are using a dict as a value for an enumerated field. "
                 "This is deprecated and will be removed, "
