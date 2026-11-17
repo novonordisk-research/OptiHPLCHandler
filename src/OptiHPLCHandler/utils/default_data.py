@@ -146,6 +146,19 @@ BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3: Mapping[str, str] = MappingProxyType(
     }
 )
 
+# Functions for which v3 requires NumOfInjs and Processing, where v1/v2 defaulted them
+# server-side. The Narrow/Broad (SEC) functions are deliberately left out.
+V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS: frozenset[str] = frozenset(
+    {
+        "Inject Samples",
+        "Inject Standards",
+        "Inject Controls",
+        "Inject RF Internal Standards",
+        "Inject Immediate Standards",
+        "Inject Immediate Samples",
+    }
+)
+
 SYNONYMS: Mapping[str, str] = MappingProxyType(
     {
         "Method": "MethodSetOrReportMethod",

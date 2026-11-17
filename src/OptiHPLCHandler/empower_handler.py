@@ -18,6 +18,7 @@ from .utils.default_data import (
     RESULT_OPERATORS,
     RUN_MODES,
     SYNONYMS,
+    V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS,
 )
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,11 @@ class EmpowerHandler:
 
     # Changing the address would require a new lookup for the service, so it is not
     # allowed.
+
+    @property
+    def api_version(self) -> str:
+        """Get the version of the Empower Web API in use."""
+        return self.connection.api_version
 
     @property
     def username(self) -> str:
@@ -257,6 +263,8 @@ class EmpowerHandler:
                 sample["Function"] = "Inject Samples"
                 if "Processing" not in sample:
                     sample["Processing"] = "Normal"
+            if self.api_version == "3.0":
+                self._set_v3_inject_defaults(sample)
             logger.debug(
                 "Adding sampleset line number %s to sample list",
                 num,
@@ -283,6 +291,9 @@ class EmpowerHandler:
                 )
             field_list = []
             for key, value in sample.items():
+                if self.api_version == "3.0" and value is None:
+                    # v3 rejects null values; omitting the field leaves it empty.
+                    continue
                 key = self.synonym_dict.get(key, key)
                 # If you have logged in, the synonyms should be set, so this should not
                 # be necessary, but we want to be able to use the handler by logging in
@@ -346,7 +357,7 @@ class EmpowerHandler:
         }
         logger.debug("Running experiment with parameters %s", parameters)
         self.connection.post(
-            endpoint="acquisition/run-sample-set-method", body=parameters, timeout=60
+            endpoint="acquisition/run-sample-set-method", body=parameters
         )
 
     def GetMethodList(self, method_type: str = "MethodSetMethod") -> list[str]:
@@ -388,7 +399,7 @@ class EmpowerHandler:
         response = self.connection.get(
             endpoint="project/methods/instrument-method", params={"name": method_name}
         )
-        if self.connection.api_version == "1.0":
+        if self.api_version == "1.0":
             return EmpowerInstrumentMethod(response.content[0], use_sample_manager_oven)
         return EmpowerInstrumentMethod(response.content, use_sample_manager_oven)
 
@@ -409,7 +420,7 @@ class EmpowerHandler:
         response = self.connection.get(
             endpoint="project/methods/method-set", params={"name": method_name}
         )
-        if self.connection.api_version == "1.0":
+        if self.api_version == "1.0":
             return response.content[0]
         return response.content
 
@@ -458,7 +469,7 @@ class EmpowerHandler:
         response = self.connection.get(
             endpoint="project/methods/sample-set-method", params={"name": method_name}
         )
-        if self.connection.api_version == "1.0":
+        if self.api_version == "1.0":
             return response.content[0]
         return response.content
 
@@ -935,6 +946,22 @@ class EmpowerHandler:
                 logger.debug("Logging out of session %s", session["id"])
                 connection.logout()
 
+    @staticmethod
+    def _set_v3_inject_defaults(sample: dict[str, Any]) -> None:
+        """Fill in NumOfInjs and Processing, which v3 no longer sets server-side."""
+        if sample["Function"] not in V3_FUNCTIONS_NEEDING_INJECT_DEFAULTS:
+            return
+        defaults = {"NumOfInjs": 1, "Processing": "Normal"}
+        missing = [key for key in defaults if key not in sample]
+        if missing:
+            logger.debug(
+                "Assuming default values for %s. "
+                "As of v3, these are no longer set server-side.",
+                ", ".join(missing),
+            )
+        for key in missing:
+            sample[key] = defaults[key]
+
     def _build_enum_field(self, key: str, value: Any) -> dict:
         """
         Validate an enumerated SampleSetLine field's value and build its
@@ -942,8 +969,8 @@ class EmpowerHandler:
         dataType "Enumerator"; v3 sends the raw value with dataType "Enum".
         """
         if isinstance(value, dict):
-            # If the value is a dict, it is already in the correct format.
-            # We will unpack it for the check, and then pack it again.
+            # Legacy {"member": value} format. Unpack it for the check; the field is
+            # rebuilt below in the format required by the API version in use.
             warnings.warn(
                 "You are using a dict as a value for an enumerated field. "
                 "This is deprecated and will be removed, "
@@ -960,15 +987,19 @@ class EmpowerHandler:
                 f"Value {value} not in enumerated values for field {key}. "
                 f"Available values: {self._samplesetline_enum_dict[key]}"
             )
-        if self.connection.api_version == "3.0":
-            return {"name": key, "value": value, "dataType": "Enum"}
+        if self.api_version == "3.0":
+            if len(self._samplesetline_enum_dict[key]) > 0:
+                return {"name": key, "value": value, "dataType": "Enum"}
+            # On v3, free-text fields masquerading as enums must be sent as text, or
+            # new values can't be added.
+            return self._set_data_type({"name": key, "value": value})
         return {"name": key, "value": {"member": value}, "dataType": "Enumerator"}
 
     def _build_sample_set_line(
         self, num: int, component_list: list[dict], field_list: list[dict]
     ) -> dict:
         """Build a SampleSetLineRequest, using the row/insertMode contract on v3."""
-        if self.connection.api_version == "3.0":
+        if self.api_version == "3.0":
             return {
                 "components": component_list,
                 "row": num + 1,  # v3 rows are 1-indexed, unlike legacy "id"
@@ -979,7 +1010,7 @@ class EmpowerHandler:
 
     def _set_data_type(self, field: Mapping[str, Any]):
         """Find and set the data type of the field, based on the type of `value`."""
-        use_v3 = self.connection.api_version == "3.0"
+        use_v3 = self.api_version == "3.0"
         if use_v3 and field["name"] in BUILTIN_NUMERIC_FIELD_DATA_TYPES_V3:
             # These builtin fields have a fixed Empower dataType that can't be told
             # apart from the Python type of the value (e.g. RunTime is always "Real",
