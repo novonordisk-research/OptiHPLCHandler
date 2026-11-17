@@ -3,7 +3,7 @@ from .empower_handler import EmpowerHandler
 from .empower_instrument_method import EmpowerInstrumentMethod
 from .empower_module_method import EmpowerModuleMethod
 
-__version__ = "5.1.0"
+__version__ = "5.2.0"
 
 __all__ = [
     "EmpowerConnection",
